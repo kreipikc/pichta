@@ -27,4 +27,4 @@ async def get_me(user_id: int):
 )
 async def post_me(user: UserCreate):
     pass
-    # Создание пользователя
+    # Редактирование пользователя (себя)
