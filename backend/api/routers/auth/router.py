@@ -45,7 +45,7 @@ async def login_user(response: Response, user: User):
     description="Generates new access token using valid refresh token. Does not extend refresh token lifespan.",
     response_description="Bearer Token (Access)",
     status_code=status.HTTP_200_OK,
-    # response_model=Token,
+    response_model=Token,
     # responses=UsersResponse.refresh_post,
 )
 async def refresh_token_point(request: Request):

@@ -1,0 +1,29 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: App
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
+      - REDIS_URL=redis://${BackEnd_USER}:${BackEnd_USER_PASSWORD}@Redis:6379 
+      - SECRET_KEY_JWT=${SECRET_KEY_JWT}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - PASSWORD_RESET_CODE_EXPIRE_MINUTES=${PASSWORD_RESET_CODE_EXPIRE_MINUTES}
+    restart: unless-stopped
+    networks:
+      - app_network
+    ports:
+      - 8005:8005
