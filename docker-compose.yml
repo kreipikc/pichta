@@ -1,29 +1,56 @@
 services:
+  pg-age:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+      args:
+        - POSTGRES_USER=${POSTGRES_USER}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+        - POSTGRES_DB_GRAPH=${POSTGRES_DB_GRAPH}
+        - POSTGRES_DB_USERS=${POSTGRES_DB_USERS}
+    container_name: pg_age
+    env_file:
+      - .env
+    networks:
+      - app_network
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_GRAPH}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: App
+    container_name: backend
     depends_on:
-      postgres:
+      pg-age:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
-      - REDIS_URL=redis://${BackEnd_USER}:${BackEnd_USER_PASSWORD}@Redis:6379 
+      - POSTGRES_GRAPH_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB_GRAPH}
+      - POSTGRES_USERS_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB_USERS}
       - SECRET_KEY_JWT=${SECRET_KEY_JWT}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_EMAIL=${SMTP_EMAIL}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - PASSWORD_RESET_CODE_EXPIRE_MINUTES=${PASSWORD_RESET_CODE_EXPIRE_MINUTES}
     restart: unless-stopped
     networks:
       - app_network
     ports:
-      - 8005:8005
+      - "8005:8005"
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  pg_data:

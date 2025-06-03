@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, Response, Request, Depends
-from .model import UserInfo, UserCreate
+from .schemas import UserInfo, UserCreate
 
 
 router = APIRouter(prefix="/user", tags=["User 👔"])

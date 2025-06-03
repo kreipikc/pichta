@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, Response, Request, Depends
-from .model import User, Token
+from .schemas import UserRegister, UserLogin, Token
 
 
 router = APIRouter(prefix="/auth", tags=["Auth 👔"])
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["Auth 👔"])
     response_model=None,
     # responses=,
 )
-async def register_user(user: User):
+async def register_user(user: UserRegister):
     pass
 
 
@@ -27,7 +27,7 @@ async def register_user(user: User):
     response_model=Token,
     # responses=,
 )
-async def login_user(response: Response, user: User):
+async def login_user(response: Response, user: UserLogin):
     # check = await UserRepository.authenticate_user(email=user.email, password=user.password)
     # if check is None:
     #     raise HTTPError.bad_credentials_400()
