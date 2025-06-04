@@ -61,5 +61,5 @@ async def refresh_access_token(refresh_token: str) -> str:
     """
     user = await descript_and_check_token(refresh_token)
 
-    new_access_token = create_access_token({"sub": str(user.email), "role": str(user.role)})
+    new_access_token = create_access_token({"sub": str(user.email)})
     return new_access_token

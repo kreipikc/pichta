@@ -9,6 +9,7 @@ class UserInfo(BaseModel):
     id: UUID
     email: EmailStr = Field(description="Электронная почта")
     phone: str = Field(description="Номер телефона")
+    username: str
     password_hash: str
     created_at: datetime
     updated_at: Optional[datetime] = None

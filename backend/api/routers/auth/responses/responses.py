@@ -1,6 +1,6 @@
 from .http_errors import HTTPError
 from fastapi import status
-from .utils import convert_to_example
+from utils import convert_to_example
 
 
 """ Base authorization responses """
@@ -21,7 +21,7 @@ base_auth_responses = {
 
 
 class AuthResponse:
-    """Users responses.
+    """Auth responses.
 
     Attributes:
         register_post: Responses for register

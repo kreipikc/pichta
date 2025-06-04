@@ -1,7 +1,8 @@
 from fastapi import APIRouter, status, Response, Request, Depends
 from .schemas import UserInfo, UserUpdate
+from .service import UserRepository
 from ..auth.dependencies import get_current_user
-from ..auth.responses.responses import base_auth_responses
+from .responses.responses import UserResponse
 
 
 router = APIRouter(prefix="/user", tags=["User 👔"])
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/user", tags=["User 👔"])
     response_description="User info",
     status_code=status.HTTP_200_OK,
     response_model=UserInfo,
-    responses=base_auth_responses,
+    responses=UserResponse.me_get
 )
 async def get_me(user_current: UserInfo = Depends(get_current_user)):
     return user_current
@@ -22,11 +23,13 @@ async def get_me(user_current: UserInfo = Depends(get_current_user)):
 
 @router.post(
     path="/me",
-    summary="",
-    description="",
+    summary="Update information about you",
+    description="Returns status code.",
     response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
+    response_model=None,
+    responses=UserResponse.me_post
 )
-async def post_me(user: UserUpdate, user_current: UserInfo = Depends(get_current_user)):
-    pass
-    # Редактирование пользователя (себя)
+async def post_me(user_data: UserUpdate, user_current: UserInfo = Depends(get_current_user)):
+    await UserRepository.update_user(user_data=user_data, id_user=user_current.id)
+    return Response(status_code=status.HTTP_200_OK)

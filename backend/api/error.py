@@ -9,3 +9,14 @@ class ErrorModel(BaseModel):
     @var detail: details of error
     """
     detail: Union[str, Dict[str, str]]
+
+
+class ErrorDetail(BaseModel):
+    """Detail in HTTPException.
+
+    Attributes:
+        code: Error code.
+        reason: Error reason.
+    """
+    code: str
+    reason: str

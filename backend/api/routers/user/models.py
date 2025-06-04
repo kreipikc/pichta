@@ -14,8 +14,9 @@ class UserOrm(Model):
         primary_key=True,
         default=uuid.uuid4,
     )
-    email: Mapped[str] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(nullable=False)
     phone: Mapped[str] = mapped_column(nullable=False)
+    username: Mapped[str] = mapped_column(nullable=False)
     password_hash: Mapped[str] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)

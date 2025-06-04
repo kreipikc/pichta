@@ -1,19 +1,8 @@
 from fastapi import HTTPException, status
-from pydantic import BaseModel
+from error import ErrorDetail
 
 
-class ErrorDetail(BaseModel):
-    """Detail in HTTPException.
-
-    Attributes:
-        code: Error code.
-        reason: Error reason.
-    """
-    code: str
-    reason: str
-
-
-class UserErrorCode:
+class AuthErrorCode:
     """Аll authentication and authorization error codes.
 
     Attributes:
@@ -24,7 +13,6 @@ class UserErrorCode:
         NO_ACCESS_RIGHTS: No required access rights.
         DATA_OUT_OF_DATE: The data is out of date.
         EMAIL_OR_PHONE_ALREADY_EXISTS: Email or phone is already taken.
-        USER_NOT_FOUND: User not found.
         REFRESH_TOKEN_IN_BLACK_LIST: Refresh_token in black list.
     """
     BAD_CREDENTIALS = "BAD_CREDENTIALS"
@@ -34,7 +22,6 @@ class UserErrorCode:
     NO_ACCESS_RIGHTS = "NO_ACCESS_RIGHTS"
     DATA_OUT_OF_DATE = "DATA_OUT_OF_DATE"
     EMAIL_OR_PHONE_ALREADY_EXISTS = "EMAIL_OR_PHONE_ALREADY_EXISTS"
-    USER_NOT_FOUND = "USER_NOT_FOUND"
     REFRESH_TOKEN_IN_BLACK_LIST = "REFRESH_TOKEN_IN_BLACK_LIST"
 
 
@@ -50,7 +37,6 @@ class HTTPError:
         user_not_active_403: User is not active.
         no_access_rights_403: No required access rights.
         data_out_of_date_403: User data is out of date, please re-login.
-        user_not_found_404: User not found.
         email_already_exists_409: Email is already taken.
         endpoint_not_found_500: Endpoint not found.
     """
@@ -59,7 +45,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorDetail(
-                code=UserErrorCode.BAD_CREDENTIALS,
+                code=AuthErrorCode.BAD_CREDENTIALS,
                 reason="Bad credentials"
             ).model_dump(),
         )
@@ -69,7 +55,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorDetail(
-                code=UserErrorCode.BAD_CREDENTIALS,
+                code=AuthErrorCode.BAD_CREDENTIALS,
                 reason="Could not validate credentials"
             ).model_dump(),
         )
@@ -79,7 +65,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorDetail(
-                code=UserErrorCode.INVALID_TOKEN,
+                code=AuthErrorCode.INVALID_TOKEN,
                 reason="Invalid token"
             ).model_dump(),
         )
@@ -89,7 +75,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorDetail(
-                code=UserErrorCode.REFRESH_TOKEN_IN_BLACK_LIST,
+                code=AuthErrorCode.REFRESH_TOKEN_IN_BLACK_LIST,
                 reason="Refresh_token in black list"
             ).model_dump(),
         )
@@ -99,7 +85,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorDetail(
-                code=UserErrorCode.BAD_CREDENTIALS,
+                code=AuthErrorCode.BAD_CREDENTIALS,
                 reason="Access token expires but refresh exists"
             ).model_dump(),
         )
@@ -109,7 +95,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorDetail(
-                code=UserErrorCode.USER_NOT_ACTIVE,
+                code=AuthErrorCode.USER_NOT_ACTIVE,
                 reason="User is not active"
             ).model_dump(),
         )
@@ -119,7 +105,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorDetail(
-                code=UserErrorCode.NO_ACCESS_RIGHTS,
+                code=AuthErrorCode.NO_ACCESS_RIGHTS,
                 reason="No required access rights"
             ).model_dump(),
         )
@@ -129,18 +115,8 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorDetail(
-                code=UserErrorCode.DATA_OUT_OF_DATE,
+                code=AuthErrorCode.DATA_OUT_OF_DATE,
                 reason="User data is out of date, please re-login"
-            ).model_dump(),
-        )
-
-    @staticmethod
-    def user_not_found_404():
-        return HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorDetail(
-                code=UserErrorCode.USER_NOT_FOUND,
-                reason="User not found"
             ).model_dump(),
         )
 
@@ -149,7 +125,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorDetail(
-                code=UserErrorCode.EMAIL_OR_PHONE_ALREADY_EXISTS,
+                code=AuthErrorCode.EMAIL_OR_PHONE_ALREADY_EXISTS,
                 reason="Email or phone is already taken"
             ).model_dump(),
         )
@@ -159,7 +135,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorDetail(
-                code=UserErrorCode.ENDPOINT_NOT_FOUND,
+                code=AuthErrorCode.ENDPOINT_NOT_FOUND,
                 reason="Endpoint not found"
             ).model_dump(),
         )

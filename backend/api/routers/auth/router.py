@@ -22,7 +22,7 @@ router = APIRouter(prefix="/auth", tags=["Auth 👔"])
 )
 async def register_user(user: UserRegister):
     user.password = get_password_hash(user.password)
-    await UserRepository.add_user(user)
+    await UserRepository.create_user(user)
     return Response(status_code=status.HTTP_201_CREATED)
 
 
@@ -73,7 +73,7 @@ async def refresh_token_point(request: Request):
 
 # @router.post(
 #     path="/logout",
-#     summary="Logout, add refresh_token to black list",
+#     summary="Logout, add refresh_token to blacklist",
 #     description="Invalidates refresh token by adding it to blacklist. Requires valid access token.",
 #     response_description="Empty response (status 200)",
 #     status_code=status.HTTP_200_OK,

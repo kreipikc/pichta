@@ -1,9 +1,13 @@
+import uuid
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from database import new_session
 from .models import UserOrm
+from .responses.http_errors import HTTPError as HTTPError_user
+from .schemas import UserUpdate
+from ..auth.responses.http_errors import HTTPError as HTTPError_auth
 from ..auth.schemas import UserRegister
 
 
@@ -39,7 +43,7 @@ class UserRepository:
             return user
 
     @classmethod
-    async def add_user(cls, data: UserRegister) -> Optional[str]:
+    async def create_user(cls, data: UserRegister) -> Optional[str]:
         """Create user.
 
         Args:
@@ -53,6 +57,7 @@ class UserRepository:
                 user = UserOrm(
                     email=data.email,
                     phone=data.phone,
+                    username=data.username,
                     password_hash=data.password,
                     created_at=datetime.now()
                 )
@@ -63,4 +68,18 @@ class UserRepository:
                 return user.email
             except IntegrityError:
                 await session.rollback()
-                raise HTTPError.email_or_phone_already_exists_409()
+                raise HTTPError_auth.email_or_phone_already_exists_409()
+
+    @classmethod
+    async def update_user(cls, user_data: UserUpdate, id_user: uuid.UUID):
+        async with new_session() as session:
+            user = await session.get(UserOrm, id_user)
+            if not user:
+                raise HTTPError_user.user_not_found_404()
+
+            for field, value in user_data.model_dump(exclude_unset=True).items():
+                setattr(user, field, value)
+
+            user.updated_at = datetime.now()
+
+            await session.commit()
