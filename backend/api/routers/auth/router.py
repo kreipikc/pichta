@@ -1,5 +1,11 @@
 from fastapi import APIRouter, status, Response, Request, Depends
+from .dependencies import refresh_access_token
 from .schemas import UserRegister, UserLogin, Token
+from .responses.responses import AuthResponse
+from .responses.http_errors import HTTPError
+from .service import AuthRepository
+from .utils import get_password_hash, create_refresh_token, create_access_token
+from ..user.service import UserRepository
 
 
 router = APIRouter(prefix="/auth", tags=["Auth 👔"])
@@ -12,10 +18,12 @@ router = APIRouter(prefix="/auth", tags=["Auth 👔"])
     response_description="Empty response (status 200)",
     status_code=status.HTTP_201_CREATED,
     response_model=None,
-    # responses=,
+    responses=AuthResponse.register_post,
 )
 async def register_user(user: UserRegister):
-    pass
+    user.password = get_password_hash(user.password)
+    await UserRepository.add_user(user)
+    return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.post(
@@ -25,18 +33,17 @@ async def register_user(user: UserRegister):
     response_description="Access token (Bearer) and refresh token (Cookie)",
     status_code=status.HTTP_200_OK,
     response_model=Token,
-    # responses=,
+    responses=AuthResponse.login_post,
 )
 async def login_user(response: Response, user: UserLogin):
-    # check = await UserRepository.authenticate_user(email=user.email, password=user.password)
-    # if check is None:
-    #     raise HTTPError.bad_credentials_400()
-    #
-    # access_token = create_access_token(data={"sub": str(check.email), "role": str(check.role)})
-    # create_refresh_token(response=response, data={"sub": str(check.email), "role": str(check.role)})
-    #
-    # return Token(access_token=access_token, token_type="Bearer")
-    pass
+    check_user = await AuthRepository.authenticate_user(email=user.email, password=user.password)
+    if check_user is None:
+        raise HTTPError.bad_credentials_400()
+
+    access_token = create_access_token(data={"sub": str(check_user.email)})
+    create_refresh_token(response=response, data={"sub": str(check_user.email)})
+
+    return Token(access_token=access_token, token_type="Bearer")
 
 
 @router.post(
@@ -46,9 +53,11 @@ async def login_user(response: Response, user: UserLogin):
     response_description="Bearer Token (Access)",
     status_code=status.HTTP_200_OK,
     response_model=Token,
-    # responses=UsersResponse.refresh_post,
+    responses=AuthResponse.refresh_post,
 )
 async def refresh_token_point(request: Request):
+    ### НЕ РАБОТАЕТ, В СВЯЗИ С ОТСУТСТВИЕМ Redis - где хранить код? ###
+
     # refresh_token = request.cookies.get("refresh_token")
     # if not refresh_token:
     #     raise HTTPError.bad_credentials_401()
@@ -69,7 +78,7 @@ async def refresh_token_point(request: Request):
 #     response_description="Empty response (status 200)",
 #     status_code=status.HTTP_200_OK,
 #     response_model=None,
-#     # responses=base_auth_responses,
+#     responses=base_auth_responses,
 # )
 # async def logout(request: Request):
 #     # refresh_token = request.cookies.get("refresh_token")

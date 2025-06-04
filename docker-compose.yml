@@ -2,7 +2,7 @@ services:
   pg-age:
     build:
       context: .
-      dockerfile: database/Dockerfile
+      dockerfile: docker/backend/database/postgres/Dockerfile
       args:
         - POSTGRES_USER=${POSTGRES_USER}
         - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -28,7 +28,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: docker/backend/api/Dockerfile
     container_name: backend
     depends_on:
       pg-age:
@@ -36,8 +36,8 @@ services:
     env_file:
       - .env
     environment:
-      - POSTGRES_GRAPH_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB_GRAPH}
-      - POSTGRES_USERS_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB_USERS}
+      - POSTGRES_GRAPH_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pg_age:5432/${POSTGRES_DB_GRAPH}
+      - POSTGRES_USERS_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pg_age:5432/${POSTGRES_DB_USERS}
       - SECRET_KEY_JWT=${SECRET_KEY_JWT}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}

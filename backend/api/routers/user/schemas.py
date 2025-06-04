@@ -1,15 +1,22 @@
 import re
-from pydantic import BaseModel, Field, EmailStr, field_validator
+from datetime import datetime
+from typing import Optional
+from uuid import UUID
+from pydantic import BaseModel, Field, EmailStr, field_validator, ConfigDict
 
 
 class UserInfo(BaseModel):
-    username: str
+    id: UUID
     email: EmailStr = Field(description="Электронная почта")
-    phone: str
-    password: str = Field(min_length=6, max_length=50, description="Пароль, от 6 до 50 знаков")
+    phone: str = Field(description="Номер телефона")
+    password_hash: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
-class UserCreate(BaseModel):
+class UserUpdate(BaseModel):
     username: str
     password: str = Field(min_length=6, max_length=50, description="Пароль, от 6 до 50 знаков")
     phone: str

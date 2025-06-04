@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import jwt
 from fastapi import Response
-from ...config import (
+from config import (
     SECRET_KEY_JWT,
     ALGORITHM,
     ACCESS_TOKEN_EXPIRE_MINUTES,
