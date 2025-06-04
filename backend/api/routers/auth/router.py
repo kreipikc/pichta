@@ -56,19 +56,12 @@ async def login_user(response: Response, user: UserLogin):
     responses=AuthResponse.refresh_post,
 )
 async def refresh_token_point(request: Request):
-    ### НЕ РАБОТАЕТ, В СВЯЗИ С ОТСУТСТВИЕМ Redis - где хранить код? ###
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPError.bad_credentials_401()
 
-    # refresh_token = request.cookies.get("refresh_token")
-    # if not refresh_token:
-    #     raise HTTPError.bad_credentials_401()
-    #
-    # email = await request.app.redis.get_refresh_token_email(refresh_token)
-    # if email:
-    #     raise HTTPError.refresh_token_in_black_list_401()
-    #
-    # access_token = await refresh_access_token(refresh_token=refresh_token)
-    # return Token(access_token=access_token, token_type="Bearer")
-    pass
+    access_token = await refresh_access_token(refresh_token=refresh_token)
+    return Token(access_token=access_token, token_type="Bearer")
 
 
 # @router.post(
