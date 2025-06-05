@@ -30,7 +30,8 @@ RUN initdb -D "$PGDATA" && \
     pg_ctl -D "$PGDATA" -m fast -w stop
 
 USER root
-RUN echo "host all all 0.0.0.0/0 trust" >> "$PGDATA/pg_hba.conf"
-RUN echo "host all all ::/0 trust" >> "$PGDATA/pg_hba.conf"
+RUN echo "host all ${POSTGRES_USER} all md5" >> "$PGDATA/pg_hba.conf" && \
+    echo "host all postgres all md5" >> "$PGDATA/pg_hba.conf" && \
+    echo "host all all all md5" >> "$PGDATA/pg_hba.conf"
 
 EXPOSE 5432
