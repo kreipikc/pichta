@@ -1,4 +1,5 @@
 from fastapi import APIRouter, status, Response, Request, Depends
+from utils import handle_catch_error
 from .dependencies import refresh_access_token
 from .schemas import UserRegister, UserLogin, Token
 from .responses.responses import AuthResponse
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/auth", tags=["Auth 👔"])
     response_model=None,
     responses=AuthResponse.register_post,
 )
+@handle_catch_error
 async def register_user(user: UserRegister):
     user.password = get_password_hash(user.password)
     await UserRepository.create_user(user)
@@ -35,6 +37,7 @@ async def register_user(user: UserRegister):
     response_model=Token,
     responses=AuthResponse.login_post,
 )
+@handle_catch_error
 async def login_user(response: Response, user: UserLogin):
     check_user = await AuthRepository.authenticate_user(email=user.email, password=user.password)
     if check_user is None:
@@ -55,6 +58,7 @@ async def login_user(response: Response, user: UserLogin):
     response_model=Token,
     responses=AuthResponse.refresh_post,
 )
+@handle_catch_error
 async def refresh_token_point(request: Request):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:

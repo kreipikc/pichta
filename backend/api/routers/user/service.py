@@ -73,13 +73,17 @@ class UserRepository:
     @classmethod
     async def update_user(cls, user_data: UserUpdate, id_user: uuid.UUID):
         async with new_session() as session:
-            user = await session.get(UserOrm, id_user)
-            if not user:
-                raise HTTPError_user.user_not_found_404()
+            try:
+                user = await session.get(UserOrm, id_user)
+                if not user:
+                    raise HTTPError_user.user_not_found_404()
 
-            for field, value in user_data.model_dump(exclude_unset=True).items():
-                setattr(user, field, value)
+                for field, value in user_data.model_dump(exclude_unset=True).items():
+                    setattr(user, field, value)
 
-            user.updated_at = datetime.now()
+                user.updated_at = datetime.now()
 
-            await session.commit()
+                await session.commit()
+            except IntegrityError:
+                await session.rollback()
+                raise HTTPError_auth.email_or_phone_already_exists_409()
