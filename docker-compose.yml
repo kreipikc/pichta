@@ -1,5 +1,5 @@
 services:
-  pg-age:
+  pg_age:
     build:
       context: .
       dockerfile: docker/backend/database/postgres/Dockerfile
@@ -53,7 +53,9 @@ services:
       dockerfile: docker/backend/api/Dockerfile
     container_name: backend
     depends_on:
-      pg-age:
+      pg_age:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     env_file:
       - .env
