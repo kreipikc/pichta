@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 
 
-router = APIRouter(prefix="/task", tags=["Tasks"])
+router = APIRouter()
 
 
 @router.get(

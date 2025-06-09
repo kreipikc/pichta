@@ -1,4 +1,4 @@
-from routers.auth.responses.responses import base_auth_responses
+from routers.auth.ident.responses.responses import base_auth_responses
 from utils import merge_responses, convert_to_example
 from fastapi import status
 from .http_errors import HTTPError as HTTPError_user

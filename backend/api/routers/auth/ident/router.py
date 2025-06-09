@@ -1,15 +1,16 @@
 from fastapi import APIRouter, status, Response, Request, Depends
 from utils import handle_catch_error
-from .dependencies import refresh_access_token
+from .dependencies import refresh_access_token, get_current_user
 from .schemas import UserRegister, UserLogin, Token
-from .responses.responses import AuthResponse
+from .responses.responses import IdentResponse, base_auth_responses
 from .responses.http_errors import HTTPError
 from .service import AuthRepository
 from .utils import get_password_hash, create_refresh_token, create_access_token
+from ..user.schemas import UserInfo
 from ..user.service import UserRepository
 
 
-router = APIRouter(prefix="/auth", tags=["Auth 👔"])
+router = APIRouter()
 
 
 @router.post(
@@ -19,10 +20,10 @@ router = APIRouter(prefix="/auth", tags=["Auth 👔"])
     response_description="Empty response (status 200)",
     status_code=status.HTTP_201_CREATED,
     response_model=None,
-    responses=AuthResponse.register_post,
+    responses=IdentResponse.register_post,
 )
 @handle_catch_error
-async def register_user(user: UserRegister):
+async def register_user(user: UserRegister) -> Response:
     user.password = get_password_hash(user.password)
     await UserRepository.create_user(user)
     return Response(status_code=status.HTTP_201_CREATED)
@@ -35,10 +36,10 @@ async def register_user(user: UserRegister):
     response_description="Access token (Bearer) and refresh token (Cookie)",
     status_code=status.HTTP_200_OK,
     response_model=Token,
-    responses=AuthResponse.login_post,
+    responses=IdentResponse.login_post,
 )
 @handle_catch_error
-async def login_user(response: Response, user: UserLogin):
+async def login_user(response: Response, user: UserLogin) -> Token:
     check_user = await AuthRepository.authenticate_user(email=user.email, password=user.password)
     if check_user is None:
         raise HTTPError.bad_credentials_400()
@@ -56,10 +57,10 @@ async def login_user(response: Response, user: UserLogin):
     response_description="Bearer Token (Access)",
     status_code=status.HTTP_200_OK,
     response_model=Token,
-    responses=AuthResponse.refresh_post,
+    responses=IdentResponse.refresh_post,
 )
 @handle_catch_error
-async def refresh_token_point(request: Request):
+async def refresh_token_point(request: Request) -> Token:
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
         raise HTTPError.bad_credentials_401()
@@ -68,18 +69,22 @@ async def refresh_token_point(request: Request):
     return Token(access_token=access_token, token_type="Bearer")
 
 
-# @router.post(
-#     path="/logout",
-#     summary="Logout, add refresh_token to blacklist",
-#     description="Invalidates refresh token by adding it to blacklist. Requires valid access token.",
-#     response_description="Empty response (status 200)",
-#     status_code=status.HTTP_200_OK,
-#     response_model=None,
-#     responses=base_auth_responses,
-# )
-# async def logout(request: Request):
-#     # refresh_token = request.cookies.get("refresh_token")
-#     # if refresh_token:
-#     #     await request.app.redis.add_refresh_token_email(user_data.email, refresh_token)
-#     # return Response(status_code=status.HTTP_200_OK)
-#     pass
+@router.post(
+    path="/logout",
+    summary="Logout, deleted refresh token (Cookie)",
+    description="Deleted refresh token (Cookie). Requires valid access token.",
+    response_description="Empty response (status 200)",
+    status_code=status.HTTP_200_OK,
+    response_model=None,
+    responses=base_auth_responses,
+)
+@handle_catch_error
+async def logout(response: Response, user_current: UserInfo = Depends(get_current_user)) -> Response:
+    response.delete_cookie(
+        key="refresh_token",
+        path="/",
+        secure=False,
+        httponly=True,
+    )
+    response.status_code = status.HTTP_200_OK
+    return response

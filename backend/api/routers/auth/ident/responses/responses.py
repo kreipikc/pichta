@@ -20,8 +20,8 @@ base_auth_responses = {
 }
 
 
-class AuthResponse:
-    """Auth responses.
+class IdentResponse:
+    """Ident responses.
 
     Attributes:
         register_post: Responses for register

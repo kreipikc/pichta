@@ -2,11 +2,11 @@ from fastapi import APIRouter, status, Response, Depends
 from utils import handle_catch_error
 from .schemas import UserInfo, UserUpdate
 from .service import UserRepository
-from ..auth.dependencies import get_current_user
+from ..ident.dependencies import get_current_user
 from .responses.responses import UserResponse
 
 
-router = APIRouter(prefix="/user", tags=["User 👔"])
+router = APIRouter()
 
 
 @router.get(
@@ -19,20 +19,20 @@ router = APIRouter(prefix="/user", tags=["User 👔"])
     responses=UserResponse.me_get
 )
 @handle_catch_error
-async def get_me(user_current: UserInfo = Depends(get_current_user)):
+async def get_me(user_current: UserInfo = Depends(get_current_user)) -> UserInfo:
     return user_current
 
 
 @router.post(
     path="/me",
     summary="Update information about you",
-    description="Returns status code.",
+    description="Returns status code. Requires valid access token.",
     response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
     response_model=None,
     responses=UserResponse.me_post
 )
 @handle_catch_error
-async def post_me(user_data: UserUpdate, user_current: UserInfo = Depends(get_current_user)):
+async def post_me(user_data: UserUpdate, user_current: UserInfo = Depends(get_current_user)) -> Response:
     await UserRepository.update_user(user_data=user_data, id_user=user_current.id)
     return Response(status_code=status.HTTP_200_OK)

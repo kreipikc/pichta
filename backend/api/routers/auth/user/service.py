@@ -7,8 +7,8 @@ from database import new_session
 from .models import UserOrm
 from .responses.http_errors import HTTPError as HTTPError_user
 from .schemas import UserUpdate
-from ..auth.responses.http_errors import HTTPError as HTTPError_auth
-from ..auth.schemas import UserRegister
+from ..ident.responses.http_errors import HTTPError as HTTPError_auth
+from ..ident.schemas import UserRegister
 
 
 class UserRepository:

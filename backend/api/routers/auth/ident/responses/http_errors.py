@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from error import ErrorDetail
 
 
-class AuthErrorCode:
+class IdentErrorCode:
     """Аll authentication and authorization error codes.
 
     Attributes:
@@ -45,7 +45,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorDetail(
-                code=AuthErrorCode.BAD_CREDENTIALS,
+                code=IdentErrorCode.BAD_CREDENTIALS,
                 reason="Bad credentials"
             ).model_dump(),
         )
@@ -55,7 +55,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorDetail(
-                code=AuthErrorCode.BAD_CREDENTIALS,
+                code=IdentErrorCode.BAD_CREDENTIALS,
                 reason="Could not validate credentials"
             ).model_dump(),
         )
@@ -65,7 +65,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorDetail(
-                code=AuthErrorCode.INVALID_TOKEN,
+                code=IdentErrorCode.INVALID_TOKEN,
                 reason="Invalid token"
             ).model_dump(),
         )
@@ -75,7 +75,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorDetail(
-                code=AuthErrorCode.REFRESH_TOKEN_IN_BLACK_LIST,
+                code=IdentErrorCode.REFRESH_TOKEN_IN_BLACK_LIST,
                 reason="Refresh_token in black list"
             ).model_dump(),
         )
@@ -85,7 +85,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorDetail(
-                code=AuthErrorCode.BAD_CREDENTIALS,
+                code=IdentErrorCode.BAD_CREDENTIALS,
                 reason="Access token expires but refresh exists"
             ).model_dump(),
         )
@@ -95,7 +95,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorDetail(
-                code=AuthErrorCode.USER_NOT_ACTIVE,
+                code=IdentErrorCode.USER_NOT_ACTIVE,
                 reason="User is not active"
             ).model_dump(),
         )
@@ -105,7 +105,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorDetail(
-                code=AuthErrorCode.NO_ACCESS_RIGHTS,
+                code=IdentErrorCode.NO_ACCESS_RIGHTS,
                 reason="No required access rights"
             ).model_dump(),
         )
@@ -115,7 +115,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorDetail(
-                code=AuthErrorCode.DATA_OUT_OF_DATE,
+                code=IdentErrorCode.DATA_OUT_OF_DATE,
                 reason="User data is out of date, please re-login"
             ).model_dump(),
         )
@@ -125,7 +125,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorDetail(
-                code=AuthErrorCode.EMAIL_OR_PHONE_ALREADY_EXISTS,
+                code=IdentErrorCode.EMAIL_OR_PHONE_ALREADY_EXISTS,
                 reason="Email or phone is already taken"
             ).model_dump(),
         )
@@ -135,7 +135,7 @@ class HTTPError:
         return HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorDetail(
-                code=AuthErrorCode.ENDPOINT_NOT_FOUND,
+                code=IdentErrorCode.ENDPOINT_NOT_FOUND,
                 reason="Endpoint not found"
             ).model_dump(),
         )

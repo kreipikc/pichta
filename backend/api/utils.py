@@ -3,11 +3,11 @@ from typing import List, Callable, Coroutine, Any, TypeVar
 from fastapi import HTTPException, status
 from error import ErrorModel
 from logger import app_logger
-from routers.auth.responses.http_errors import (
-    HTTPError as HTTPError_auth,
-    AuthErrorCode
+from routers.auth.ident.responses.http_errors import (
+    HTTPError as HTTPError_ident,
+    IdentErrorCode
 )
-from routers.user.responses.http_errors import (
+from routers.auth.user.responses.http_errors import (
     HTTPError as HTTPError_user,
     UserErrorCode
 )
@@ -25,32 +25,32 @@ def handle_catch_error(func: Callable[..., Coroutine[Any, Any, T]]) -> Callable[
         except HTTPException as e:
             match (e.status_code, e.detail.get("code")):
                 # -------------------- Auth errors --------------------
-                case (status.HTTP_400_BAD_REQUEST, AuthErrorCode.BAD_CREDENTIALS):
-                    raise HTTPError_auth.bad_credentials_400()
+                case (status.HTTP_400_BAD_REQUEST, IdentErrorCode.BAD_CREDENTIALS):
+                    raise HTTPError_ident.bad_credentials_400()
 
-                case (status.HTTP_401_UNAUTHORIZED, AuthErrorCode.BAD_CREDENTIALS):
-                    raise HTTPError_auth.bad_credentials_401()
+                case (status.HTTP_401_UNAUTHORIZED, IdentErrorCode.BAD_CREDENTIALS):
+                    raise HTTPError_ident.bad_credentials_401()
 
-                case (status.HTTP_401_UNAUTHORIZED, AuthErrorCode.INVALID_TOKEN):
-                    raise HTTPError_auth.invalid_token_401()
+                case (status.HTTP_401_UNAUTHORIZED, IdentErrorCode.INVALID_TOKEN):
+                    raise HTTPError_ident.invalid_token_401()
 
-                case (status.HTTP_401_UNAUTHORIZED, AuthErrorCode.REFRESH_TOKEN_IN_BLACK_LIST):
-                    raise HTTPError_auth.refresh_token_in_black_list_401()
+                case (status.HTTP_401_UNAUTHORIZED, IdentErrorCode.REFRESH_TOKEN_IN_BLACK_LIST):
+                    raise HTTPError_ident.refresh_token_in_black_list_401()
 
-                case (status.HTTP_403_FORBIDDEN, AuthErrorCode.BAD_CREDENTIALS):
-                    raise HTTPError_auth.bad_credentials_403()
+                case (status.HTTP_403_FORBIDDEN, IdentErrorCode.BAD_CREDENTIALS):
+                    raise HTTPError_ident.bad_credentials_403()
 
-                case (status.HTTP_403_FORBIDDEN, AuthErrorCode.NO_ACCESS_RIGHTS):
-                    raise HTTPError_auth.no_access_rights_403()
+                case (status.HTTP_403_FORBIDDEN, IdentErrorCode.NO_ACCESS_RIGHTS):
+                    raise HTTPError_ident.no_access_rights_403()
 
-                case (status.HTTP_403_FORBIDDEN, AuthErrorCode.USER_NOT_ACTIVE):
-                    raise HTTPError_auth.user_not_active_403()
+                case (status.HTTP_403_FORBIDDEN, IdentErrorCode.USER_NOT_ACTIVE):
+                    raise HTTPError_ident.user_not_active_403()
 
-                case (status.HTTP_403_FORBIDDEN, AuthErrorCode.DATA_OUT_OF_DATE):
-                    raise HTTPError_auth.data_out_of_date_403()
+                case (status.HTTP_403_FORBIDDEN, IdentErrorCode.DATA_OUT_OF_DATE):
+                    raise HTTPError_ident.data_out_of_date_403()
 
-                case (status.HTTP_409_CONFLICT, AuthErrorCode.EMAIL_OR_PHONE_ALREADY_EXISTS):
-                    raise HTTPError_auth.email_or_phone_already_exists_409()
+                case (status.HTTP_409_CONFLICT, IdentErrorCode.EMAIL_OR_PHONE_ALREADY_EXISTS):
+                    raise HTTPError_ident.email_or_phone_already_exists_409()
 
                 # -------------------- Not Found errors --------------------
                 case (status.HTTP_404_NOT_FOUND, UserErrorCode.USER_NOT_FOUND):
@@ -61,7 +61,7 @@ def handle_catch_error(func: Callable[..., Coroutine[Any, Any, T]]) -> Callable[
         # -------------------- Other error --------------------
         except Exception as e:
             app_logger.error(f"Unexpected error in {func.__name__}: {str(e)}", exc_info=True)
-            raise HTTPError_auth.endpoint_not_found_500()
+            raise HTTPError_ident.endpoint_not_found_500()
 
     return wrapper
 
