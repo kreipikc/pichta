@@ -29,6 +29,8 @@ async def lifespan(app: FastAPI):
 
         if SMTP_HOST == "smtp.example.com" or SMTP_EMAIL == "your_email@example.com":
             app_logger.info("SMTP arguments are set by default - skip initialization")
+        elif SMTP_HOST == "" and SMTP_EMAIL == "":
+            app_logger.info("SMTP arguments are set by empty - skip initialization")
         else:
             app.smtp = SmtpTools(SMTP_HOST, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD)
             await app.smtp.ping()
