@@ -1,11 +1,12 @@
 from fastapi import APIRouter, status, Response, Request, Depends
 from utils import handle_catch_error
-from .dependencies import refresh_access_token, get_current_user
+from .dependencies import get_current_user
 from .schemas import UserRegister, UserLogin, Token
 from .responses.responses import IdentResponse, base_auth_responses
 from .responses.http_errors import HTTPError
 from .service import AuthRepository
-from .utils import get_password_hash, create_refresh_token, create_access_token
+from .utils import get_password_hash
+from .jwt import JWTService
 from ..user.schemas import UserInfo
 from ..user.service import UserRepository
 
@@ -44,8 +45,8 @@ async def login_user(response: Response, user: UserLogin) -> Token:
     if check_user is None:
         raise HTTPError.bad_credentials_400()
 
-    access_token = create_access_token(data={"sub": str(check_user.email)})
-    create_refresh_token(response=response, data={"sub": str(check_user.email)})
+    access_token = JWTService.create_access_token(data={"sub": str(check_user.email)})
+    JWTService.create_refresh_token(response=response, data={"sub": str(check_user.email)})
 
     return Token(access_token=access_token, token_type="Bearer")
 
@@ -65,7 +66,7 @@ async def refresh_token_point(request: Request) -> Token:
     if not refresh_token:
         raise HTTPError.bad_credentials_401()
 
-    access_token = await refresh_access_token(refresh_token=refresh_token)
+    access_token = await JWTService.refresh_access_token(refresh_token=refresh_token)
     return Token(access_token=access_token, token_type="Bearer")
 
 
