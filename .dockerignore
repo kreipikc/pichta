@@ -1,3 +1,11 @@
 # Backend
-backend/**/__pycache__/
 backend/**/.env
+backend/**/*venv*/
+
+# Кэш Python
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+backend/**/.pytest_cache/
+backend/**/.mypy_cache/

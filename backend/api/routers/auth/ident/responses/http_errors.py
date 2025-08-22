@@ -12,7 +12,7 @@ class IdentErrorCode:
         ENDPOINT_NOT_FOUND: Endpoint not found.
         NO_ACCESS_RIGHTS: No required access rights.
         DATA_OUT_OF_DATE: The data is out of date.
-        EMAIL_OR_PHONE_ALREADY_EXISTS: Email or phone is already taken.
+        LOGIN_ALREADY_EXISTS: Login is already taken.
         REFRESH_TOKEN_IN_BLACK_LIST: Refresh_token in black list.
     """
     BAD_CREDENTIALS = "BAD_CREDENTIALS"
@@ -21,7 +21,7 @@ class IdentErrorCode:
     ENDPOINT_NOT_FOUND = "ENDPOINT_NOT_FOUND"
     NO_ACCESS_RIGHTS = "NO_ACCESS_RIGHTS"
     DATA_OUT_OF_DATE = "DATA_OUT_OF_DATE"
-    EMAIL_OR_PHONE_ALREADY_EXISTS = "EMAIL_OR_PHONE_ALREADY_EXISTS"
+    LOGIN_ALREADY_EXISTS = "LOGIN_ALREADY_EXISTS"
     REFRESH_TOKEN_IN_BLACK_LIST = "REFRESH_TOKEN_IN_BLACK_LIST"
 
 
@@ -37,7 +37,7 @@ class HTTPError:
         user_not_active_403: User is not active.
         no_access_rights_403: No required access rights.
         data_out_of_date_403: User data is out of date, please re-login.
-        email_already_exists_409: Email is already taken.
+        login_already_exists_409: Login is already taken.
         endpoint_not_found_500: Endpoint not found.
     """
     @staticmethod
@@ -121,12 +121,12 @@ class HTTPError:
         )
 
     @staticmethod
-    def email_or_phone_already_exists_409():
+    def login_already_exists_409():
         return HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorDetail(
-                code=IdentErrorCode.EMAIL_OR_PHONE_ALREADY_EXISTS,
-                reason="Email or phone is already taken"
+                code=IdentErrorCode.LOGIN_ALREADY_EXISTS,
+                reason="Login is already taken"
             ).model_dump(),
         )
 

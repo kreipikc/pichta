@@ -68,7 +68,7 @@ class JWTService:
         """
         user = await JWTService.descript_and_check_token(refresh_token)
 
-        new_access_token = JWTService.create_access_token({"sub": str(user.email)})
+        new_access_token = JWTService.create_access_token({"sub": str(user.id)})
         return new_access_token
 
     @staticmethod
@@ -80,10 +80,10 @@ class JWTService:
         except JWTError:
             raise HTTPError.invalid_token_401()
 
-        if not (user_email := payload.get('sub')):
+        if not (user_id := payload.get('sub')):
             raise HTTPError.invalid_token_401()
 
-        if not (user := await UserRepository.find_one_or_none_by_email(user_email)):
+        if not (user := await UserRepository.find_one_or_none_by_id(int(user_id))):
             raise HTTPError.data_out_of_date_403()
 
         # if not user.is_active:

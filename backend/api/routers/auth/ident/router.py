@@ -5,7 +5,6 @@ from .schemas import UserRegister, UserLogin, Token
 from .responses.responses import IdentResponse, base_auth_responses
 from .responses.http_errors import HTTPError
 from .service import AuthRepository
-from .utils import get_password_hash
 from .jwt import JWTService
 from ..user.schemas import UserInfo
 from ..user.service import UserRepository
@@ -20,12 +19,11 @@ router = APIRouter()
     description="Creates new user account. Hashes password automatically. Email must be unique.",
     response_description="Empty response (status 200)",
     status_code=status.HTTP_201_CREATED,
-    response_model=None,
+    response_class=Response,
     responses=IdentResponse.register_post,
 )
 @handle_catch_error
 async def register_user(user: UserRegister) -> Response:
-    user.password = get_password_hash(user.password)
     await UserRepository.create_user(user)
     return Response(status_code=status.HTTP_201_CREATED)
 
@@ -41,12 +39,12 @@ async def register_user(user: UserRegister) -> Response:
 )
 @handle_catch_error
 async def login_user(response: Response, user: UserLogin) -> Token:
-    check_user = await AuthRepository.authenticate_user(email=user.email, password=user.password)
+    check_user = await AuthRepository.authenticate_user(login=user.login, password=user.password)
     if check_user is None:
         raise HTTPError.bad_credentials_400()
 
-    access_token = JWTService.create_access_token(data={"sub": str(check_user.email)})
-    JWTService.create_refresh_token(response=response, data={"sub": str(check_user.email)})
+    access_token = JWTService.create_access_token(data={"sub": str(check_user.id)})
+    JWTService.create_refresh_token(response=response, data={"sub": str(check_user.id)})
 
     return Token(access_token=access_token, token_type="Bearer")
 
@@ -76,7 +74,7 @@ async def refresh_token_point(request: Request) -> Token:
     description="Deleted refresh token (Cookie). Requires valid access token.",
     response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
-    response_model=None,
+    response_class=Response,
     responses=base_auth_responses,
 )
 @handle_catch_error

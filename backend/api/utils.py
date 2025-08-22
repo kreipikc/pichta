@@ -49,8 +49,8 @@ def handle_catch_error(func: Callable[..., Coroutine[Any, Any, T]]) -> Callable[
                 case (status.HTTP_403_FORBIDDEN, IdentErrorCode.DATA_OUT_OF_DATE):
                     raise HTTPError_ident.data_out_of_date_403()
 
-                case (status.HTTP_409_CONFLICT, IdentErrorCode.EMAIL_OR_PHONE_ALREADY_EXISTS):
-                    raise HTTPError_ident.email_or_phone_already_exists_409()
+                case (status.HTTP_409_CONFLICT, IdentErrorCode.LOGIN_ALREADY_EXISTS):
+                    raise HTTPError_ident.login_already_exists_409()
 
                 # -------------------- Not Found errors --------------------
                 case (status.HTTP_404_NOT_FOUND, UserErrorCode.USER_NOT_FOUND):

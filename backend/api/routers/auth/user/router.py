@@ -29,7 +29,7 @@ async def get_me(user_current: UserInfo = Depends(get_current_user)) -> UserInfo
     description="Returns status code. Requires valid access token.",
     response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
-    response_model=None,
+    response_class=Response,
     responses=UserResponse.me_post
 )
 @handle_catch_error

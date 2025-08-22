@@ -1,22 +1,18 @@
-import uuid
 from datetime import datetime
-from sqlalchemy import DateTime
+from typing import Optional
+from sqlalchemy import DateTime, Enum, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import UUID
 from database import Model
+from routers.auth.user.roles import UserRole
 
 
 class UserOrm(Model):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-    )
-    email: Mapped[str] = mapped_column(nullable=False)
-    phone: Mapped[str] = mapped_column(nullable=False)
-    username: Mapped[str] = mapped_column(nullable=False)
-    password_hash: Mapped[str] = mapped_column(nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    login: Mapped[str] = mapped_column(unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(nullable=False)
+    role: Mapped[Enum[UserRole]] = mapped_column(Enum(UserRole, name="user_role"), nullable=False, default=UserRole.user)
+    about_me: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    create_date: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, onupdate=func.now())

@@ -30,7 +30,7 @@ class IdentResponse:
     """
     register_post = {
         status.HTTP_409_CONFLICT: convert_to_example([
-            HTTPError.email_or_phone_already_exists_409(),
+            HTTPError.login_already_exists_409(),
         ]),
     }
 
