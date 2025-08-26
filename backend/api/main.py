@@ -1,10 +1,13 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+
+from database import close_db_connection
 from logger import app_logger
 
 from routers.auth.ident.router import router as router_ident
 from routers.auth.user.router import router as router_user
+from routers.education.router import router as router_education
 from routers.task.router import router as router_task
 
 from config import (
@@ -19,12 +22,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         app_logger.error(f"Unexpected error: {str(e)}")
     finally:
-        pass
+        await close_db_connection()
+        app_logger.info("Database connection closed")
 
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(router_ident, prefix="/auth", tags=["Auth"])
 app.include_router(router_user, prefix="/user", tags=["User 👔"])
+app.include_router(router_education, prefix="/education", tags=["Education"])
 app.include_router(router_task, prefix="/task", tags=["Tasks"])
 
 app.add_middleware(
