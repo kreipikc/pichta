@@ -1,0 +1,99 @@
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from typing import List
+
+from .schemas import ProfessionResponse, ProfessionCreate, ProfessionUpdate
+from .service import ProfessionRepository, get_profession_repository
+from ..auth.ident.dependencies import get_current_user, require_roles
+from ..auth.user.roles import UserRole
+from ..auth.user.schemas import UserInfo
+
+
+router = APIRouter()
+
+
+@router.get(
+    path="/getall",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_200_OK,
+    response_model=List[ProfessionResponse]
+)
+async def read_professions(
+        profession_repo: ProfessionRepository = Depends(get_profession_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.admin, UserRole.manager]))
+) -> List[ProfessionResponse]:
+    profs = await profession_repo.get_all_professions()
+    return [ProfessionResponse.model_validate(prof) for prof in profs]
+
+
+@router.get(
+    path="/get/{profession_id}",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_200_OK,
+    response_model=ProfessionResponse
+)
+async def read_profession(
+    profession_id: int,
+    profession_repo: ProfessionRepository = Depends(get_profession_repository),
+    current_user: UserInfo = Depends(get_current_user)
+) -> ProfessionResponse:
+    profession = await profession_repo.get_profession_by_id(profession_id)
+    if not profession:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profession not found"
+        )
+    return ProfessionResponse.model_validate(profession)
+
+
+@router.post(
+    path="/add",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ProfessionResponse
+)
+async def create_new_profession(
+    profession: ProfessionCreate,
+    profession_repo: ProfessionRepository = Depends(get_profession_repository),
+    current_user: UserInfo = Depends(require_roles([UserRole.admin]))
+) -> ProfessionResponse:
+    return await profession_repo.create_profession(profession)
+
+
+@router.put(
+    path="/update/{profession_id}",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_200_OK,
+    response_model=ProfessionResponse
+)
+async def update_existing_profession(
+    profession_id: int,
+    profession: ProfessionUpdate,
+    profession_repo: ProfessionRepository = Depends(get_profession_repository),
+    current_user: UserInfo = Depends(require_roles([UserRole.admin]))
+) -> ProfessionResponse:
+    return await profession_repo.update_profession(profession_id, profession)
+
+
+@router.delete(
+    path="/delete/{profession_id}",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response
+)
+async def delete_existing_profession(
+    profession_id: int,
+    profession_repo: ProfessionRepository = Depends(get_profession_repository),
+    current_user: UserInfo = Depends(require_roles([UserRole.admin]))
+) -> Response:
+    await profession_repo.delete_profession(profession_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

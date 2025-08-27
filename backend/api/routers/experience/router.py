@@ -1,0 +1,114 @@
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+
+from .service import get_experience_repository, ExperienceRepository
+from .schemas import ExperienceResponse, ExperienceUpdate, ExperienceCreate
+from ..auth.user.roles import UserRole
+from ..auth.user.schemas import UserInfo
+from ..auth.ident.dependencies import require_roles
+
+
+router = APIRouter()
+
+
+@router.get(
+    path="/getall",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_200_OK,
+    response_model=List[ExperienceResponse]
+)
+async def get_user_experiences(
+        experience_repo: ExperienceRepository = Depends(get_experience_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> List[ExperienceResponse]:
+    return await experience_repo.get_user_experiences(current_user.id)
+
+
+@router.get(
+    path="/get/{experience_id}",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_200_OK,
+    response_model=ExperienceResponse
+)
+async def get_experience(
+        experience_id: int,
+        experience_repo: ExperienceRepository = Depends(get_experience_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> ExperienceResponse:
+    experience = await experience_repo.get_experience(experience_id)
+
+    if not experience:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Experience not found")
+
+    return experience
+
+
+@router.post(
+    path="/add",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ExperienceResponse,
+)
+async def add_experience_for_self(
+        experience_data: ExperienceCreate,
+        experience_repo: ExperienceRepository = Depends(get_experience_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> ExperienceResponse:
+    return await experience_repo.create_experience_for_self(current_user.id, experience_data)
+
+
+@router.post(
+    path="/add/{user_id}",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ExperienceResponse,
+)
+async def add_experience_for_user(
+        user_id: int,
+        experience_data: ExperienceCreate,
+        experience_repo: ExperienceRepository = Depends(get_experience_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> ExperienceResponse:
+    return await experience_repo.create_experience(experience_data, user_id)
+
+
+@router.put(
+    path="/update/{experience_id}",
+    summary="",
+    description="",
+    response_description="",
+    status_code=status.HTTP_200_OK,
+    response_model=ExperienceResponse
+)
+async def update_experience(
+        experience_id: int,
+        experience_data: ExperienceUpdate,
+        experience_repo: ExperienceRepository = Depends(get_experience_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> ExperienceResponse:
+    return await experience_repo.update_experience(experience_id, experience_data)
+
+
+@router.delete(
+    path="/delete/{experience_id}",
+    summary="",
+    description="",
+    response_description="Status code",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response
+)
+async def delete_experience(
+        experience_id: int,
+        experience_repo: ExperienceRepository = Depends(get_experience_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> Response:
+    await experience_repo.delete_experience(experience_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

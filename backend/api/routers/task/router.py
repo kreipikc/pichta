@@ -1,4 +1,13 @@
-from fastapi import APIRouter, status
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi.exceptions import ResponseValidationError
+
+from .service import TaskRepository, get_task_repository
+from .schemas import TaskCreate, TaskResponse, TaskCreateSelf, TaskUpdate
+from ..auth.ident.dependencies import require_roles
+from ..auth.user.roles import UserRole
+from ..auth.user.schemas import UserInfo
+from ..auth.user.service import UserRepository
 
 
 router = APIRouter()
@@ -6,77 +15,116 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="",
+    summary="Get all tasks for user",
     description="",
-    response_description="All tasks",
+    response_description="",
     status_code=status.HTTP_200_OK,
-    # response_model=,
-    # responses=,
+    response_model=List[TaskResponse],
 )
-async def task_get_all():
-    pass
+async def get_user_tasks(
+        user_id: int,
+        task_repo: TaskRepository = Depends(get_task_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> List[TaskResponse]:
+    tasks = await task_repo.get_user_tasks(user_id)
+    return [TaskResponse.model_validate(task) for task in tasks]
 
 
 @router.get(
     path="/get/{task_id}",
-    summary="",
+    summary="Get task by ID",
     description="",
     response_description="",
     status_code=status.HTTP_200_OK,
-    # response_model=,
-    # responses=,
+    response_model=TaskResponse,
 )
-async def task_get_by_task_id(task_id: int):
-    pass
+async def get_task(
+        task_id: int,
+        task_repo: TaskRepository = Depends(get_task_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> TaskResponse:
+    task = await task_repo.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    return TaskResponse.model_validate(task)
 
 
 @router.post(
     path="/add",
-    summary="",
+    summary="Add task for yourself",
     description="",
-    response_description="All tasks",
-    status_code=status.HTTP_200_OK,
-    # response_model=,
-    # responses=,
+    response_description="",
+    status_code=status.HTTP_201_CREATED,
+    response_model=TaskResponse,
 )
-async def task_add():
-    pass
+async def add_task_for_self(
+        task_data: TaskCreateSelf,
+        task_repo: TaskRepository = Depends(get_task_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> TaskResponse:
+    task_data.created_from = current_user.id
+    try:
+        return await task_repo.create_task_for_self(current_user.id, task_data)
+    except ResponseValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=e.errors()
+        )
 
 
 @router.post(
     path="/add/{user_id}",
-    summary="",
+    summary="Add task for another user",
     description="",
-    response_description="All tasks",
-    status_code=status.HTTP_200_OK,
-    # response_model=,
-    # responses=,
+    response_description="",
+    status_code=status.HTTP_201_CREATED,
+    response_model=TaskResponse,
 )
-async def task_add_by_user_id(user_id: int):
-    pass
+async def add_task_for_user(
+        user_id: int,
+        task_data: TaskCreate,
+        task_repo: TaskRepository = Depends(get_task_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+):
+    user = await UserRepository.find_one_or_none_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    task_data.created_from = current_user.id
+    return await task_repo.create_task(user_id, task_data)
 
 
 @router.put(
     path="/update/{task_id}",
-    summary="",
+    summary="Update task",
     description="",
-    response_description="All tasks",
+    response_description="",
     status_code=status.HTTP_200_OK,
-    # response_model=,
-    # responses=,
+    response_model=TaskResponse,
 )
-async def task_update(task_id: int):
-    pass
+async def update_task(
+        task_id: int,
+        task_data: TaskUpdate,
+        task_repo: TaskRepository = Depends(get_task_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> TaskResponse:
+    return await task_repo.update_task(task_id, task_data)
 
 
 @router.delete(
     path="/delete/{task_id}",
-    summary="",
+    summary="Delete task",
     description="",
-    response_description="All tasks",
-    status_code=status.HTTP_200_OK,
-    # response_model=,
-    # responses=,
+    response_description="",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
 )
-async def task_delete(task_id: int):
-    pass
+async def delete_task(
+        task_id: int,
+        task_repo: TaskRepository = Depends(get_task_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+) -> Response:
+    await task_repo.delete_task(task_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

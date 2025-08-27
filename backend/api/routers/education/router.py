@@ -22,7 +22,7 @@ router = APIRouter()
 async def get_all_education(
         user_id: int,
         education_repository: EducationRepository = Depends(get_education_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin, UserRole.user]))
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
 ):
     return await education_repository.get_education_by_user(user_id)
 
@@ -38,7 +38,7 @@ async def get_all_education(
 async def get_education(
         education_id: int,
         education_repository: EducationRepository = Depends(get_education_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin, UserRole.user]))
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
 ):
     education = await education_repository.get_education_by_id(education_id)
     if not education:
@@ -60,7 +60,7 @@ async def get_education(
 async def add_education(
         education_data: EducationCreate,
         education_repository: EducationRepository = Depends(get_education_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin, UserRole.user]))
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
 ):
     return await education_repository.create_education(education_data)
 
@@ -77,7 +77,7 @@ async def update_education_endpoint(
         education_id: int,
         education_data: EducationUpdate,
         education_repository: EducationRepository = Depends(get_education_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin, UserRole.user]))
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
 ):
     return await education_repository.update_education(education_id, education_data)
 
@@ -93,7 +93,7 @@ async def update_education_endpoint(
 async def delete_education_endpoint(
         education_id: int,
         education_repository: EducationRepository = Depends(get_education_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin, UserRole.user]))
+        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
 ):
     await education_repository.delete_education(education_id)
     return Response(status_code=status.HTTP_200_OK)
