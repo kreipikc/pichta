@@ -13,9 +13,9 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="",
-    description="",
-    response_description="",
+    summary="Get all experiences",
+    description="Get all experiences",
+    response_description="List experiences",
     status_code=status.HTTP_200_OK,
     response_model=List[ExperienceResponse]
 )
@@ -28,9 +28,9 @@ async def get_user_experiences(
 
 @router.get(
     path="/get/{experience_id}",
-    summary="",
-    description="",
-    response_description="",
+    summary="Get experience",
+    description="Get experience by experience_id",
+    response_description="Experience object",
     status_code=status.HTTP_200_OK,
     response_model=ExperienceResponse
 )
@@ -49,9 +49,9 @@ async def get_experience(
 
 @router.post(
     path="/add",
-    summary="",
-    description="",
-    response_description="",
+    summary="Add experience",
+    description="Add experience for self",
+    response_description="Data of a new object of experience",
     status_code=status.HTTP_201_CREATED,
     response_model=ExperienceResponse,
 )
@@ -65,9 +65,9 @@ async def add_experience_for_self(
 
 @router.post(
     path="/add/{user_id}",
-    summary="",
-    description="",
-    response_description="",
+    summary="Add experience for user",
+    description="Add experience for user by id",
+    response_description="Data of a new object of experience",
     status_code=status.HTTP_201_CREATED,
     response_model=ExperienceResponse,
 )
@@ -82,9 +82,9 @@ async def add_experience_for_user(
 
 @router.put(
     path="/update/{experience_id}",
-    summary="",
-    description="",
-    response_description="",
+    summary="Update experience",
+    description="Update experience by id",
+    response_description="Data of a updated object of experience",
     status_code=status.HTTP_200_OK,
     response_model=ExperienceResponse
 )
@@ -99,8 +99,8 @@ async def update_experience(
 
 @router.delete(
     path="/delete/{experience_id}",
-    summary="",
-    description="",
+    summary="Delete experience",
+    description="Delete experience by id",
     response_description="Status code",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response

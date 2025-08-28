@@ -13,9 +13,9 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="",
-    description="",
-    response_description="",
+    summary="Getting all professions",
+    description="Getting all professions",
+    response_description="List professions",
     status_code=status.HTTP_200_OK,
     response_model=List[ProfessionResponse]
 )
@@ -29,9 +29,9 @@ async def read_professions(
 
 @router.get(
     path="/get/{profession_id}",
-    summary="",
-    description="",
-    response_description="",
+    summary="Getting an profession",
+    description="Getting an profession by id",
+    response_description="Profession object",
     status_code=status.HTTP_200_OK,
     response_model=ProfessionResponse
 )
@@ -51,9 +51,9 @@ async def read_profession(
 
 @router.post(
     path="/add",
-    summary="",
-    description="",
-    response_description="",
+    summary="Add new profession",
+    description="Add a new profession",
+    response_description="Data of the created object",
     status_code=status.HTTP_201_CREATED,
     response_model=ProfessionResponse
 )
@@ -67,9 +67,9 @@ async def create_new_profession(
 
 @router.put(
     path="/update/{profession_id}",
-    summary="",
-    description="",
-    response_description="",
+    summary="Update profession",
+    description="Update profession by id",
+    response_description="Data of the updated object",
     status_code=status.HTTP_200_OK,
     response_model=ProfessionResponse
 )
@@ -84,9 +84,9 @@ async def update_existing_profession(
 
 @router.delete(
     path="/delete/{profession_id}",
-    summary="",
-    description="",
-    response_description="",
+    summary="Delete profession",
+    description="Delete profession by id",
+    response_description="Status code",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response
 )

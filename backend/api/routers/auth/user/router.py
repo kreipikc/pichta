@@ -1,8 +1,9 @@
 from fastapi import APIRouter, status, Response, Depends
 from utils import handle_catch_error
-from .schemas import UserInfo, UserUpdate
+from .roles import UserRole
+from .schemas import UserInfo, UserUpdate, AboutMeCreate
 from .service import UserRepository
-from ..ident.dependencies import get_current_user
+from ..ident.dependencies import get_current_user, require_roles
 from .responses.responses import UserResponse
 
 
@@ -35,4 +36,21 @@ async def get_me(user_current: UserInfo = Depends(get_current_user)) -> UserInfo
 @handle_catch_error
 async def post_me(user_data: UserUpdate, user_current: UserInfo = Depends(get_current_user)) -> Response:
     await UserRepository.update_user(user_data=user_data, id_user=user_current.id)
+    return Response(status_code=status.HTTP_200_OK)
+
+
+@router.post(
+    path="/aboutme",
+    summary="Update aboutme for yourself",
+    description="Update aboutme for yourself",
+    response_description="Status code",
+    status_code=status.HTTP_200_OK,
+    response_class=Response
+)
+@handle_catch_error
+async def update_about_me(
+        data: AboutMeCreate,
+        current_user: UserInfo = Depends(require_roles([UserRole.admin, UserRole.manager, UserRole.user]))
+) -> Response:
+    await UserRepository.update_aboutme(current_user.id, data)
     return Response(status_code=status.HTTP_200_OK)

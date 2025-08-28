@@ -12,9 +12,9 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="Get all skills for user",
-    description="",
-    response_description="",
+    summary="Get all skills for yourself",
+    description="Get all skills for yourself",
+    response_description="List skills",
     status_code=status.HTTP_200_OK,
     response_model=List[UserSkillResponse],
 )
@@ -29,9 +29,9 @@ async def get_user_skills(
 
 @router.get(
     path="/get/",
-    summary="Get skill by ID for user",
-    description="",
-    response_description="",
+    summary="Get skill for yourself by skill_id",
+    description="Get skill for yourself by skill_id",
+    response_description="Skill object",
     status_code=status.HTTP_200_OK,
     response_model=UserSkillResponse,
 )
@@ -48,9 +48,9 @@ async def get_user_skill(
 
 @router.post(
     path="/add",
-    summary="Add skill for user",
-    description="",
-    response_description="",
+    summary="Add skill for yourself",
+    description="Add skill for yourself",
+    response_description="Data of the created object",
     status_code=status.HTTP_201_CREATED,
     response_model=UserSkillResponse,
 )
@@ -71,9 +71,9 @@ async def add_user_skill(
 
 @router.put(
     path="/update",
-    summary="Update skill for user",
-    description="",
-    response_description="",
+    summary="Update skill for yourself",
+    description="Update skill for yourself",
+    response_description="Data of the updated object",
     status_code=status.HTTP_200_OK,
     response_model=UserSkillResponse,
 )
@@ -94,9 +94,9 @@ async def update_user_skill(
 
 @router.delete(
     path="/delete/{skill_id}",
-    summary="Delete skill for user",
-    description="",
-    response_description="",
+    summary="Delete skill",
+    description="Delete skill by skill_id",
+    response_description="Status code",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
 )

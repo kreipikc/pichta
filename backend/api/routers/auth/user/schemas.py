@@ -21,3 +21,7 @@ class UserUpdate(BaseModel):
     login: str
     password: str = Field(min_length=6, max_length=50, description="Пароль, от 6 до 50 знаков")
     about_me: Optional[str] = Field(None, max_length=1000)
+
+
+class AboutMeCreate(BaseModel):
+    about_me: str

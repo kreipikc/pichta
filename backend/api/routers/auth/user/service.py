@@ -6,7 +6,8 @@ from sqlalchemy.exc import IntegrityError
 from database import new_session
 from .models import UserOrm
 from .responses.http_errors import HTTPError as HTTPError_user
-from .schemas import UserUpdate
+from .roles import UserRole
+from .schemas import UserUpdate, AboutMeCreate
 from ..ident.responses.http_errors import HTTPError as HTTPError_auth
 from ..ident.schemas import UserRegister
 from ..ident.utils import get_password_hash
@@ -37,11 +38,12 @@ class UserRepository:
             return user
 
     @classmethod
-    async def create_user(cls, data: UserRegister) -> Optional[str]:
+    async def create_user(cls, data: UserRegister, role: UserRole = UserRole.user) -> Optional[str]:
         """Create user.
 
         Args:
             data: The data for create user.
+            role (UserRole): User role (default -> user).
 
         Returns:
             A Optional[str], login of the created user on success, otherwise None.
@@ -51,7 +53,7 @@ class UserRepository:
                 user = UserOrm(
                     login=data.login,
                     password=get_password_hash(data.password),
-                    role=data.role,
+                    role=role,
                     create_date=datetime.now()
                 )
 
@@ -83,3 +85,18 @@ class UserRepository:
             except IntegrityError:
                 await session.rollback()
                 raise HTTPError_auth.login_already_exists_409()
+
+    @classmethod
+    async def update_aboutme(cls, user_id: int, data: AboutMeCreate):
+        async with new_session() as session:
+            result = await session.execute(
+                select(UserOrm).where(UserOrm.id == user_id)
+            )
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise HTTPError_user.user_not_found_404()
+
+            # Обновляем информацию
+            user.about_me = data.about_me
+            await session.commit()

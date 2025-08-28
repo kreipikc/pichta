@@ -15,9 +15,9 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="Get all tasks for user",
-    description="",
-    response_description="",
+    summary="Get all tasks for user by user_id",
+    description="Get all tasks for user by user_id",
+    response_description="List tasks",
     status_code=status.HTTP_200_OK,
     response_model=List[TaskResponse],
 )
@@ -32,9 +32,9 @@ async def get_user_tasks(
 
 @router.get(
     path="/get/{task_id}",
-    summary="Get task by ID",
-    description="",
-    response_description="",
+    summary="Get task",
+    description="Get task by task_id",
+    response_description="Task object",
     status_code=status.HTTP_200_OK,
     response_model=TaskResponse,
 )
@@ -52,8 +52,8 @@ async def get_task(
 @router.post(
     path="/add",
     summary="Add task for yourself",
-    description="",
-    response_description="",
+    description="Add task for yourself",
+    response_description="Data of the created object",
     status_code=status.HTTP_201_CREATED,
     response_model=TaskResponse,
 )
@@ -74,9 +74,9 @@ async def add_task_for_self(
 
 @router.post(
     path="/add/{user_id}",
-    summary="Add task for another user",
-    description="",
-    response_description="",
+    summary="Add task for another user by user_id",
+    description="Add task for another user by user_id",
+    response_description="Data of the created object",
     status_code=status.HTTP_201_CREATED,
     response_model=TaskResponse,
 )
@@ -99,8 +99,8 @@ async def add_task_for_user(
 @router.put(
     path="/update/{task_id}",
     summary="Update task",
-    description="",
-    response_description="",
+    description="Update task by task_id",
+    response_description="Data of the updated object",
     status_code=status.HTTP_200_OK,
     response_model=TaskResponse,
 )
@@ -116,8 +116,8 @@ async def update_task(
 @router.delete(
     path="/delete/{task_id}",
     summary="Delete task",
-    description="",
-    response_description="",
+    description="Delete task by task_id",
+    response_description="Status code",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
 )

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status, Response, Request, Depends
 from utils import handle_catch_error
+
 from .dependencies import get_current_user
 from .schemas import UserRegister, UserLogin, Token
 from .responses.responses import IdentResponse, base_auth_responses
@@ -24,7 +25,7 @@ router = APIRouter()
 )
 @handle_catch_error
 async def register_user(user: UserRegister) -> Response:
-    await UserRepository.create_user(user)
+    await UserRepository.create_user(user) # Default role -> User
     return Response(status_code=status.HTTP_201_CREATED)
 
 

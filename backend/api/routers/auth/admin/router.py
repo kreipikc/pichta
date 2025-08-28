@@ -13,9 +13,9 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="",
-    description="",
-    response_description="",
+    summary="Get all user",
+    description="Get all user",
+    response_description="List users",
     status_code=status.HTTP_200_OK,
     response_model=List[UserInfo]
 )
@@ -23,38 +23,14 @@ async def get_all_users(
         admin_repo: AdminRepository = Depends(get_admin_repository),
         current_user: UserInfo = Depends(require_roles([UserRole.admin]))
 ) -> List[UserInfo]:
-    if current_user.role != UserRole.admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admin can view all users"
-        )
     return await admin_repo.get_all_users()
-
-
-@router.delete(
-    path="/delete/{user_id}",
-    summary="",
-    description="",
-    response_description="",
-    status_code=status.HTTP_204_NO_CONTENT,
-    response_class=Response
-)
-async def delete_user(
-        user_id: int,
-        admin_repo: AdminRepository = Depends(get_admin_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.admin]))
-) -> Response:
-    await admin_repo.delete_user(user_id)
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
 
 
 @router.put(
     path="/update/{user_id}",
-    summary="",
-    description="",
-    response_description="",
+    summary="Update user",
+    description="Update user by user_id",
+    response_description="Data of the updated object",
     status_code=status.HTTP_200_OK,
     response_model=UserInfo
 )
@@ -65,3 +41,20 @@ async def update_user(
         current_user: UserInfo = Depends(require_roles([UserRole.admin]))
 ) -> UserInfo:
     return UserInfo.model_validate(await admin_repo.update_user(user_id, user_data.model_dump(exclude_unset=True)))
+
+
+@router.delete(
+    path="/delete/{user_id}",
+    summary="Delete user",
+    description="Delete user by user_id",
+    response_description="Status code",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response
+)
+async def delete_user(
+        user_id: int,
+        admin_repo: AdminRepository = Depends(get_admin_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.admin]))
+) -> Response:
+    await admin_repo.delete_user(user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
