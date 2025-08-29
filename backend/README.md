@@ -117,22 +117,22 @@ pichta
 ### User
 - **GET** `/user/me` - получить текущего пользователя;
 - **POST** `/user/me` - обновить информацию текущего пользователя;
-- **POST** `/user/aboutme` - обновить поле пользователя "Обо мне"
+- **POST** `/user/aboutme` - обновить поле пользователя "Обо мне".
 
 ### Admin
 - **GET** `/user/getall` - получить список всех пользователей;
 - **PUT** `/user/update/{user_id}` - обновить пользователя по id;
-- **DELETE** `/user/delete/{user_id}` - удалить пользователя по id;
+- **DELETE** `/user/delete/{user_id}` - удалить пользователя по id.
 
 ### For Myself
-- **GET** `/me/wanted_prof/add` - добавить желаемою профессию для себя;
+- **GET** `/me/wanted_prof/add` - добавить желаемою профессию для себя.
 
 ### Education
 - **GET** `/educ/getall` - получение всех educations;
 - **GET** `/educ/get/{education_id}` - получение education по id;
 - **POST** `/educ/add` - создание нового education;
 - **PUT** `/educ/update/{education_id}` - обновить education по id;
-- **DELETE** `/educ/delete/{education_id}` - удалить education по id;
+- **DELETE** `/educ/delete/{education_id}` - удалить education по id.
 
 ### Experience
 - **GET** `/exper/getall` - получение всех experiences;
@@ -140,28 +140,28 @@ pichta
 - **POST** `/exper/add` - создание новый experience;
 - **POST** `/exper/add/{user_id}` - добавить новый experience для пользователя по user_id;
 - **PUT** `/exper/update/{experience_id}` - обновить experience по id;
-- **DELETE** `/exper/delete/{experience_id}` - удалить experience по id;
+- **DELETE** `/exper/delete/{experience_id}` - удалить experience по id.
 
 ### Profession
 - **GET** `/prof/getall` - получение всех professions;
 - **GET** `/prof/get/{profession_id}` - получение profession по id;
 - **POST** `/prof/add` - создание нового profession;
 - **PUT** `/prof/update/{profession_id}` - обновить profession по id;
-- **DELETE** `/prof/delete/{profession_id}` - удалить profession по id;
+- **DELETE** `/prof/delete/{profession_id}` - удалить profession по id.
 
 ### Skills
 - **GET** `/skill/getall` - получение всех skills;
 - **GET** `/skill/get/` - получение skill по id (в JSON);
 - **POST** `/skill/add` - создание нового skill;
 - **PUT** `/skill/update/{skill_id}` - обновить skill по id;
-- **DELETE** `/skill/delete/{skill_id}` - удалить skill по id;
+- **DELETE** `/skill/delete/{skill_id}` - удалить skill по id.
 
 ### Tasks
 - **GET** `/task/getall` - получение всех tasks;
 - **GET** `/task/get/{task_id}` - получение task по id;
 - **POST** `/task/add` - создание нового task;
 - **PUT** `/task/update/{task_id}` - обновить task по id;
-- **DELETE** `/task/delete/{task_id}` - удалить task по id;
+- **DELETE** `/task/delete/{task_id}` - удалить task по id.
 
 ## 📊 Переменные окружения
 | Переменная                  | Описание                            | По умолчанию                                |
