@@ -47,7 +47,7 @@ uvicorn main:app --host 0.0.0.0 --port 8005
 ### 5. Готово
 Проект запущен локально на порту **8005** и доступен по http://localhost:8005.
 
-## 🐳 Запуск через Docker и Docker-compose
+## 🐳 Запуск через Docker
 Находимся в корне проекта:
 ```bash
 # Сборка и запуск в фоне
@@ -55,8 +55,56 @@ docker-compose up --build -d backend
 ```
 
 ## 🏗️ Структура проекта
+Повторяющие названия файлы имеют один и тот же функционал (например: admin/schemas.py и education/schemas.py).
 ```
-
+pichta
+├── README.md
+├── api     # API часть
+│   ├── config.py         # Конфиг с инициализацией настроек
+│   ├── database.py       # Все для работы с базой данных (подключение и Model)
+│   ├── error.py          # Общий класс для ошибок
+│   ├── logger.py         # Настройка и инициализация объекта для логирования
+│   ├── main.py           # Точка входа
+│   ├── requirements.txt  # Необходимые зависимости для Python
+│   ├── routers           # Все сервисы с ручками
+│   │   ├── auth                  # Основной сервис для работы с AAA
+│   │   │   ├── admin             # Сервис с admin-endpoints
+│   │   │   │   ├── router.py     # Все ручки
+│   │   │   │   ├── schemas.py    # Pydantic-схемы
+│   │   │   │   └── service.py    # Бизнес логика и взаимодействие с БД
+│   │   │   ├── ident                   # Сервис для работы с авторизацией и аутентификацией
+│   │   │   │   ├── dependencies.py     # Зависимости для авторизации и аутентификации
+│   │   │   │   ├── jwt.py              # Класс для работы с JWT
+│   │   │   │   ├── responses           # Все возможные ошибки данного сервиса (классификация ошибок)
+│   │   │   │   │   ├── http_errors.py  # Классы со всеми видами ошибок сервиса
+│   │   │   │   │   └── responses.py    # Класс для инициализации ошибок в проекте
+│   │   │   │   ├── router.py.
+│   │   │   │   ├── schemas.py
+│   │   │   │   ├── service.py
+│   │   │   │   └── utils.py            # Дополнительные утилиты для сервиса
+│   │   │   └── user
+│   │   │       ├── models.py           # ORM-модели
+│   │   │       ├── responses
+│   │   │       │   ├── http_errors.py
+│   │   │       │   └── responses.py
+│   │   │       ├── roles.py            # Класс Enum с ролями пользователей
+│   │   │       ├── router.py
+│   │   │       ├── schemas.py
+│   │   │       └── service.py
+│   │   ├── education
+│   │   │   ├── models.py
+│   │   │   ├── router.py
+│   │   │   ├── schemas.py
+│   │   │   └── service.py
+│   │   ├── experience      # Аналогинчно серсиву education
+│   │   ├── for_myself      # Аналогинчно серсиву education
+│   │   ├── profession      # Аналогинчно серсиву education
+│   │   ├── skill           # Аналогинчно серсиву education
+│   │   └── task            # Аналогинчно серсиву education
+│   └── utils.py            # Общие утилиты
+└── database              # Данные для БД
+    └── postgres          # Конкретно для Postgres
+        └── 01.init.sql   # SQL-скрипт для инициализации
 ```
 
 ## 📡 API Endpoints
