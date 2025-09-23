@@ -27,8 +27,7 @@ class UserSkillResponse(UserSkillBase):
         from_attributes = True
 
 
-class SkillResponse(BaseModel):
-    id: int
+class SkillResponse(UserSkillBase):
     name: str
 
     class Config:

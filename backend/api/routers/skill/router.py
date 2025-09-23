@@ -1,8 +1,9 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 
+from logger import app_logger
 from .service import get_skill_repository, SkillRepository
-from .schemas import UserSkillCreate, UserSkillResponse
+from .schemas import UserSkillCreate, UserSkillResponse, SkillResponse
 from ..auth.ident.dependencies import get_current_user, require_roles
 from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
@@ -17,15 +18,15 @@ router = APIRouter()
     description="Get all skills for yourself",
     response_description="List skills",
     status_code=status.HTTP_200_OK,
-    response_model=List[UserSkillResponse],
+    response_model=List[SkillResponse],
 )
 async def get_user_skills(
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
-) -> List[UserSkillResponse]:
+) -> List[SkillResponse]:
     user_id = int(current_user.id)
     skills = await skill_repo.get_user_skills(user_id)
-    return [UserSkillResponse.model_validate(skill) for skill in skills]
+    return [SkillResponse.model_validate(skill) for skill in skills]
 
 
 @router.get(
@@ -34,16 +35,17 @@ async def get_user_skills(
     description="Get skill for yourself by skill_id",
     response_description="Skill object",
     status_code=status.HTTP_200_OK,
-    response_model=UserSkillResponse,
+    response_model=SkillResponse,
 )
 async def get_user_skill(
         skill_id: int,
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
-) -> UserSkillResponse:
+) -> SkillResponse:
     user_id = int(current_user.id)
     if skill := await skill_repo.get_user_skill(skill_id, user_id):
-        return UserSkillResponse.model_validate(skill)
+        app_logger.info(skill)
+        return SkillResponse.model_validate(skill)
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Skill not found for this user")
 
 

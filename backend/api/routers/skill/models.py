@@ -1,3 +1,5 @@
+from sqlalchemy.orm import relationship
+
 from database import Model
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
 
@@ -20,3 +22,10 @@ class UserSkill(Model):
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     status = Column(String(20), nullable=False)
+
+    skill = relationship("Skill", backref="user_skills")
+
+    @property
+    def name(self) -> str:
+        """Возвращает название навыка из связанной таблицы skills"""
+        return self.skill.name if self.skill else None

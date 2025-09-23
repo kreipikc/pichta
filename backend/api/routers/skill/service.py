@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status, Depends
+from sqlalchemy.orm import selectinload
 
 from logger import app_logger
 from .models import Skill, UserSkill
@@ -17,14 +18,19 @@ class SkillRepository:
 
     async def get_user_skills(self, user_id: int) -> list[UserSkill]:
         result = await self.session.execute(
-            select(UserSkill).where(UserSkill.id_user == user_id))
+            select(UserSkill)
+            .where(UserSkill.id_user == user_id)
+            .options(selectinload(UserSkill.skill))  # загружаем связь skill
+        )
         return result.scalars().all()
 
     async def get_user_skill(self, skill_id: int, user_id: int) -> UserSkill | None:
         result = await self.session.execute(
             select(UserSkill)
             .where(UserSkill.id_skill == skill_id)
-            .where(UserSkill.id_user == user_id))
+            .where(UserSkill.id_user == user_id)
+            .options(selectinload(UserSkill.skill))
+        )
         return result.scalar_one_or_none()
 
     async def create_user_skills(self, user_id: int, skill_data: List[UserSkillCreate]) -> List[UserSkill]:
