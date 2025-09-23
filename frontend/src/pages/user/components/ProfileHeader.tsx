@@ -1,12 +1,13 @@
-import { Avatar, Group, Text } from "@mantine/core";
-import { useAppSelector } from "@/hooks/useAppSelector";
+import { Avatar, Group, Text, Loader } from '@mantine/core';
+import { useGetMeQuery } from '@/app/redux/api/auth.api';
 
 export default function ProfileHeader() {
-  const user = useAppSelector((s) => s.user.currentUser);
+  const { data: user, isFetching, isLoading } = useGetMeQuery();
+  if (isLoading || isFetching) return <Loader size="sm" />;
 
-  const name = user?.login ?? "—";
-  const position = user?.role ?? "—";
-  const initials = typeof name === "string" && name ? name[0].toUpperCase() : "U";
+  const name = user?.login ?? '—';
+  const position = user?.role ?? '—';
+  const initials = name ? name[0].toUpperCase() : 'U';
 
   return (
     <div className="profile-header">
