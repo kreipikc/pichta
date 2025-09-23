@@ -6,6 +6,7 @@ export interface UserSkillBaseI {
   start_date?: string | null
   end_date?: string | null
   status: string
+  name: string
 }
 
 export type UserSkillCreateI = UserSkillBaseI
