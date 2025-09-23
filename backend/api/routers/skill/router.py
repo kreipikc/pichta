@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 
 from .service import get_skill_repository, SkillRepository
 from .schemas import UserSkillCreate, UserSkillResponse
-from ..auth.ident.dependencies import get_current_user
+from ..auth.ident.dependencies import get_current_user, require_roles
+from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
 
 
@@ -47,18 +48,35 @@ async def get_user_skill(
 
 
 @router.post(
-    path="/add/{user_id}",
+    path="/add",
     summary="Add skill for yourself",
     description="Add skill for yourself",
     response_description="Status code",
     status_code=status.HTTP_201_CREATED,
-    response_class=Response,
+    response_class=Response
+)
+async def add_my_skill(
+        skill_data: List[UserSkillCreate],
+        skill_repo: SkillRepository = Depends(get_skill_repository),
+        current_user: UserInfo = Depends(get_current_user)
+) -> Response:
+    await skill_repo.create_user_skills(current_user.id, skill_data)
+    return Response(status_code=status.HTTP_201_CREATED)
+
+
+@router.post(
+    path="/add/{user_id}",
+    summary="Add skill for user",
+    description="Add skill for specific user (admin only)",
+    response_description="Status code",
+    status_code=status.HTTP_201_CREATED,
+    response_class=Response
 )
 async def add_user_skill(
         user_id: int,
         skill_data: List[UserSkillCreate],
         skill_repo: SkillRepository = Depends(get_skill_repository),
-        current_user: UserInfo = Depends(get_current_user)
+        current_user: UserInfo = Depends(require_roles([UserRole.admin]))
 ) -> Response:
     await skill_repo.create_user_skills(user_id, skill_data)
     return Response(status_code=status.HTTP_201_CREATED)
