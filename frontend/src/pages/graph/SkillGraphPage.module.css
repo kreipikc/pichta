@@ -1,0 +1,40 @@
+.courseList {
+    margin-top: 10px;
+    padding-left: 20px;
+  }
+  
+  .courseItem {
+    margin-bottom: 8px;
+    list-style: none;
+  }
+  
+  .courseLink {
+    color: var(--mantine-color-teal-7);
+    font-weight: 500;
+    text-decoration: none;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+  
+  .courseLink::after {
+    content: ' ↗';
+    font-size: 0.8em;
+    opacity: 0.6;
+  }
+  
+  .courseLink:hover {
+    text-decoration: underline;
+    color: var(--mantine-color-teal-9);
+  }
+  
+  .iconWrapper {
+    text-align: center;
+    margin: 16px 0 12px;
+  }
+  
+  .drawerIcon {
+    max-width: 100%;
+    max-height: 120px;
+    object-fit: contain;
+  }
+  

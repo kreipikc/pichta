@@ -1,0 +1,38 @@
+.card {
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  .scrollContainer {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: #f8f9fa;
+    box-shadow: 0 4px 12px rgba(64, 114, 41, 0.05);
+    padding: 8px;
+    cursor: grab;
+    scroll-behavior: smooth;
+  }
+  .scrollContainer.dragging {
+    cursor: grabbing;
+  }
+  
+  .courseLink {
+    color: var(--mantine-color-teal-7);
+    font-weight: 500;
+    text-decoration: none;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+  
+  .courseLink::after {
+    content: ' ↗';
+    font-size: 0.8em;
+    opacity: 0.6;
+  }
+  
+  .courseLink:hover {
+    text-decoration: underline;
+    color: var(--mantine-color-teal-9);
+  }
