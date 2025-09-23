@@ -13,8 +13,13 @@ class UserSkillBase(BaseModel):
     status: str
 
 
-class UserSkillCreate(UserSkillBase):
-    pass
+class UserSkillCreate(BaseModel):
+    id_skill: int
+    proficiency: int
+    priority: Optional[int] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    status: str
 
 
 class UserSkillResponse(UserSkillBase):

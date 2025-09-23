@@ -47,26 +47,21 @@ async def get_user_skill(
 
 
 @router.post(
-    path="/add",
+    path="/add/{user_id}",
     summary="Add skill for yourself",
     description="Add skill for yourself",
-    response_description="Data of the created object",
+    response_description="Status code",
     status_code=status.HTTP_201_CREATED,
-    response_model=UserSkillResponse,
+    response_class=Response,
 )
 async def add_user_skill(
-        skill_data: UserSkillCreate,
+        user_id: int,
+        skill_data: List[UserSkillCreate],
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
-) -> UserSkillResponse:
-    current_user_id = int(current_user.id)
-
-    if skill_data.id_user != current_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Can only add skills for yourself"
-        )
-    return UserSkillResponse.model_validate(await skill_repo.create_user_skill(skill_data))
+) -> Response:
+    await skill_repo.create_user_skills(user_id, skill_data)
+    return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.put(
@@ -82,20 +77,13 @@ async def update_user_skill(
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> UserSkillResponse:
-    current_user_id = int(current_user.id)
-
-    if skill_data.id_user != current_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Can only update your own skills"
-        )
-    return UserSkillResponse.model_validate(await skill_repo.update_user_skill(skill_data.id_skill, skill_data.id_user, skill_data))
+    return UserSkillResponse.model_validate(await skill_repo.update_user_skill(skill_data.id_skill, current_user.id, skill_data))
 
 
 @router.delete(
     path="/delete/{skill_id}",
-    summary="Delete skill",
-    description="Delete skill by skill_id",
+    summary="Delete skill for yourself",
+    description="Delete skill by skill_id for yourself",
     response_description="Status code",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
