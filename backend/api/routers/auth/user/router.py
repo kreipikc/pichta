@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Response, Depends
 from utils import handle_catch_error
 from .roles import UserRole
-from .schemas import UserInfo, UserUpdate, AboutMeCreate, UserRoleResponse
+from .schemas import UserInfo, AboutMeCreate, UserRoleResponse, UserPrint, ChangePass
 from .service import UserRepository
 from ..ident.dependencies import get_current_user, require_roles
 from .responses.responses import UserResponse
@@ -16,26 +16,26 @@ router = APIRouter()
     description="Returns authenticated user's profile data. Requires valid access token.",
     response_description="User info",
     status_code=status.HTTP_200_OK,
-    response_model=UserInfo,
+    response_model=UserPrint,
     responses=UserResponse.me_get
 )
 @handle_catch_error
-async def get_me(user_current: UserInfo = Depends(get_current_user)) -> UserInfo:
-    return user_current
+async def get_me(user_current: UserInfo = Depends(get_current_user)) -> UserPrint:
+    return UserPrint.model_validate(user_current.model_dump())
 
 
 @router.post(
-    path="/me",
-    summary="Update information about you",
-    description="Returns status code. Requires valid access token.",
+    path="/change_pass",
+    summary="Change pass for yourself",
+    description="Change pass for yourself",
     response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
     response_class=Response,
-    responses=UserResponse.me_post
+    responses=UserResponse.change_pass
 )
 @handle_catch_error
-async def post_me(user_data: UserUpdate, user_current: UserInfo = Depends(get_current_user)) -> Response:
-    await UserRepository.update_user(user_data=user_data, id_user=user_current.id)
+async def change_pass(user_data: ChangePass, user_current: UserInfo = Depends(get_current_user)) -> Response:
+    await UserRepository.update_pass_user(user_current.id, user_data)
     return Response(status_code=status.HTTP_200_OK)
 
 

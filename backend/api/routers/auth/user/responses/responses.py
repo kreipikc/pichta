@@ -9,7 +9,7 @@ class UserResponse:
 
     Attributes:
         me_get: Responses for get me
-        me_post: Responses for post me
+        change_pass: Responses for change_pass
     """
     me_get = merge_responses(
         base_auth_responses,
@@ -20,7 +20,7 @@ class UserResponse:
         }
     )
 
-    me_post = merge_responses(
+    change_pass = merge_responses(
         base_auth_responses,
         {
             status.HTTP_404_NOT_FOUND: convert_to_example([

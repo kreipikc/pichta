@@ -4,13 +4,14 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from database import new_session
+from logger import app_logger
 from .models import UserOrm
 from .responses.http_errors import HTTPError as HTTPError_user
 from .roles import UserRole
-from .schemas import UserUpdate, AboutMeCreate
+from .schemas import UserUpdate, AboutMeCreate, ChangePass
 from ..ident.responses.http_errors import HTTPError as HTTPError_auth
 from ..ident.schemas import UserRegister
-from ..ident.utils import get_password_hash
+from ..ident.utils import get_password_hash, verify_password
 
 
 class UserRepository:
@@ -85,6 +86,21 @@ class UserRepository:
             except IntegrityError:
                 await session.rollback()
                 raise HTTPError_auth.login_already_exists_409()
+
+    @classmethod
+    async def update_pass_user(cls, user_id: int, data: ChangePass):
+        async with new_session() as session:
+            result = await session.execute(
+                select(UserOrm).where(UserOrm.id == user_id)
+            )
+            user = result.scalar_one_or_none()
+            if not user:
+                raise HTTPError_user.user_not_found_404()
+
+            user.password = get_password_hash(data.password)
+
+            session.add(user)
+            await session.commit()
 
     @classmethod
     async def update_aboutme(cls, user_id: int, data: AboutMeCreate):
