@@ -25,3 +25,7 @@ class UserUpdate(BaseModel):
 
 class AboutMeCreate(BaseModel):
     about_me: str
+
+
+class UserRoleResponse(BaseModel):
+    role: str
