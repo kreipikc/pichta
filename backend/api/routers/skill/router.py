@@ -14,6 +14,22 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
+    summary="Get all skills",
+    description="Get all skills",
+    response_description="List skills",
+    status_code=status.HTTP_200_OK,
+    response_model=List[SkillResponse],
+)
+async def get_user_skills(
+        skill_repo: SkillRepository = Depends(get_skill_repository),
+        current_user: UserInfo = Depends(get_current_user)
+) -> List[SkillResponse]:
+    skills = await skill_repo.get_all_skills()
+    return [SkillResponse.model_validate(skill) for skill in skills]
+
+
+@router.get(
+    path="/getall/me",
     summary="Get all skills for yourself",
     description="Get all skills for yourself",
     response_description="List skills",
@@ -31,8 +47,8 @@ async def get_user_skills(
 
 @router.get(
     path="/get/{skill_id}",
-    summary="Get skill for yourself by skill_id",
-    description="Get skill for yourself by skill_id",
+    summary="Get skill by skill_id",
+    description="Get skill by skill_id",
     response_description="Skill object",
     status_code=status.HTTP_200_OK,
     response_model=SkillResponse,
@@ -42,11 +58,10 @@ async def get_user_skill(
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> SkillResponse:
-    user_id = int(current_user.id)
-    if skill := await skill_repo.get_user_skill(skill_id, user_id):
-        app_logger.info(skill)
-        return SkillResponse.model_validate(skill)
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Skill not found for this user")
+    skill = await skill_repo.get_skill_by_id(skill_id)
+    if not skill:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Skill not found")
+    return SkillResponse.model_validate(await skill_repo.get_skill_by_id(skill_id))
 
 
 @router.post(

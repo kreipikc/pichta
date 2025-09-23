@@ -16,6 +16,13 @@ class SkillRepository:
     def __init__(self, session: AsyncSession = Depends(get_db)):
         self.session = session
 
+    async def get_all_skills(self) -> list[UserSkill]:
+        result = await self.session.execute(
+            select(UserSkill)
+            .options(selectinload(UserSkill.skill))
+        )
+        return result.scalars().all()
+
     async def get_user_skills(self, user_id: int) -> list[UserSkill]:
         result = await self.session.execute(
             select(UserSkill)
@@ -23,6 +30,14 @@ class SkillRepository:
             .options(selectinload(UserSkill.skill))  # загружаем связь skill
         )
         return result.scalars().all()
+
+    async def get_skill_by_id(self, skill_id: int) -> UserSkill | None:
+        result = await self.session.execute(
+            select(UserSkill)
+            .where(UserSkill.id_skill == skill_id)
+            .options(selectinload(UserSkill.skill))
+        )
+        return result.scalar_one_or_none()
 
     async def get_user_skill(self, skill_id: int, user_id: int) -> UserSkill | None:
         result = await self.session.execute(
