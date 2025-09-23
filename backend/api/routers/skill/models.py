@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import relationship
 
 from database import Model
@@ -19,7 +20,7 @@ class UserSkill(Model):
     id_user = Column(Integer, ForeignKey('users.id'), primary_key=True)
     proficiency = Column(Integer, nullable=False)
     priority = Column(Integer)
-    start_date = Column(DateTime)
+    start_date = Column(DateTime, default=datetime.now)
     end_date = Column(DateTime)
     status = Column(String(20), nullable=False)
 

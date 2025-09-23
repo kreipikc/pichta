@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 
 from logger import app_logger
 from .service import get_skill_repository, SkillRepository
-from .schemas import UserSkillCreate, UserSkillResponse, SkillResponse
+from .schemas import UserSkillCreate, UserSkillResponse, SkillResponse, UserSkillUpdate
 from ..auth.ident.dependencies import get_current_user, require_roles
 from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
@@ -100,7 +100,7 @@ async def add_user_skill(
 
 
 @router.put(
-    path="/update",
+    path="/update/{skill_id}",
     summary="Update skill for yourself",
     description="Update skill for yourself",
     response_description="Data of the updated object",
@@ -108,11 +108,12 @@ async def add_user_skill(
     response_model=UserSkillResponse,
 )
 async def update_user_skill(
-        skill_data: UserSkillCreate,
+        skill_id: int,
+        skill_data: UserSkillUpdate,
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> UserSkillResponse:
-    return UserSkillResponse.model_validate(await skill_repo.update_user_skill(skill_data.id_skill, current_user.id, skill_data))
+    return UserSkillResponse.model_validate(await skill_repo.update_user_skill(skill_id, current_user.id, skill_data))
 
 
 @router.delete(

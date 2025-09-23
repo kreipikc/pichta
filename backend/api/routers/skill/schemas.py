@@ -22,6 +22,14 @@ class UserSkillCreate(BaseModel):
     status: str
 
 
+class UserSkillUpdate(BaseModel):
+    proficiency: int
+    priority: Optional[int] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    status: str
+
+
 class UserSkillResponse(UserSkillBase):
     class Config:
         from_attributes = True

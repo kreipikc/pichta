@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from logger import app_logger
 from .models import Skill, UserSkill
-from .schemas import UserSkillCreate
+from .schemas import UserSkillCreate, UserSkillUpdate
 from database import get_db
 
 
@@ -52,12 +52,12 @@ class SkillRepository:
         try:
             skills = []
             for skill in skill_data:
-                skill_dict = skill.model_dump()
+                skill_dict = skill.model_dump(exclude_unset=True)
 
-                # Преобразуем aware datetime в naive datetime
-                if skill_dict.get('start_date'):
+                if skill_dict.get('start_date') and skill_dict['start_date'].tzinfo is not None:
                     skill_dict['start_date'] = skill_dict['start_date'].replace(tzinfo=None)
-                if skill_dict.get('end_date'):
+
+                if skill_dict.get('end_date') and skill_dict['end_date'].tzinfo is not None:
                     skill_dict['end_date'] = skill_dict['end_date'].replace(tzinfo=None)
 
                 skills.append(UserSkill(id_user=user_id, **skill_dict))
@@ -84,7 +84,7 @@ class SkillRepository:
                 detail="Internal server error"
             )
 
-    async def update_user_skill(self, skill_id: int, user_id: int, skill_data: UserSkillCreate) -> UserSkill:
+    async def update_user_skill(self, skill_id: int, user_id: int, skill_data: UserSkillUpdate) -> UserSkill:
         try:
             skill = await self.get_user_skill(skill_id, user_id)
             if not skill:
@@ -93,7 +93,7 @@ class SkillRepository:
                     detail="Skill not found for this user"
                 )
 
-            update_data = skill_data.model_dump()
+            update_data = skill_data.model_dump(exclude_unset=True)
 
             if 'start_date' in update_data and update_data['start_date']:
                 if update_data['start_date'].tzinfo is not None:
@@ -104,7 +104,8 @@ class SkillRepository:
                     update_data['end_date'] = update_data['end_date'].replace(tzinfo=None)
 
             for key, value in update_data.items():
-                setattr(skill, key, value)
+                if hasattr(skill, key):
+                    setattr(skill, key, value)
 
             await self.session.commit()
             await self.session.refresh(skill)
