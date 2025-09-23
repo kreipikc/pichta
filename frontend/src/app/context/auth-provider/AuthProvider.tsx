@@ -106,6 +106,7 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     logout: async () => {
       await logoutMutation().unwrap().catch(() => {});
       localStorage.removeItem('access_token');
+      localStorage.removeItem('token_type');
       dispatch(deleteUser());
       setStatus(AuthStatus.Unauthenticated);
       navigate(paths.Auth);

@@ -15,6 +15,7 @@ import { useRoutes } from "@/hooks/useRoutes";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { useForm } from "@mantine/form";
+import { useAuth } from '@/app/context/auth-provider/AuthProvider';
 
 export default function SettingsSection() {
   const [darkMode, setDarkMode] = useState(true);
@@ -22,6 +23,7 @@ export default function SettingsSection() {
   const [language, setLanguage] = useState("ru");
   const { paths } = useRoutes();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const [modalOpened, setModalOpened] = useState(false);
   const [changeSuccess, setChangeSuccess] = useState(false);
@@ -46,7 +48,7 @@ export default function SettingsSection() {
   };
 
   const handleLogout = () => {
-    navigate(paths.Auth);
+    logout();
   };
 
   const handleChangePassword = (values: { current: string; new: string }) => {
