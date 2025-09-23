@@ -1,45 +1,43 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { userReducer } from "@/app/redux/store/reducers/userSlice";
 import { errorToastMiddleware } from "@/app/redux/store/middlewares/errorToast";
-import { humidApi } from "@/app/redux/api/humid.api";
+
 import { authApi } from "@/app/redux/api/auth.api";
-import { tempApi } from "@/app/redux/api/temp.api";
-import { predictApi } from "@/app/redux/api/predict.api";
-import { roleApi } from "@/app/redux/api/role.api";
-import { tagEndpointsApi } from "../api/endpoints.api";
-import { userApi } from "../api/user.api";
-import { sensorsApi } from "../api/sensors.api";
-import { dataApi } from "../api/data.api";
+import { userApi } from "@/app/redux/api/user.api";
+import { educationApi } from "@/app/redux/api/education.api";
+import { experienceApi } from "@/app/redux/api/experience.api";
+import { professionApi } from "@/app/redux/api/profession.api";
+import { skillApi } from "@/app/redux/api/skill.api";
+import { taskApi } from "@/app/redux/api/task.api";
+import { meApi } from "@/app/redux/api/me.api";
 
 const rootReducer = combineReducers({
-    user: userReducer,
-    [authApi.reducerPath]: authApi.reducer,
-    [humidApi.reducerPath]: humidApi.reducer,
-    [tempApi.reducerPath]: tempApi.reducer,
-    [predictApi.reducerPath]: predictApi.reducer,
-    [roleApi.reducerPath]: roleApi.reducer,
-    [tagEndpointsApi.reducerPath]: tagEndpointsApi.reducer,
-    [userApi.reducerPath]: userApi.reducer,
-    [sensorsApi.reducerPath]: sensorsApi.reducer,
-    [dataApi.reducerPath]: dataApi.reducer,
+  user: userReducer,
+  [authApi.reducerPath]: authApi.reducer,
+  [userApi.reducerPath]: userApi.reducer,
+  [educationApi.reducerPath]: educationApi.reducer,
+  [experienceApi.reducerPath]: experienceApi.reducer,
+  [professionApi.reducerPath]: professionApi.reducer,
+  [skillApi.reducerPath]: skillApi.reducer,
+  [taskApi.reducerPath]: taskApi.reducer,
+  [meApi.reducerPath]: meApi.reducer,
 });
 
 export const setupStore = () => {
-    return configureStore({
-        reducer: rootReducer,
-        middleware: getDefaultMiddleware =>
-            getDefaultMiddleware()
-                .concat(authApi.middleware)
-                .concat(humidApi.middleware)
-                .concat(tempApi.middleware)
-                .concat(predictApi.middleware)
-                .concat(roleApi.middleware)
-                .concat(tagEndpointsApi.middleware)
-                .concat(userApi.middleware)
-                .concat(sensorsApi.middleware)
-                .concat(dataApi.middleware)
-                .concat(errorToastMiddleware),
-    });
+  return configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware()
+        .concat(authApi.middleware)
+        .concat(userApi.middleware)
+        .concat(educationApi.middleware)
+        .concat(experienceApi.middleware)
+        .concat(professionApi.middleware)
+        .concat(skillApi.middleware)
+        .concat(taskApi.middleware)
+        .concat(meApi.middleware)
+        .concat(errorToastMiddleware),
+  });
 };
 
 export type RootState = ReturnType<typeof rootReducer>;

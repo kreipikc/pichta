@@ -13,19 +13,19 @@ export const routes: RoutesType = {
         title: "Auth",
         path: "/",
         component: AuthPage,
-        type: PageType.authenticated,
+        type: PageType.unAuthenticated,
     },
     [RouteName.Register]: {
         title: "Register",
         path: "/register",
         component: Registration,
-        type: PageType.authenticated,
+        type: PageType.unAuthenticated,
     },
     [RouteName.ForgotPassword]: {
         title: "ForgotPassword",
         path: "/forgot-password",
         component: ForgotPassword,
-        type: PageType.authenticated,
+        type: PageType.unAuthenticated,
     },
     [RouteName.UserProfile]: {
         title: "Профиль",

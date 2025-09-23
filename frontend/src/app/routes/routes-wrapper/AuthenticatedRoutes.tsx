@@ -16,7 +16,7 @@ export function AuthenticatedRoutes(): JSX.Element {
                         <Route key={title} element={<Element />} path={path} />
                     )
                 )}
-                <Route key={-1} path="*" element={<Navigate to={paths.Auth} />} />
+                <Route key={-1} path="*" element={<Navigate to={paths.UserProfile} />} />
             </Route>
         </Routes>
     )

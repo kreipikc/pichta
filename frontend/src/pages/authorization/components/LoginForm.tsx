@@ -11,7 +11,7 @@ export const LoginForm: FC<LoginFormProps> = ({ handleSubmit }) => {
   const form = useForm({
     validateInputOnBlur: true,
     initialValues: {
-      username: "",
+      login: "",
       password: "",
     },
   });
@@ -24,7 +24,7 @@ export const LoginForm: FC<LoginFormProps> = ({ handleSubmit }) => {
         placeholder="Ваш логин"
         type="text"
         mb="md"
-        {...form.getInputProps("username")}
+        {...form.getInputProps("login")}
       />
       <PasswordInput
         withAsterisk

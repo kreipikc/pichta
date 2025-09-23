@@ -23,7 +23,9 @@ const App = () => {
     <MantineProvider defaultColorScheme={colorScheme}>
       <Provider store={store}>
         <Router>
-          <AppRoutes />
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
         </Router>
       </Provider>
     </MantineProvider>

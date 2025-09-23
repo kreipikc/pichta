@@ -1,30 +1,26 @@
-import { useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
+import { useCallback, useState } from 'react';
+import { useRegisterMutation } from '@/app/redux/api/auth.api';
+import { useRoutes } from '@/hooks/useRoutes';
 
 export const useRegister = () => {
-  const [loading, setLoading] = useState(false);
+  const [registerMutation, { isLoading }] = useRegisterMutation();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const navigate = useNavigate();
+  const { navigateTo } = useRoutes();
 
-  const register = useCallback(async (formData: any) => {
-    setLoading(true);
+  const register = useCallback(async (formData: Record<string, any>) => {
+    setError(null);
     try {
-      Cookies.set("mock_username", formData.email || formData.username);
-      Cookies.set("mock_password", formData.password);
-      Cookies.set("mock_name", formData.name || "User");
-
+      const login = formData.login ?? formData.username ?? formData.email;
+      const password = formData.password as string;
+      if (!login || !password) throw new Error('Заполните логин и пароль');
+      await registerMutation({ login, password }).unwrap();
       setSuccess(true);
-      setTimeout(() => {
-        navigate("/");
-      }, 1500);
-    } catch (e) {
-      setError("Не удалось зарегистрироваться");
-    } finally {
-      setLoading(false);
+      navigateTo.Auth();
+    } catch (e: any) {
+      setError(e?.message || 'Не удалось зарегистрироваться');
     }
-  }, [navigate]);
+  }, [registerMutation, navigateTo]);
 
-  return { register, loading, error, success };
+  return { register, loading: isLoading, error, success };
 };

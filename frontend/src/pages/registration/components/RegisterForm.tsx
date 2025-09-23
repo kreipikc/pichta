@@ -25,26 +25,21 @@ export const RegisterForm: FC<RegisterFormProps> = ({
   success,
 }) => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    phone_number: "",
-  });
+  const [formData, setFormData] = useState({ login: "", password: "", confirmPassword: "" });
 
   const form = useForm({
     validateInputOnBlur: true,
     initialValues: formData,
     validate: {
-      email: (val) => (/^\S+@\S+$/.test(val) ? null : "Некорректный email"),
-      password: (val) =>
-        val.length >= 6 ? null : "Пароль должен быть не менее 6 символов",
-    },
-  });
+    login: (val) => (val?.trim().length ? null : "Введите логин"),
+    password: (val) =>
+      val.length >= 6 ? null : "Пароль должен быть не менее 6 символов",
+    confirmPassword: (val, values) =>
+      val === values.password ? null : "Пароли не совпадают",
+  },
+});
 
-  const onSubmit = async () => {
-    await handleRegister(form.values);
-  };
+  const onSubmit = async () => { await handleRegister({ login: form.values.login, password: form.values.password }); };
 
   useEffect(() => {
     if (success) {
@@ -55,31 +50,24 @@ export const RegisterForm: FC<RegisterFormProps> = ({
   return (
     <form onSubmit={form.onSubmit(onSubmit)} style={{ width: "100%", maxWidth: 400 }}>
       <TextInput
-        label="Имя"
-        placeholder="Иван"
+        label="Логин"
+        placeholder="Ваш логин"
         withAsterisk
-        {...form.getInputProps("name")}
+        {...form.getInputProps("login")}
       />
-      <TextInput
-        label="Email"
-        placeholder="example@mail.ru"
-        withAsterisk
-        {...form.getInputProps("email")}
-      />
-      <PasswordInput
+            <PasswordInput
         label="Пароль"
         placeholder="*******"
         withAsterisk
         {...form.getInputProps("password")}
       />
-      <TextInput
-        label="Телефон"
-        placeholder="+7 777 777 777"
+      <PasswordInput
+        label="Повторите пароль"
+        placeholder="*******"
         withAsterisk
-        {...form.getInputProps("phone_number")}
+        {...form.getInputProps("confirmPassword")}
       />
-
-      {error && (
+{error && (
         <Notification color="red" icon={<IconX />} mt="md">
           {error}
         </Notification>
