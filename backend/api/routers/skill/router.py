@@ -29,7 +29,7 @@ async def get_user_skills(
 
 
 @router.get(
-    path="/get/",
+    path="/get/{skill_id}",
     summary="Get skill for yourself by skill_id",
     description="Get skill for yourself by skill_id",
     response_description="Skill object",
