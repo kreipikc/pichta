@@ -46,7 +46,8 @@ export const PROF_DELETE_PATH = `${PROF_PREFIX}/delete` // + /{profession_id}
 
 // Skill
 export const SKILL_PREFIX = 'skill'
-export const SKILL_GETALL_SELF_PATH = `${SKILL_PREFIX}/getall`
+export const SKILL_GETALL_SELF_PATH = `${SKILL_PREFIX}/getall/me`
+export const SKILL_GETALL_PATH = `${SKILL_PREFIX}/getall`
 export const SKILL_GET_ONE_SELF_PATH = `${SKILL_PREFIX}/get` // backend shows '/get/'
 export const SKILL_ADD_PATH = `${SKILL_PREFIX}/add`
 export const SKILL_UPDATE_PATH = `${SKILL_PREFIX}/update`

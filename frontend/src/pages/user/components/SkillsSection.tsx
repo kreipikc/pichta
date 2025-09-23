@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
-import { Card, Progress, Modal, Group, Text, Button, Slider, Loader, Stack } from "@mantine/core";
+import {
+  Card, Progress, Modal, Group, Text, Button, Slider, Loader, Stack,
+} from "@mantine/core";
+import AddSkillModal from "./components/AddSkillModal";
 import {
   useGetAllSkillsSelfQuery,
   useGetSkillSelfQuery,
@@ -17,13 +20,14 @@ type SkillItem = {
 export default function SkillsSection() {
   const { data: skillsResp, isLoading } = useGetAllSkillsSelfQuery();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [openedAdd, setOpenedAdd] = useState(false);
 
   const [updateSkill, { isLoading: isUpdating }] = useUpdateSkillMutation();
   const [deleteSkill, { isLoading: isDeleting }] = useDeleteSkillMutation();
 
   const skills: SkillItem[] = useMemo(() => {
     const list = (skillsResp ?? []) as any[];
-    return list.slice().sort((a,b) => {
+    return list.slice().sort((a, b) => {
       const pa = a?.priority ?? Infinity;
       const pb = b?.priority ?? Infinity;
       return pa - pb;
@@ -36,7 +40,10 @@ export default function SkillsSection() {
 
   return (
     <Card withBorder className="skills-card">
-      <h2 className="section-title">Навыки и компетенции</h2>
+      <Group justify="space-between" align="center" mb="sm">
+        <h2 className="section-title" style={{ margin: 0 }}>Навыки и компетенции</h2>
+        <Button onClick={() => setOpenedAdd(true)}>Добавить</Button>
+      </Group>
 
       {isLoading ? (
         <Loader size="sm" />
@@ -51,22 +58,11 @@ export default function SkillsSection() {
               fullWidth
               onClick={() => setSelectedId(s.id_skill)}
               styles={{
-                root: {
-                  // больше вертикальный размер кнопки
-                  minHeight: 80,
-                  paddingTop: 12,
-                  paddingBottom: 12,
-                  alignItems: 'stretch', // пусть высота определяется содержимым
-                },
-                // label — span; делаем блочным и растягиваем
-                label: {
-                  display: 'block',
-                  width: '100%',
-                },
+                root: { minHeight: 80, paddingTop: 12, paddingBottom: 12, alignItems: "stretch" },
+                label: { display: "block", width: "100%" },
               }}
             >
-              {/* используем Stack, чтобы была гарантированная вертикальная высота */}
-              <Stack gap={8} style={{ width: '100%' }}>
+              <Stack gap={8} style={{ width: "100%" }}>
                 <Group justify="space-between" align="center" wrap="nowrap">
                   <Text fw={600} lh={1.2} className="skill-name">
                     {(s as any).name ?? `#${s.id_skill}`}
@@ -75,8 +71,6 @@ export default function SkillsSection() {
                     {s.proficiency}%
                   </Text>
                 </Group>
-
-                {/* даём небольшой отступ сверху, чтобы полоска не прилипала */}
                 <Progress
                   value={Math.max(0, Math.min(100, s.proficiency))}
                   size="sm"
@@ -104,28 +98,27 @@ export default function SkillsSection() {
             onUpdate={async (prof) => {
               const current = skills.find((x) => x.id_skill === selectedId);
               if (!current) return;
-
               await updateSkill({
                 id_skill: selectedId!,
                 proficiency: prof,
                 status: current.status,
                 priority: current.priority ?? null,
-            } as any).unwrap();
+              } as any).unwrap();
             }}
             onDelete={async () => {
-              await deleteSkill(selectedId).unwrap();
+              await deleteSkill(selectedId!).unwrap();
               setSelectedId(null);
             }}
             loading={isUpdating || isDeleting}
           />
         )}
       </Modal>
+      <AddSkillModal opened={openedAdd} onClose={() => setOpenedAdd(false)} />
     </Card>
   );
 }
 
 function SkillModalBody({
-  skillId,
   initialProficiency,
   onUpdate,
   onDelete,
@@ -142,7 +135,7 @@ function SkillModalBody({
   const [proficiency, setProficiency] = useState(initialProficiency);
 
   return (
-    <Stack gap="md"> {/* даёт вертикальные отступы между блоками */}
+    <Stack gap="md">
       <Group justify="space-between" align="center">
         <Text>Уровень владения</Text>
         <Text fw={600}>{proficiency}%</Text>
@@ -154,10 +147,9 @@ function SkillModalBody({
         min={0}
         max={100}
         step={1}
-        marks={[{ value: 0, label: '0' }, { value: 100, label: '100' }]}
+        marks={[{ value: 0, label: "0" }, { value: 100, label: "100" }]}
       />
 
-      {/* Разводим кнопки и добавляем небольшой отступ сверху */}
       <Group justify="space-between" mt="xs">
         <Button variant="light" color="red" onClick={onDelete} loading={loading}>
           Удалить
@@ -166,7 +158,14 @@ function SkillModalBody({
           <Button variant="default" onClick={onClose}>
             Отмена
           </Button>
-          <Button color="teal" onClick={async () => { await onUpdate(proficiency); onClose(); }} loading={loading}>
+          <Button
+            color="teal"
+            onClick={async () => {
+              await onUpdate(proficiency);
+              onClose();
+            }}
+            loading={loading}
+          >
             Сохранить
           </Button>
         </Group>
