@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 
 from logger import app_logger
 from .service import get_skill_repository, SkillRepository
-from .schemas import UserSkillCreate, UserSkillResponse, SkillResponse, UserSkillUpdate
+from .schemas import UserSkillCreate, UserSkillResponse, SkillResponse, UserSkillUpdate, SkillOnlyResponse
 from ..auth.ident.dependencies import get_current_user, require_roles
 from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
@@ -18,17 +18,17 @@ router = APIRouter()
     description="Get all skills",
     response_description="List skills",
     status_code=status.HTTP_200_OK,
-    response_model=List[SkillResponse],
+    response_model=List[SkillOnlyResponse],
 )
 async def get_user_skills(
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
-) -> List[SkillResponse]:
+) -> List[SkillOnlyResponse]:
     skills = await skill_repo.get_all_skills()
 
     if not skills:
         return []
-    return [SkillResponse.model_validate(skill) for skill in skills]
+    return [SkillOnlyResponse.model_validate(skill) for skill in skills]
 
 
 @router.get(

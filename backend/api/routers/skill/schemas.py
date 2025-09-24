@@ -40,3 +40,11 @@ class SkillResponse(UserSkillBase):
 
     class Config:
         from_attributes = True
+
+
+class SkillOnlyResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True

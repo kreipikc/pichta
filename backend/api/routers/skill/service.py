@@ -16,11 +16,8 @@ class SkillRepository:
     def __init__(self, session: AsyncSession = Depends(get_db)):
         self.session = session
 
-    async def get_all_skills(self) -> list[UserSkill]:
-        result = await self.session.execute(
-            select(UserSkill)
-            .options(selectinload(UserSkill.skill))
-        )
+    async def get_all_skills(self) -> list[Skill]:
+        result = await self.session.execute(select(Skill))
         return result.scalars().all()
 
     async def get_user_skills(self, user_id: int) -> list[UserSkill]:
