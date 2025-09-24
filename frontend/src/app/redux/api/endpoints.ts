@@ -17,7 +17,7 @@ export const USER_DELETE_PATH = `${USER_PREFIX}/delete` // + /{user_id}
 
 // For Myself
 export const ME_PREFIX = 'me'
-export const ME_WANTED_PROFESSION_ADD_PATH = `${ME_PREFIX}/wanted_prof/add`
+export const ME_WANTED_PROFESSION_ADD_PATH = `${ME_PREFIX}/wanted_profession/add`
 
 // Education
 export const EDUC_PREFIX = 'educ'
@@ -48,16 +48,16 @@ export const PROF_DELETE_PATH = `${PROF_PREFIX}/delete` // + /{profession_id}
 export const SKILL_PREFIX = 'skill'
 export const SKILL_GETALL_SELF_PATH = `${SKILL_PREFIX}/getall/me`
 export const SKILL_GETALL_PATH = `${SKILL_PREFIX}/getall`
-export const SKILL_GET_ONE_SELF_PATH = `${SKILL_PREFIX}/get` // backend shows '/get/'
+export const SKILL_GET_ONE_SELF_PATH = `${SKILL_PREFIX}/get`
 export const SKILL_ADD_PATH = `${SKILL_PREFIX}/add`
 export const SKILL_UPDATE_PATH = `${SKILL_PREFIX}/update`
 export const SKILL_DELETE_PATH = `${SKILL_PREFIX}/delete` // + /{skill_id}
 
 // Task
 export const TASK_PREFIX = 'task'
-export const TASK_GETALL_PATH = `${TASK_PREFIX}/getall`
-export const TASK_GET_PATH = `${TASK_PREFIX}/get` // + /{task_id}
-export const TASK_ADD_SELF_PATH = `${TASK_PREFIX}/add`
-export const TASK_ADD_FOR_USER_PATH = `${TASK_PREFIX}/add` // + /{user_id}
-export const TASK_UPDATE_PATH = `${TASK_PREFIX}/update` // + /{task_id}
-export const TASK_DELETE_PATH = `${TASK_PREFIX}/delete` // + /{task_id}`)
+export const TASK_GETALL_PATH = `${TASK_PREFIX}/getall`          // ?user_id={id}
+export const TASK_GET_PATH = `${TASK_PREFIX}/get`                // + /{task_id}
+export const TASK_ADD_SELF_PATH = `${TASK_PREFIX}/add`           // POST body TaskCreateSelf
+export const TASK_ADD_FOR_USER_PATH = `${TASK_PREFIX}/add`       // + /{user_id}
+export const TASK_UPDATE_PATH = `${TASK_PREFIX}/update`          // + /{task_id}
+export const TASK_DELETE_PATH = `${TASK_PREFIX}/delete`          // + /{task_id}

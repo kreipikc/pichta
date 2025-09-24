@@ -12,9 +12,9 @@ import SettingsSection from "./components/SettingsSection";
 export const UserProfilePage = () => {
   const [activeTab, setActiveTab] = useState<string | null>("profile");
   const { data: user, isLoading, isFetching, isError } = useGetMeQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
+    refetchOnMountOrArgChange: false,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
   });
 
   if (isLoading || isFetching) {
@@ -67,7 +67,8 @@ export const UserProfilePage = () => {
           </Tabs.Panel>
 
           <Tabs.Panel value="tasks">
-            <TasksSection />
+            {/* передаём userId, чтобы TasksSection НЕ запрашивал /user/me сам */}
+            <TasksSection userId={user.id} key={`tasks-${user.id}`} />
           </Tabs.Panel>
 
           <Tabs.Panel value="settings">
