@@ -34,9 +34,5 @@ class AboutMeCreate(BaseModel):
     about_me: str
 
 
-class ChangePass(BaseModel):
-    password: str = Field(min_length=6, max_length=50, description="Пароль, от 6 до 50 знаков")
-
-
 class UserRoleResponse(BaseModel):
     role: str

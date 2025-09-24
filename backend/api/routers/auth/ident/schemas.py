@@ -14,3 +14,8 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class ChangePass(BaseModel):
+    old_password: str = Field(min_length=6, max_length=50, description="Пароль, от 6 до 50 знаков")
+    new_password: str = Field(min_length=6, max_length=50, description="Пароль, от 6 до 50 знаков")
