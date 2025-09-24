@@ -208,7 +208,7 @@ export const AppDateField = forwardRef<HTMLButtonElement, AppDateFieldProps>(
 
               {clearable && value && (
                 <Button size="compact-xs" variant="subtle" color="gray" onClick={clear}>
-                  Очистить
+                  X
                 </Button>
               )}
             </Group>
