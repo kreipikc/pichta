@@ -130,7 +130,7 @@ export const AppDateField = forwardRef<HTMLButtonElement, AppDateFieldProps>(
                     clear();
                   }}
                 >
-                  Очистить
+                  X
                 </Button>
               ) : null
             }
