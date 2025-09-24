@@ -14,8 +14,8 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="Get all skills or yourself skills",
-    description="Get all skills (admin), all yourself skills (user)",
+    summary="Get all skills",
+    description="Get all skills",
     response_description="List skills",
     status_code=status.HTTP_200_OK,
     response_model=List[SkillResponse],
@@ -24,14 +24,10 @@ async def get_user_skills(
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> List[SkillResponse]:
-    if current_user.role == UserRole.admin:
-        skills = await skill_repo.get_all_skills()
-    else:
-        skills = await skill_repo.get_user_skills(int(current_user.id))
+    skills = await skill_repo.get_all_skills()
 
     if not skills:
         return []
-
     return [SkillResponse.model_validate(skill) for skill in skills]
 
 
