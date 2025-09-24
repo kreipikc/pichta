@@ -1,19 +1,34 @@
+// Обновлено: разделил тип для ответа (с name) и для DTO (без name)
+
 export interface UserSkillBaseI {
-  id_skill: number
-  id_user: number
-  proficiency: number
-  priority?: number | null
-  start_date?: string | null
-  end_date?: string | null
-  status: string
-  name: string
+  id_skill: number;
+  id_user: number;
+  proficiency: number;
+  priority?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  status: string;
 }
 
-export type UserSkillCreateI = UserSkillBaseI
+export interface UserSkillWithNameI extends UserSkillBaseI {
+  name: string;
+}
 
-export interface UserSkillResponseI extends UserSkillBaseI {}
+// Для POST /skill/add (на бэке ждут массив таких объектов)
+export type UserSkillCreateI = UserSkillBaseI;
+
+// Для PATCH /skill/update (тоже массив). Поля частично optional, но id_skill обязателен.
+export interface UserSkillUpdateI {
+  proficiency: number;
+  priority?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  status: string;
+}
+
+export interface UserSkillResponseI extends UserSkillWithNameI {}
 
 export interface SkillResponseI {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }

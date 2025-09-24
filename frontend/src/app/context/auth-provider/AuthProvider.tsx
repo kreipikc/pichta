@@ -119,6 +119,21 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   // Инициализация
   useEffect(() => {
     const init = async () => {
+      // нормализация формата токенов от бэка
+      const pickTokens = (t: any) => {
+        if (!t) return null;
+        const access =
+          t.access_token ?? t.accessToken ?? t.token ?? t.access ?? null;
+        const type = t.token_type ?? t.tokenType ?? 'Bearer';
+        return access ? { access_token: String(access), token_type: String(type) } : null;
+      };
+
+      const saveTokens = (t: { access_token: string; token_type: string } | null) => {
+        if (!t) return;
+        localStorage.setItem('access_token', t.access_token);
+        localStorage.setItem('token_type', t.token_type);
+      };
+
       try {
         const me = await getMeManually();
         if (me) {
@@ -127,8 +142,12 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
           scheduleNextRefresh();
           return;
         }
-        const refreshed = await refreshToken().unwrap().catch(() => null);
+
+        const refreshedRaw = await refreshToken().unwrap().catch(() => null);
+        const refreshed = pickTokens(refreshedRaw);
         if (refreshed) {
+          saveTokens(refreshed);
+
           const meAfter = await getMeManually();
           if (meAfter) {
             dispatch(addUser(meAfter));

@@ -63,7 +63,7 @@ export const UserProfilePage = () => {
           </Tabs.Panel>
 
           <Tabs.Panel value="skills">
-            <SkillsSection />
+            <SkillsSection userId={user.id} key={`skills-${user.id}`} />
           </Tabs.Panel>
 
           <Tabs.Panel value="tasks">

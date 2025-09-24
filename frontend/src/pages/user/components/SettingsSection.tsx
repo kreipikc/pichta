@@ -49,12 +49,6 @@ export default function SettingsSection() {
     },
   });
 
-  const handleSave = () => {
-    // здесь можно сохранить notifications/language на бэк, если нужно
-    // сейчас просто уведомление:
-    toast.success("Настройки сохранены");
-  };
-
   const handleLogout = () => {
     logout();
   };
@@ -118,10 +112,6 @@ export default function SettingsSection() {
           <Divider my="md" />
 
           <Stack>
-            <Button fullWidth color="teal" onClick={handleSave}>
-              Сохранить настройки
-            </Button>
-
             <Button fullWidth color="teal" onClick={() => setModalOpened(true)}>
               Изменить пароль
             </Button>

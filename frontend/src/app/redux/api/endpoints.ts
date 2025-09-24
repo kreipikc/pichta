@@ -47,9 +47,9 @@ export const PROF_DELETE_PATH = `${PROF_PREFIX}/delete` // + /{profession_id}
 
 // Skill
 export const SKILL_PREFIX = 'skill'
-export const SKILL_GETALL_SELF_PATH = `${SKILL_PREFIX}/getall/me`
+export const SKILL_GETALL_BY_USER_PATH = `${SKILL_PREFIX}/getall`; // + /{user_id}
 export const SKILL_GETALL_PATH = `${SKILL_PREFIX}/getall`
-export const SKILL_GET_ONE_SELF_PATH = `${SKILL_PREFIX}/get`
+export const SKILL_GET_PATH = `${SKILL_PREFIX}/get`; // + /{skill_id} + ?user_id={id}
 export const SKILL_ADD_PATH = `${SKILL_PREFIX}/add`
 export const SKILL_UPDATE_PATH = `${SKILL_PREFIX}/update`
 export const SKILL_DELETE_PATH = `${SKILL_PREFIX}/delete` // + /{skill_id}

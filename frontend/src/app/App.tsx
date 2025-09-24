@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import { setupStore } from "@/app/redux/store";
 import { AuthProvider } from "./context/auth-provider/AuthProvider";
 import { useLocalStorage } from "@mantine/hooks";
+import { theme } from "./theme/theme";
 
 const store = setupStore();
 
@@ -19,6 +20,7 @@ const App = () => {
     <MantineProvider
       defaultColorScheme="light"
       forceColorScheme={colorScheme}
+      theme={theme}
     >
       <Provider store={store}>
         <Router>
