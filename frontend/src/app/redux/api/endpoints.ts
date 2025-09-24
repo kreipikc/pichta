@@ -14,6 +14,7 @@ export const USER_ABOUTME_PATH = `${USER_PREFIX}/aboutme`
 export const USER_GETALL_PATH = `${USER_PREFIX}/getall`
 export const USER_UPDATE_PATH = `${USER_PREFIX}/update` // + /{user_id}
 export const USER_DELETE_PATH = `${USER_PREFIX}/delete` // + /{user_id}
+export const USER_CHANGE_PASS_PATH = `${USER_PREFIX}/change_pass` 
 
 // For Myself
 export const ME_PREFIX = 'me'

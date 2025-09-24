@@ -1,51 +1,57 @@
-import type { MantineThemeOverride } from '@mantine/core'
+import { MantineThemeOverride } from '@mantine/core';
 
 export const theme: MantineThemeOverride = {
-  colorScheme: 'light',
+  /** ВАЖНО: никаких __blue, __cyan и т.п. */
   primaryColor: 'teal',
-  primaryShade: { light: 6, dark: 6 },
+  primaryShade: { light: 6, dark: 5 }, // опционально
 
-  colors: {
-    __blue: [
-      "#ebf1ff","#d3defa","#a1baf7","#6c94f6","#4574f5",
-      "#3060f6","#2656f7","#1c47dc","#133fc5","#0035ad"
-    ],
-    __cyan: [
-      "#e1faff","#cbf0ff","#9adeff","#64cbff","#3bbcfe",
-      "#22b2fe","#09adff","#0097e4","#0086cd","#0075b5"
-    ],
-  },
+  /** Базовые шрифты по желанию */
+  fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, "Noto Color Emoji", sans-serif',
+  headings: { fontFamily: 'Inter, sans-serif', fontWeight: '700' },
 
-  white: '#fff',
-  black: '#2C2A29',
-
-  fontFamily: `'InterVariable', Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`,
-  headings: {
-    fontFamily: `'Manrope Variable', Manrope, Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`,
-    fontWeight: '700',
-  },
-  fontFamilyMonospace: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`,
-
-  fontSizes: {
-    xs: '0.6rem',
-    sm: '0.75rem',
-    md: '0.9rem',
-    lg: '1rem',
-    xl: '1.2rem',
-  },
-
+  /** Дефолтные цвета для ключевых компонентов,
+   *  чтобы НИГДЕ не всплывал blue по умолчанию
+   */
   components: {
     Button: {
-      defaultProps: {
-      },
-      styles: {
-        label: { fontSize: '0.9rem' },
-      },
+      defaultProps: { color: 'teal' },
     },
-    AppShell: {
-      styles: {
-        main: { padding: 0 },
-      },
+    ActionIcon: {
+      defaultProps: { color: 'teal' },
+    },
+    Tabs: {
+      defaultProps: { color: 'teal' },
+    },
+    Badge: {
+      defaultProps: { color: 'teal' },
+    },
+    Checkbox: {
+      defaultProps: { color: 'teal' },
+    },
+    Switch: {
+      defaultProps: { color: 'teal' },
+    },
+    Progress: {
+      defaultProps: { color: 'teal' },
+    },
+    Radio: {
+      defaultProps: { color: 'teal' },
+    },
+    Slider: {
+      defaultProps: { color: 'teal' },
+    },
+    // если используешь @mantine/dates
+    DatePickerInput: {
+      defaultProps: { color: 'teal' },
+    },
+    DateTimePicker: {
+      defaultProps: { color: 'teal' },
+    },
+    Select: {
+      defaultProps: { color: 'teal' },
+    },
+    SegmentedControl: {
+      defaultProps: { color: 'teal' },
     },
   },
-}
+};

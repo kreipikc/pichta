@@ -1,124 +1,131 @@
+/* === Базовые стили страницы === */
 body {
-    margin: 0;
-    overflow: auto;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: #f8f8f8;
-  }
-  
-  code {
-    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
-  }
-  
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  /* Страница профиля */
+  margin: 0;
+  overflow: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* цвет фона и текста из темы */
+  background-color: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* === Профиль === */
 .user-profile-page {
-    background-color: var(--mantine-color-gray-0);
-    min-height: 100vh;
-    padding: 2rem;
-  }
-  
+  min-height: 100vh;
+  padding: 2rem;
+}
+
 .user-profile-container {
-width: 100%;
-margin: 0 auto;
-background-color: var(--mantine-color-white);
-border-radius: 12px;
-padding: 2rem;
-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  margin: 0 auto;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border: 1px solid var(--mantine-color-default-border);
 }
 
 .user-profile-title {
-font-family: 'Inter Black', sans-serif;
-font-size: 32px;
-font-weight: 800;
-color: var(--primary);
-margin-bottom: 2rem;
+  font-family: 'Inter Black', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--mantine-color-primary-6);
+  margin-bottom: 2rem;
 }
 
 .user-profile-tablist {
-margin-bottom: 1.5rem;
-display: flex;
-flex-wrap: wrap;
-gap: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .user-profile-tab {
-font-family: 'Inter', sans-serif;
-font-weight: 500;
-color: var(--mantine-color-gray-7);
-transition: 0.3s;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: var(--mantine-color-dimmed);
+  transition: 0.3s;
 }
 
 .user-profile-tab[data-active="true"] {
-color: var(--primary);
-background-color: rgba(23, 201, 100, 0.1);
+  color: var(--mantine-color-primary-light-color);
+  background-color: var(--mantine-color-primary-light);
 }
 
-
 .profile-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-gap: 2rem;
-flex-wrap: wrap;
-margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
 }
 
 .profile-header-left {
-display: flex;
-align-items: center;
-gap: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .profile-avatar {
-border: 3px solid var(--primary);
-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 3px solid var(--mantine-color-primary-6);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .profile-info {
-display: flex;
-flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-name {
-font-size: 1.5rem;
-font-weight: 700;
-color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mantine-color-primary-6);
 }
 
 .profile-position,
 .profile-phone {
-font-size: 0.9rem;
-color: #666;
+  font-size: 0.9rem;
+  color: var(--mantine-color-dimmed);
 }
 
 .profile-form {
-display: flex;
-flex-direction: column;
-gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.skills-card {
-padding: 1.5rem;
-margin-bottom: 2rem;
-border-radius: 12px;
-background-color: var(--mantine-color-white);
-box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+/* === Карточки / секции === */
+.skills-card,
+.education-card,
+.tasks-card,
+.activity-card {
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  background-color: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-default-border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
 
 .section-title {
-font-family: 'Inter Black', sans-serif;
-font-size: 1.25rem;
-color: var(--primary);
-margin-bottom: 1.5rem;
+  font-family: 'Inter Black', sans-serif;
+  font-size: 1.25rem;
+  color: var(--mantine-color-primary-6);
+  margin-bottom: 1.5rem;
 }
 
 .skills-grid {
@@ -128,258 +135,265 @@ margin-bottom: 1.5rem;
 }
 
 .skill-item {
-display: flex;
-flex-direction: column;
-gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .skill-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .skill-name {
-font-weight: 500;
-color: var(--primary);
+  font-weight: 500;
+  color: var(--mantine-color-primary-6);
 }
 
 .skill-level {
-font-size: 0.85rem;
-color: var(--mantine-color-gray-6);
+  font-size: 0.85rem;
+  color: var(--mantine-color-gray-6);
 }
 
-.education-card {
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border-radius: 12px;
-    background-color: var(--mantine-color-white);
-  }
-  
-  .education-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .education-list {
-    margin-top: 1.5rem;
-  }
-  
-  .education-subtitle {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--primary);
-    margin-bottom: 1rem;
-  }
-  
-  .education-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  .item-title {
-    font-weight: 600;
-    font-size: 1rem;
-  }
-  
-  .item-sub {
-    font-size: 0.875rem;
-    color: var(--mantine-color-gray-6);
-  }
-  
-  .tasks-card {
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border-radius: 12px;
-    background-color: var(--mantine-color-white);
-  }
-  
-  .task-badge {
-    text-transform: none;
-    font-weight: 500;
-    font-size: 0.8rem;
-  }
-  
-  .activity-card {
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border-radius: 12px;
-    background-color: var(--mantine-color-white);
-  }
-  
-  .activity-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .activity-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    border-radius: 10px;
-    background-color: var(--mantine-color-gray-0);
-  }
-  
-  .activity-icon {
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-  }
-  
-  .activity-content {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .activity-text {
-    font-weight: 500;
-    font-size: 0.95rem;
-    color: #1f2937;
-  }
-  
-  .activity-date {
-    font-size: 0.8rem;
-    color: #9ca3af;
-  }
-  
-  .auth-title {
-    color: var(--mantine-color-teal-6);
-    font-weight: 700;
-    font-size: 2rem;
-  }
-  
-  .tasks-table {
-    font-size: 0.95rem;
-  }
+/* === Образование === */
+.education-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
 
-  .questionnaire-wrapper {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .questionnaire-card {
-    width: 700px;
-    min-height: 700px;
-    display: flex;
-    flex-direction: column;
-    padding: var(--mantine-spacing-xl);
-    border-radius: var(--mantine-radius-lg);
-    border: 1px solid var(--mantine-color-gray-3);
-    box-shadow: var(--mantine-shadow-lg);
-  }
-  
-  .questionnaire-progress {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-    position: relative;
-    gap: 8px;
-  }
-  
-  .progress-step-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    flex: 1;
-  }
-  
-  .progress-step {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid #ccc;
-    background-color: white;
-    color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 1;
-    transition: all 0.6s ease-in-out;
-  }
-  
-  .progress-step.active {
-    border-color: #12b886;
-    background-color: white;
-    color: #12b886;
-  }
-  
-  .progress-step.completed {
-    background-color: #12b886;
-    border-color: #12b886;
-    color: white;
-  }
-  
-  .progress-label {
-    margin-top: 8px;
-    text-align: center;
-    max-width: 80px;
-  }
-  
-  .progress-line {
-    position: absolute;
-    top: 16px;
-    left: -50%;
-    width: 100%;
-    height: 2px;
-    background-color: #ccc;
-    z-index: 0;
-    transition: background-color 0.6s ease-in-out;
-  }
-  
-  .progress-line.filled {
-    background-color: #12b886;
-  }
-  
-  .questionnaire-body {
-    flex: 1;
-  }
-  
-  .questionnaire-footer {
-    display: flex;
-    justify-content: space-between;
-    margin-top: var(--mantine-spacing-lg);
-  }
-  
-  .graphContainer {
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 8px;
-    background: #f8f9fa;
-    box-shadow: 0 4px 12px rgba(64, 114, 41, 0.05);
-    height: calc(100vh - 150px);
-    max-height: 100%;
-    overflow: hidden;
-  }
+.education-list {
+  margin-top: 1.5rem;
+}
 
-  .registerPrompt {
-    margin-top: 1.5rem;
-    font-size: 0.95rem;
-    color: #495057;
-    text-align: center;
-  }
-  
-  .registerLink {
-    color: #20c997;
-    text-decoration: none;
-    font-weight: 600;
-    margin-left: 4px;
-  }
-  
-  .registerLink:hover {
-    text-decoration: underline;
-    color: #12b886;
-  }
-  
+.education-subtitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--mantine-color-primary-6);
+  margin-bottom: 1rem;
+}
+
+.education-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-default-border);
+}
+
+.item-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.item-sub {
+  font-size: 0.875rem;
+  color: var(--mantine-color-gray-6);
+}
+
+/* === Задачи === */
+.tasks-table {
+  font-size: 0.95rem;
+}
+
+.task-badge {
+  text-transform: none;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+/* === Активности === */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background-color: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-default-border);
+}
+
+.activity-icon {
+  color: var(--mantine-color-primary-6);
+  display: flex;
+  align-items: center;
+}
+
+.activity-content { display: flex; flex-direction: column; }
+
+.activity-text {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--mantine-color-text);
+}
+
+.activity-date {
+  font-size: 0.8rem;
+  color: var(--mantine-color-dimmed);
+}
+
+/* === Заголовки/тексты в auth === */
+.auth-title {
+  color: var(--mantine-color-primary-6);
+  font-weight: 700;
+  font-size: 2rem;
+}
+
+/* === Опросник === */
+.questionnaire-wrapper {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.questionnaire-card {
+  width: 700px;
+  min-height: 700px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--mantine-spacing-xl);
+  border-radius: var(--mantine-radius-lg);
+  border: 1px solid var(--mantine-color-default-border);
+  box-shadow: var(--mantine-shadow-lg);
+  background: var(--mantine-color-white);
+}
+
+.questionnaire-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  position: relative;
+  gap: 8px;
+}
+
+.progress-step-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.progress-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--mantine-color-default-border);
+  background-color: var(--mantine-color-white);
+  color: var(--mantine-color-text);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.progress-step.active {
+  border-color: var(--mantine-color-primary-6);
+  background-color: var(--mantine-color-white);
+  color: var(--mantine-color-primary-6);
+}
+
+.progress-step.completed {
+  background-color: var(--mantine-color-primary-6);
+  border-color: var(--mantine-color-primary-6);
+  color: var(--mantine-color-white);
+}
+
+.progress-label {
+  margin-top: 8px;
+  text-align: center;
+  max-width: 80px;
+  color: var(--mantine-color-dimmed);
+}
+
+.progress-line {
+  position: absolute;
+  top: 16px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background-color: var(--mantine-color-default-border);
+  z-index: 0;
+  transition: background-color 0.3s ease;
+}
+
+.progress-line.filled {
+  background-color: var(--mantine-color-primary-6);
+}
+
+.questionnaire-body { flex: 1; }
+
+.questionnaire-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--mantine-spacing-lg);
+}
+
+/* === Контейнер графа === */
+.graphContainer {
+  border: 2px solid var(--mantine-color-default-border);
+  border-radius: 12px;
+  padding: 8px;
+  background: var(--mantine-color-gray-0);
+  box-shadow: 0 4px 12px rgba(64,114,41,0.05);
+  height: calc(100vh - 150px);
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* === Регистрация / ссылки === */
+.registerPrompt {
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: var(--mantine-color-dimmed);
+  text-align: center;
+}
+
+.registerLink {
+  color: var(--mantine-color-primary-5);
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.registerLink:hover {
+  text-decoration: underline;
+  color: var(--mantine-color-primary-6);
+}
+
+/* === Таблица задач: общие утилиты === */
+.task-input-unstyled .mantine-Input-input,
+.task-textarea-unstyled .mantine-Input-input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* фикс высоты ячейки с кнопками, чтобы строки не прыгали */
+.task-actions-cell {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-action { width: 32px; height: 32px; }
+
+/* === Адаптивные мелочи (опционально) === */
+/* Можно добавить медиазапросы при необходимости */

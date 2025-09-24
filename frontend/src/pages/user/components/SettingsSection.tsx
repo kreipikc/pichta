@@ -13,12 +13,20 @@ import {
 } from "@mantine/core";
 import { useRoutes } from "@/hooks/useRoutes";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 import { useForm } from "@mantine/form";
-import { useAuth } from '@/app/context/auth-provider/AuthProvider';
+import { useAuth } from "@/app/context/auth-provider/AuthProvider";
+import { useLocalStorage } from "@mantine/hooks";
+import { toast } from "react-toastify";
+import { useChangePassword } from "@/hooks/useChangePassword";
 
 export default function SettingsSection() {
-  const [darkMode, setDarkMode] = useState(true);
+  // 🌓 тема: независимый тумблер, пишет в localStorage('color-scheme')
+  const [colorScheme, setColorScheme] = useLocalStorage<"light" | "dark">({
+    key: "color-scheme",
+    defaultValue: "light",
+  });
+  const darkMode = colorScheme === "dark";
+
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState("ru");
   const { paths } = useRoutes();
@@ -27,6 +35,8 @@ export default function SettingsSection() {
 
   const [modalOpened, setModalOpened] = useState(false);
   const [changeSuccess, setChangeSuccess] = useState(false);
+
+  const { changePassword, isLoading: isChanging } = useChangePassword();
 
   const form = useForm({
     initialValues: {
@@ -40,31 +50,28 @@ export default function SettingsSection() {
   });
 
   const handleSave = () => {
-    console.log("Настройки сохранены", {
-      darkMode,
-      notifications,
-      language,
-    });
+    // здесь можно сохранить notifications/language на бэк, если нужно
+    // сейчас просто уведомление:
+    toast.success("Настройки сохранены");
   };
 
   const handleLogout = () => {
     logout();
   };
 
-  const handleChangePassword = (values: { current: string; new: string }) => {
-    const stored = Cookies.get("mock_password");
-    if (values.current !== stored) {
-      form.setFieldError("current", "Неверный текущий пароль");
-      return;
+  const handleChangePassword = async (values: { current: string; new: string }) => {
+    const ok = await changePassword(values.current, values.new);
+    if (ok) {
+      setChangeSuccess(true);
+      toast.success("Пароль успешно изменён");
+      setTimeout(() => {
+        setModalOpened(false);
+        form.reset();
+        setChangeSuccess(false);
+      }, 1200);
+    } else {
+      toast.error("Не удалось изменить пароль. Проверьте текущий пароль и попробуйте снова.");
     }
-
-    Cookies.set("mock_password", values.new, { expires: 30 });
-    setChangeSuccess(true);
-    setTimeout(() => {
-      setModalOpened(false);
-      form.reset();
-      setChangeSuccess(false);
-    }, 1500);
   };
 
   return (
@@ -77,7 +84,7 @@ export default function SettingsSection() {
             <span className="settings-label">Тёмная тема</span>
             <Switch
               checked={darkMode}
-              onChange={(event) => setDarkMode(event.currentTarget.checked)}
+              onChange={(event) => setColorScheme(event.currentTarget.checked ? "dark" : "light")}
               color="teal"
             />
           </Group>
@@ -148,12 +155,12 @@ export default function SettingsSection() {
           />
 
           {changeSuccess && (
-            <Text color="green" size="sm" mb="sm">
+            <Text c="teal" size="sm" mb="sm">
               Пароль успешно изменён
             </Text>
           )}
 
-          <Button type="submit" fullWidth color="teal">
+          <Button type="submit" fullWidth color="teal" loading={isChanging}>
             Сохранить
           </Button>
         </form>
