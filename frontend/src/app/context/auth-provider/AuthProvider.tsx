@@ -1,10 +1,9 @@
-import { createContext, FC, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, FC, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useGetMeQuery,
   useRefreshTokenMutation,
   useLogoutMutation,
-  // 👇 добавили сам объект API, чтобы вызывать .endpoints.getMe.initiate
   authApi,
 } from '@/app/redux/api/auth.api';
 import { userActions } from '@/app/redux/store/reducers/userSlice';
@@ -33,6 +32,14 @@ interface AuthContextProps {
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 
+// === Настройки авто-рефреша из env ===
+const EXPIRE_MINUTES_RAW = import.meta.env.VITE_ACCESS_TOKEN_EXPIRE_MINUTES ?? '15';
+const EXPIRE_MINUTES = Number.isFinite(Number(EXPIRE_MINUTES_RAW))
+  ? Number(EXPIRE_MINUTES_RAW)
+  : 15;
+const REFRESH_LEEWAY_MIN = 1; // минута
+const REFRESH_INTERVAL_MS = Math.max((EXPIRE_MINUTES - REFRESH_LEEWAY_MIN) * 60_000, 30_000); // минимум 30с
+
 const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [status, setStatus] = useState<AuthStatus>(AuthStatus.Initializing);
   const dispatch = useAppDispatch();
@@ -41,13 +48,14 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const { paths } = useRoutes();
 
-  // подписка на состояние и кэш
   const { data, isFetching } = useGetMeQuery();
-
   const [refreshToken] = useRefreshTokenMutation();
   const [logoutMutation] = useLogoutMutation();
 
-  // Хелпер: ручной getMe через dispatch + unwrap
+  // id интервала, чтобы корректно чистить
+  const refreshTimerRef = useRef<number | null>(null);
+
+  // Ручной getMe через RTK initiate
   const getMeManually = async (): Promise<UserInfoI | null> => {
     try {
       const result = await dispatch(
@@ -59,18 +67,31 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
+  // Единый вызов refresh + подстраховка на 401
+  const doRefresh = async () => {
+    try {
+      await refreshToken().unwrap();
+      // опционально можно дёрнуть getMe, если на бэке меняются клеймы
+      // await getMeManually().then((me) => me && dispatch(addUser(me)));
+    } catch {
+      // если рефреш неудачный — приводим к "неавторизован"
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_type');
+      dispatch(deleteUser());
+      setStatus(AuthStatus.Unauthenticated);
+    }
+  };
+
+  // Инициализация: пробуем access, затем refresh
   useEffect(() => {
     const init = async () => {
       try {
-        // 1) Пробуем текущим access-токеном
         const me = await getMeManually();
         if (me) {
           dispatch(addUser(me));
           setStatus(AuthStatus.Authenticated);
           return;
         }
-
-        // 2) Рефрешим и пробуем ещё раз
         const refreshed = await refreshToken().unwrap().catch(() => null);
         if (refreshed) {
           const meAfter = await getMeManually();
@@ -80,8 +101,6 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
             return;
           }
         }
-
-        // 3) Гость
         dispatch(deleteUser());
         setStatus(AuthStatus.Unauthenticated);
       } catch {
@@ -90,35 +109,78 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }
     };
     void init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Синхронизация user из кэша useGetMeQuery
   useEffect(() => {
     if (data) {
       dispatch(addUser(data as UserInfoI));
     }
   }, [data, dispatch, addUser]);
 
-  const value = useMemo<AuthContextProps>(() => ({
-    initializing: status === AuthStatus.Initializing || isFetching,
-    authenticated: status === AuthStatus.Authenticated,
-    unauthenticated: status === AuthStatus.Unauthenticated,
-    login: () => navigate(paths.Auth),
-    logout: async () => {
-      await logoutMutation().unwrap().catch(() => {});
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('token_type');
-      dispatch(deleteUser());
-      setStatus(AuthStatus.Unauthenticated);
-      navigate(paths.Auth);
-    },
-    fetchUser: async () => {
-      const me = await getMeManually();
-      if (me) dispatch(addUser(me));
-    },
-    setInitializing: () => setStatus(AuthStatus.Initializing),
-    auth: () => setStatus(AuthStatus.Authenticated),
-    refresh: async () => { await refreshToken().unwrap().catch(() => {}); },
-  }), [status, isFetching, navigate, paths.Auth, logoutMutation, dispatch, deleteUser, refreshToken]);
+  // Планировщик авто-рефреша
+  useEffect(() => {
+    // чистилка интервала
+    const stop = () => {
+      if (refreshTimerRef.current) {
+        window.clearInterval(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+
+    if (status === AuthStatus.Authenticated) {
+      // первый «ранний» рефреш через REFRESH_INTERVAL_MS
+      stop();
+      refreshTimerRef.current = window.setInterval(() => {
+        void doRefresh();
+      }, REFRESH_INTERVAL_MS);
+    } else {
+      stop();
+    }
+
+    return () => stop();
+  }, [status]);
+
+  // Рефреш при возврате вкладки в фокус (если давно не обновлялись)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && status === AuthStatus.Authenticated) {
+        void doRefresh();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [status]);
+
+  const value = useMemo<AuthContextProps>(
+    () => ({
+      initializing: status === AuthStatus.Initializing || isFetching,
+      authenticated: status === AuthStatus.Authenticated,
+      unauthenticated: status === AuthStatus.Unauthenticated,
+      login: () => navigate(paths.Auth),
+      logout: async () => {
+        try {
+          await logoutMutation().unwrap();
+        } catch {}
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('token_type');
+        dispatch(deleteUser());
+        setStatus(AuthStatus.Unauthenticated);
+        navigate(paths.Auth);
+      },
+      fetchUser: async () => {
+        const me = await getMeManually();
+        if (me) dispatch(addUser(me));
+      },
+      setInitializing: () => setStatus(AuthStatus.Initializing),
+      auth: () => setStatus(AuthStatus.Authenticated),
+      refresh: async () => {
+        await doRefresh();
+      },
+    }),
+    [status, isFetching, navigate, paths.Auth, logoutMutation, dispatch, deleteUser]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
