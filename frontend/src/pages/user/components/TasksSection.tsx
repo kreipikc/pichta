@@ -15,7 +15,8 @@ import {
   Center,
   Tooltip,
 } from "@mantine/core";
-import { DateTimePicker } from "@mantine/dates";
+// ⬇⬇⬇ заменили Mantine DateTimePicker на наш кастом:
+import { AppDateField } from "@/components/date-time-picker/AppDateField";
 import {
   IconPlus,
   IconTrash,
@@ -348,12 +349,13 @@ export default function TasksSection({ userId }: { userId: number }) {
               {
                 accessor: "start_time",
                 title: "Начало",
-                width: 180,
+                width: 200,
                 render: (t) => {
                   const isEdit = !!editing[t.id];
                   const d = drafts[t.id];
                   return isEdit ? (
-                    <DateTimePicker
+                    <AppDateField
+                      kind="datetime"
                       clearable
                       value={d?.start_time ?? null}
                       onChange={(val) =>
@@ -362,6 +364,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                           [t.id]: { ...(prev[t.id] as RowDraft), start_time: val },
                         }))
                       }
+                      dropdownWidth={280}
                     />
                   ) : t.start_time ? (
                     dayjs(t.start_time).format("DD.MM.YYYY HH:mm")
@@ -373,12 +376,13 @@ export default function TasksSection({ userId }: { userId: number }) {
               {
                 accessor: "end_time",
                 title: "Завершено",
-                width: 180,
+                width: 200,
                 render: (t) => {
                   const isEdit = !!editing[t.id];
                   const d = drafts[t.id];
                   return isEdit ? (
-                    <DateTimePicker
+                    <AppDateField
+                      kind="datetime"
                       clearable
                       value={d?.end_time ?? null}
                       onChange={(val) =>
@@ -387,6 +391,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                           [t.id]: { ...(prev[t.id] as RowDraft), end_time: val },
                         }))
                       }
+                      dropdownWidth={280}
                     />
                   ) : t.end_time ? (
                     dayjs(t.end_time).format("DD.MM.YYYY HH:mm")
@@ -522,17 +527,22 @@ export default function TasksSection({ userId }: { userId: number }) {
                 onChange={(val) => setForm((s) => ({ ...s, status: val }))}
               />
             </div>
-            <DateTimePicker
+            {/* ⬇⬇⬇ наши объединённые дата/время поля */}
+            <AppDateField
+              kind="datetime"
               label="Начало"
               clearable
               value={form.start_time}
               onChange={(val) => setForm((s) => ({ ...s, start_time: val }))}
+              dropdownWidth={320}
             />
-            <DateTimePicker
+            <AppDateField
+              kind="datetime"
               label="Завершение"
               clearable
               value={form.end_time}
               onChange={(val) => setForm((s) => ({ ...s, end_time: val }))}
+              dropdownWidth={320}
             />
           </Group>
 

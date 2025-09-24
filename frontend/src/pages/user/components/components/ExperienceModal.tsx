@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, TextInput, Button, Group, NumberInput, Textarea } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
+import { Modal, TextInput, Button, Group, Textarea, Stack } from "@mantine/core";
 import dayjs from "dayjs";
 import type { ExperienceCreateI, ExperienceResponseI } from "@/shared/types/api/ExperienceI";
+import { AppDateField } from "@/components/date-time-picker/AppDateField";
 
 export type ExperienceModalValue =
   Partial<ExperienceCreateI> &
@@ -20,8 +20,9 @@ const EMPTY: ExperienceModalValue = {
   title: "",
   id_profession: null,
   description: "",
+  // важный момент: во многих типах start_time = string | undefined (без null)
   start_time: dayjs().toISOString(),
-  end_time: null,
+  end_time: undefined,
 };
 
 export default function ExperienceModal({ opened, onClose, value, onSave, saving }: Props) {
@@ -54,63 +55,60 @@ export default function ExperienceModal({ opened, onClose, value, onSave, saving
       title={isEdit ? "Редактировать опыт" : "Добавить опыт"}
       centered
     >
-      <TextInput
-        label="Должность / заголовок"
-        placeholder="Frontend разработчик"
-        value={form.title ?? ""}
-        onChange={(e) => {
-          const v = e.currentTarget.value;
-          setForm((f) => ({ ...f, title: v }));
-        }}
-        required
-        mt="xs"
-      />
-
-      <Group grow mt="xs">
-        <DateInput
-          label="Начало"
-          placeholder="Выберите дату"
+      <Stack gap="xs">
+        <TextInput
+          label="Должность / заголовок"
+          placeholder="Frontend разработчик"
+          value={form.title ?? ""}
+          onChange={(e) => {
+            const v = e.currentTarget.value;
+            setForm((f) => ({ ...f, title: v }));
+          }}
           required
-          value={form.start_time ? new Date(form.start_time) : null}
-          onChange={(d) =>
-            setForm((f) => ({ ...f, start_time: d ? dayjs(d).toISOString() : undefined }))
-          }
-          clearable={false}
         />
-        <DateInput
-          label="Окончание"
-          placeholder="Выберите дату"
-          value={form.end_time ? new Date(form.end_time) : null}
-          onChange={(d) =>
-            setForm((f) => ({ ...f, end_time: d ? dayjs(d).toISOString() : null }))
-          }
-          clearable
+
+        <Group grow>
+          <AppDateField
+            kind="date"
+            label="Начало"
+            value={form.start_time ? new Date(form.start_time) : null}
+            onChange={(d) =>
+              setForm((f) => ({ ...f, start_time: d ? d.toISOString() : undefined }))
+            }
+          />
+          <AppDateField
+            kind="date"
+            label="Окончание"
+            value={form.end_time ? new Date(form.end_time) : null}
+            onChange={(d) =>
+              setForm((f) => ({ ...f, end_time: d ? d.toISOString() : undefined }))
+            }
+          />
+        </Group>
+
+        <Textarea
+          label="Описание (опционально)"
+          placeholder="Ключевые задачи и достижения…"
+          value={form.description ?? ""}
+          onChange={(e) => {
+            const v = e.currentTarget.value;
+            setForm((f) => ({ ...f, description: v }));
+          }}
+          autosize
+          minRows={2}
         />
-      </Group>
 
-      <Textarea
-        label="Описание (опционально)"
-        placeholder="Ключевые задачи и достижения…"
-        value={form.description ?? ""}
-        onChange={(e) => {
-          const v = e.currentTarget.value;
-          setForm((f) => ({ ...f, description: v }));
-        }}
-        mt="xs"
-        autosize
-        minRows={2}
-      />
-
-      <Button
-        fullWidth
-        mt="md"
-        color="teal"
-        onClick={() => onSave(form)}
-        loading={saving}
-        disabled={!canSave}
-      >
-        Сохранить
-      </Button>
+        <Button
+          fullWidth
+          mt="sm"
+          color="teal"
+          onClick={() => onSave(form)}
+          loading={saving}
+          disabled={!canSave}
+        >
+          Сохранить
+        </Button>
+      </Stack>
     </Modal>
   );
 }

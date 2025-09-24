@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, TextInput, Button, Group } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
-import dayjs from "dayjs";
+import { Modal, TextInput, Button, Group, Stack } from "@mantine/core";
 import type { EducationCreateI, EducationResponseI } from "@/shared/types/api/EducationI";
+import { AppDateField } from "@/components/date-time-picker/AppDateField";
 
 export type EducationModalValue =
   Partial<EducationCreateI> &
@@ -26,7 +25,7 @@ const EMPTY: EducationModalValue = {
 export default function EducationModal({ opened, onClose, value, onSave, saving }: Props) {
   const [form, setForm] = useState<EducationModalValue>(EMPTY);
 
-  // Инициализируем форму только при открытии / смене режима
+  // Инициализация формы при открытии
   const openedRef = useRef(false);
   const isEdit = Boolean(value?.id);
 
@@ -53,61 +52,59 @@ export default function EducationModal({ opened, onClose, value, onSave, saving 
       title={isEdit ? "Редактировать образование" : "Добавить образование"}
       centered
     >
-      <TextInput
-        label="Тип"
-        placeholder="Высшее, Курсы и т.п."
-        value={form.type ?? ""}
-        onChange={(e) => {
-          const v = e.currentTarget.value;
-          setForm((f) => ({ ...f, type: v }));
-        }}
-        required
-        mt="xs"
-      />
-
-      <TextInput
-        label="Направление / специальность"
-        placeholder="Прикладная математика"
-        value={form.direction ?? ""}
-        onChange={(e) => {
-          const v = e.currentTarget.value;
-          setForm((f) => ({ ...f, direction: v }));
-        }}
-        required
-        mt="xs"
-      />
-
-      <Group grow mt="xs">
-        <DateInput
-          label="Начало"
-          placeholder="Выберите дату"
-          value={form.start_time ? new Date(form.start_time) : null}
-          onChange={(d) =>
-            setForm((f) => ({ ...f, start_time: d ? dayjs(d).toISOString() : null }))
-          }
-          clearable
+      <Stack gap="xs">
+        <TextInput
+          label="Тип"
+          placeholder="Высшее, Курсы и т.п."
+          value={form.type ?? ""}
+          onChange={(e) => {
+            const v = e.currentTarget.value;
+            setForm((f) => ({ ...f, type: v }));
+          }}
+          required
         />
-        <DateInput
-          label="Окончание"
-          placeholder="Выберите дату"
-          value={form.end_time ? new Date(form.end_time) : null}
-          onChange={(d) =>
-            setForm((f) => ({ ...f, end_time: d ? dayjs(d).toISOString() : null }))
-          }
-          clearable
-        />
-      </Group>
 
-      <Button
-        fullWidth
-        mt="md"
-        color="teal"
-        onClick={() => onSave(form)}
-        loading={saving}
-        disabled={!canSave}
-      >
-        Сохранить
-      </Button>
+        <TextInput
+          label="Направление / специальность"
+          placeholder="Прикладная математика"
+          value={form.direction ?? ""}
+          onChange={(e) => {
+            const v = e.currentTarget.value;
+            setForm((f) => ({ ...f, direction: v }));
+          }}
+          required
+        />
+
+        <Group grow>
+          <AppDateField
+            kind="date"
+            label="Начало"
+            value={form.start_time ? new Date(form.start_time) : null}
+            onChange={(d) =>
+              setForm((f) => ({ ...f, start_time: d ? d.toISOString() : null }))
+            }
+          />
+          <AppDateField
+            kind="date"
+            label="Окончание"
+            value={form.end_time ? new Date(form.end_time) : null}
+            onChange={(d) =>
+              setForm((f) => ({ ...f, end_time: d ? d.toISOString() : null }))
+            }
+          />
+        </Group>
+
+        <Button
+          fullWidth
+          mt="sm"
+          color="teal"
+          onClick={() => onSave(form)}
+          loading={saving}
+          disabled={!canSave}
+        >
+          Сохранить
+        </Button>
+      </Stack>
     </Modal>
   );
 }

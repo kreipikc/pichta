@@ -9,7 +9,7 @@ import {
   Stack,
   LoadingOverlay,
 } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
+import { AppDateField } from "@/components/date-time-picker/AppDateField";
 import { toast } from "react-toastify";
 import {
   useAddSkillMutation,
@@ -138,11 +138,15 @@ export default function AddSkillModal({ opened, onClose }: Props) {
           required
         />
 
-        <DateInput
+        {/* ⬇⬇⬇ наш унифицированный пикер даты */}
+        <AppDateField
+          kind="date"
           label="Start date"
           value={startDate}
           onChange={setStartDate}
           placeholder="Не указано"
+          clearable
+          dropdownWidth={300}
         />
 
         <TextInput
