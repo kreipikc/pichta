@@ -2,11 +2,11 @@ import { BrowserRouter as Router } from "react-router-dom";
 import { MantineProvider } from "@mantine/core";
 import { AppRoutes } from "@/app/routes/AppRoutes";
 import "react-toastify/dist/ReactToastify.css";
-import { useState } from "react";
 import { Provider } from "react-redux";
 import { setupStore } from "@/app/redux/store";
 import { AuthProvider } from "./context/auth-provider/AuthProvider";
 import { useLocalStorage } from "@mantine/hooks";
+import { theme } from "@/app/theme/theme";
 
 const store = setupStore();
 
@@ -16,11 +16,12 @@ const App = () => {
     defaultValue: 'light',
   });
 
-  const toggleColorScheme = () =>
-    setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
+  // Если нужно где-то дергать:
+  // const toggleColorScheme = () =>
+  //   setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
 
   return (
-    <MantineProvider defaultColorScheme={colorScheme}>
+    <MantineProvider theme={theme} defaultColorScheme={colorScheme}>
       <Provider store={store}>
         <Router>
           <AuthProvider>
