@@ -73,12 +73,6 @@ export default function EducationSection({ userId }: { userId: number }) {
 
   return (
     <Stack gap="lg">
-      {isLoading && (
-        <Group justify="center" my="lg">
-          <Loader />
-        </Group>
-      )}
-
       <Card withBorder radius="lg" p="lg">
         <Group justify="space-between" mb="md">
           <Text fw={700}>Образование</Text>
