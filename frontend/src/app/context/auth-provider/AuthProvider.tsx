@@ -45,7 +45,7 @@ function parseJwtExpMs(token?: string | null): number | null {
   try {
     const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
     if (!payload?.exp) return null;
-    return payload.exp * 1000; // exp в секундах
+    return payload.exp * 1000;
   } catch {
     return null;
   }
@@ -75,7 +75,6 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const scheduleNextRefresh = () => {
     clearRefreshTimeout();
 
-    // 1) пробуем по exp из access_token
     const accessToken = localStorage.getItem('access_token');
     const expMs = parseJwtExpMs(accessToken);
 
@@ -85,7 +84,6 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (expMs && expMs > now) {
       delay = Math.max(expMs - now - LEEWAY_MS, MIN_TIMEOUT_MS);
     } else {
-      // 2) fallback: env (минуты -> мс) минус leeway
       delay = Math.max(EXPIRE_MINUTES * 60_000 - LEEWAY_MS, MIN_TIMEOUT_MS);
     }
 
@@ -97,10 +95,8 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const doRefresh = async () => {
     try {
       await refreshToken().unwrap();
-      // после успешного рефреша у нас новый access_token → пересчитываем ближайший таймаут
       scheduleNextRefresh();
     } catch {
-      // при провале — выходим из авторизации
       localStorage.removeItem('access_token');
       localStorage.removeItem('token_type');
       dispatch(deleteUser());
@@ -109,7 +105,6 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
-  // ручной getMe через RTK initiate
   const getMeManually = async (): Promise<UserInfoI | null> => {
     try {
       const result = await dispatch(
@@ -150,7 +145,6 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }
     };
     void init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Синхронизация user из кэша useGetMeQuery
@@ -168,10 +162,8 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       clearRefreshTimeout();
     }
     return () => clearRefreshTimeout();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  // Подстраховка: вернулись во вкладку → если до exp осталось мало — рефрешнемся и перепланируем
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
@@ -182,7 +174,6 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (!expMs) return;
 
       const now = Date.now();
-      // если осталось меньше LEEWAY_MS*2, обновимся раньше
       if (expMs - now < LEEWAY_MS * 2) {
         void doRefresh();
       }
