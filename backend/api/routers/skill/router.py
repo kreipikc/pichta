@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 
 from logger import app_logger
@@ -14,8 +14,8 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="Get all skills",
-    description="Get all skills",
+    summary="Get all skills or yourself skills",
+    description="Get all skills (admin), all yourself skills (user)",
     response_description="List skills",
     status_code=status.HTTP_200_OK,
     response_model=List[SkillResponse],
@@ -24,44 +24,66 @@ async def get_user_skills(
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> List[SkillResponse]:
-    skills = await skill_repo.get_all_skills()
+    if current_user.role == UserRole.admin:
+        skills = await skill_repo.get_all_skills()
+    else:
+        skills = await skill_repo.get_user_skills(int(current_user.id))
+
+    if not skills:
+        return []
+
     return [SkillResponse.model_validate(skill) for skill in skills]
 
 
 @router.get(
-    path="/getall/me",
-    summary="Get all skills for yourself",
-    description="Get all skills for yourself",
+    path="/getall/{user_id}",
+    summary="Get all skills for user by user_id",
+    description="Get all skills for user by user_id",
     response_description="List skills",
     status_code=status.HTTP_200_OK,
     response_model=List[SkillResponse],
 )
 async def get_user_skills(
+        user_id: int,
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> List[SkillResponse]:
-    user_id = int(current_user.id)
+    if current_user.role != UserRole.admin:
+        if user_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
     skills = await skill_repo.get_user_skills(user_id)
+
+    if not skills:
+        return []
+
     return [SkillResponse.model_validate(skill) for skill in skills]
 
 
 @router.get(
     path="/get/{skill_id}",
-    summary="Get skill by skill_id",
-    description="Get skill by skill_id",
+    summary="Get skill by skill_id and user_id",
+    description="Get skill by skill_id and user_id",
     response_description="Skill object",
     status_code=status.HTTP_200_OK,
-    response_model=SkillResponse,
+    response_model=Union[SkillResponse, List],
 )
 async def get_user_skill(
         skill_id: int,
+        user_id: int,
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
-) -> SkillResponse:
-    skill = await skill_repo.get_skill_by_id(skill_id)
+) -> Union[SkillResponse, List]:
+    if current_user.role != UserRole.admin:
+        if current_user.id != user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
+    skill = await skill_repo.get_user_skill(skill_id=skill_id, user_id=user_id)
+
     if not skill:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Skill not found")
-    return SkillResponse.model_validate(await skill_repo.get_skill_by_id(skill_id))
+        return []
+
+    return SkillResponse.model_validate(skill)
 
 
 @router.post(
