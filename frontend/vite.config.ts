@@ -6,21 +6,18 @@ import svgr from 'vite-plugin-svgr'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const rootEnvDir = path.resolve(__dirname, '..');
+  const env = loadEnv(mode, rootEnvDir, '');
 
   const accessTokenExpireMinutes =
     env.VITE_ACCESS_TOKEN_EXPIRE_MINUTES ??
     env.ACCESS_TOKEN_EXPIRE_MINUTES ??
-    '15'
+    '15';
 
   return {
     base: '/',
     appType: 'spa',
-    plugins: [
-      react(),
-      gltf(),
-      svgr(),
-    ],
+    plugins: [react(), gltf(), svgr()],
     server: {
       host: '0.0.0.0',
       port: 3000,
@@ -31,7 +28,7 @@ export default defineConfig(({ mode }) => {
           secure: false,
           rewrite: (p) => p.replace(/^\/api/, ''),
         },
-      }
+      },
     },
     resolve: {
       alias: {
@@ -42,8 +39,9 @@ export default defineConfig(({ mode }) => {
         pages: path.resolve(__dirname, '.src/pages'),
         shared: path.resolve(__dirname, '.src/shared'),
         assets: path.resolve(__dirname, '.src/assets'),
-      }
+      },
     },
+    // Пробрасываем как VITE_* в рантайм
     define: {
       'import.meta.env.VITE_ACCESS_TOKEN_EXPIRE_MINUTES': JSON.stringify(accessTokenExpireMinutes),
     },

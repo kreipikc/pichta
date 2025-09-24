@@ -32,19 +32,29 @@ interface AuthContextProps {
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 
-// === Настройки авто-рефреша из env ===
+// === env fallback ===
 const EXPIRE_MINUTES_RAW = import.meta.env.VITE_ACCESS_TOKEN_EXPIRE_MINUTES ?? '15';
-const EXPIRE_MINUTES = Number.isFinite(Number(EXPIRE_MINUTES_RAW))
-  ? Number(EXPIRE_MINUTES_RAW)
-  : 15;
-const REFRESH_LEEWAY_MIN = 1; // минута
-const REFRESH_INTERVAL_MS = Math.max((EXPIRE_MINUTES - REFRESH_LEEWAY_MIN) * 60_000, 30_000); // минимум 30с
+const EXPIRE_MINUTES = Number.isFinite(Number(EXPIRE_MINUTES_RAW)) ? Number(EXPIRE_MINUTES_RAW) : 15;
+const LEEWAY_MS = 60_000; // запас 1 минута
+const MIN_TIMEOUT_MS = 30_000; // минимум 30с
+
+function parseJwtExpMs(token?: string | null): number | null {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (!payload?.exp) return null;
+    return payload.exp * 1000; // exp в секундах
+  } catch {
+    return null;
+  }
+}
 
 const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [status, setStatus] = useState<AuthStatus>(AuthStatus.Initializing);
   const dispatch = useAppDispatch();
   const { addUser, deleteUser } = userActions;
-  const user = useAppSelector((s) => s.user.currentUser);
   const navigate = useNavigate();
   const { paths } = useRoutes();
 
@@ -52,10 +62,54 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [refreshToken] = useRefreshTokenMutation();
   const [logoutMutation] = useLogoutMutation();
 
-  // id интервала, чтобы корректно чистить
-  const refreshTimerRef = useRef<number | null>(null);
+  // setTimeout id
+  const refreshTimeoutRef = useRef<number | null>(null);
 
-  // Ручной getMe через RTK initiate
+  const clearRefreshTimeout = () => {
+    if (refreshTimeoutRef.current) {
+      window.clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleNextRefresh = () => {
+    clearRefreshTimeout();
+
+    // 1) пробуем по exp из access_token
+    const accessToken = localStorage.getItem('access_token');
+    const expMs = parseJwtExpMs(accessToken);
+
+    let delay = MIN_TIMEOUT_MS;
+    const now = Date.now();
+
+    if (expMs && expMs > now) {
+      delay = Math.max(expMs - now - LEEWAY_MS, MIN_TIMEOUT_MS);
+    } else {
+      // 2) fallback: env (минуты -> мс) минус leeway
+      delay = Math.max(EXPIRE_MINUTES * 60_000 - LEEWAY_MS, MIN_TIMEOUT_MS);
+    }
+
+    refreshTimeoutRef.current = window.setTimeout(async () => {
+      await doRefresh();
+    }, delay);
+  };
+
+  const doRefresh = async () => {
+    try {
+      await refreshToken().unwrap();
+      // после успешного рефреша у нас новый access_token → пересчитываем ближайший таймаут
+      scheduleNextRefresh();
+    } catch {
+      // при провале — выходим из авторизации
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_type');
+      dispatch(deleteUser());
+      setStatus(AuthStatus.Unauthenticated);
+      clearRefreshTimeout();
+    }
+  };
+
+  // ручной getMe через RTK initiate
   const getMeManually = async (): Promise<UserInfoI | null> => {
     try {
       const result = await dispatch(
@@ -67,22 +121,7 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
-  // Единый вызов refresh + подстраховка на 401
-  const doRefresh = async () => {
-    try {
-      await refreshToken().unwrap();
-      // опционально можно дёрнуть getMe, если на бэке меняются клеймы
-      // await getMeManually().then((me) => me && dispatch(addUser(me)));
-    } catch {
-      // если рефреш неудачный — приводим к "неавторизован"
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('token_type');
-      dispatch(deleteUser());
-      setStatus(AuthStatus.Unauthenticated);
-    }
-  };
-
-  // Инициализация: пробуем access, затем refresh
+  // Инициализация
   useEffect(() => {
     const init = async () => {
       try {
@@ -90,6 +129,7 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         if (me) {
           dispatch(addUser(me));
           setStatus(AuthStatus.Authenticated);
+          scheduleNextRefresh();
           return;
         }
         const refreshed = await refreshToken().unwrap().catch(() => null);
@@ -98,6 +138,7 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
           if (meAfter) {
             dispatch(addUser(meAfter));
             setStatus(AuthStatus.Authenticated);
+            scheduleNextRefresh();
             return;
           }
         }
@@ -119,33 +160,30 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [data, dispatch, addUser]);
 
-  // Планировщик авто-рефреша
+  // Управляем таймером в зависимости от статуса
   useEffect(() => {
-    // чистилка интервала
-    const stop = () => {
-      if (refreshTimerRef.current) {
-        window.clearInterval(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-    };
-
     if (status === AuthStatus.Authenticated) {
-      // первый «ранний» рефреш через REFRESH_INTERVAL_MS
-      stop();
-      refreshTimerRef.current = window.setInterval(() => {
-        void doRefresh();
-      }, REFRESH_INTERVAL_MS);
+      scheduleNextRefresh();
     } else {
-      stop();
+      clearRefreshTimeout();
     }
-
-    return () => stop();
+    return () => clearRefreshTimeout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  // Рефреш при возврате вкладки в фокус (если давно не обновлялись)
+  // Подстраховка: вернулись во вкладку → если до exp осталось мало — рефрешнемся и перепланируем
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === 'visible' && status === AuthStatus.Authenticated) {
+      if (document.visibilityState !== 'visible') return;
+      if (status !== AuthStatus.Authenticated) return;
+
+      const accessToken = localStorage.getItem('access_token');
+      const expMs = parseJwtExpMs(accessToken);
+      if (!expMs) return;
+
+      const now = Date.now();
+      // если осталось меньше LEEWAY_MS*2, обновимся раньше
+      if (expMs - now < LEEWAY_MS * 2) {
         void doRefresh();
       }
     };
@@ -167,6 +205,7 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         localStorage.removeItem('token_type');
         dispatch(deleteUser());
         setStatus(AuthStatus.Unauthenticated);
+        clearRefreshTimeout();
         navigate(paths.Auth);
       },
       fetchUser: async () => {
@@ -174,7 +213,10 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         if (me) dispatch(addUser(me));
       },
       setInitializing: () => setStatus(AuthStatus.Initializing),
-      auth: () => setStatus(AuthStatus.Authenticated),
+      auth: () => {
+        setStatus(AuthStatus.Authenticated);
+        scheduleNextRefresh();
+      },
       refresh: async () => {
         await doRefresh();
       },
