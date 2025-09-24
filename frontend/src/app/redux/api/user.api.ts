@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_BASE_URL, USER_GETALL_PATH, USER_UPDATE_PATH, USER_DELETE_PATH, USER_CHANGE_PASS_PATH } from "@/app/redux/api/endpoints";
+import { API_BASE_URL, USER_GETALL_PATH, USER_UPDATE_PATH, USER_DELETE_PATH } from "@/app/redux/api/endpoints";
 import type { UserInfoI, UserUpdateI } from "@/shared/types/api/UserI";
 
 export const userApi = createApi({
@@ -35,15 +35,6 @@ export const userApi = createApi({
         method: "DELETE",
       }),
     }),
-
-    // 🔹 Новая ручка: смена пароля
-    changePassword: build.mutation<void, { current: string; next: string }>({
-      query: (body) => ({
-        url: USER_CHANGE_PASS_PATH,
-        method: "POST",
-        body,
-      }),
-    }),
   }),
 });
 
@@ -51,5 +42,4 @@ export const {
   useGetUsersQuery,
   useUpdateUserMutation,
   useDeleteUserMutation,
-  useChangePasswordMutation,
 } = userApi;

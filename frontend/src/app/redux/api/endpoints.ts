@@ -6,6 +6,7 @@ export const AUTH_LOGIN_PATH = `${AUTH_PREFIX}/login`
 export const AUTH_REGISTER_PATH = `${AUTH_PREFIX}/register`
 export const AUTH_REFRESH_PATH = `${AUTH_PREFIX}/refresh_token`
 export const AUTH_LOGOUT_PATH = `${AUTH_PREFIX}/logout`
+export const AUTH_CHANGE_PASS_PATH = `${AUTH_PREFIX}/change_pass` 
 
 // Users (self + admin)
 export const USER_PREFIX = 'user'
@@ -14,7 +15,6 @@ export const USER_ABOUTME_PATH = `${USER_PREFIX}/aboutme`
 export const USER_GETALL_PATH = `${USER_PREFIX}/getall`
 export const USER_UPDATE_PATH = `${USER_PREFIX}/update` // + /{user_id}
 export const USER_DELETE_PATH = `${USER_PREFIX}/delete` // + /{user_id}
-export const USER_CHANGE_PASS_PATH = `${USER_PREFIX}/change_pass` 
 
 // For Myself
 export const ME_PREFIX = 'me'
