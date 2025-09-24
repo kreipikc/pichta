@@ -1,5 +1,13 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_BASE_URL, EXPER_GETALL_PATH, EXPER_GET_PATH, EXPER_ADD_SELF_PATH, EXPER_ADD_FOR_USER_PATH, EXPER_UPDATE_PATH, EXPER_DELETE_PATH } from "@/app/redux/api/endpoints";
+import {
+  API_BASE_URL,
+  EXPER_GETALL_PATH,
+  EXPER_GET_PATH,
+  EXPER_ADD_SELF_PATH,
+  EXPER_ADD_FOR_USER_PATH,
+  EXPER_UPDATE_PATH,
+  EXPER_DELETE_PATH,
+} from "@/app/redux/api/endpoints";
 import type { ExperienceResponseI, ExperienceCreateI, ExperienceUpdateI } from "@/shared/types/api/ExperienceI";
 
 export const experienceApi = createApi({
@@ -13,24 +21,62 @@ export const experienceApi = createApi({
     },
     credentials: "include",
   }),
+  keepUnusedDataFor: 0,
+  tagTypes: ["Experience"],
   endpoints: (build) => ({
-    getAllExperience: build.query<ExperienceResponseI[], void>({
-      query: () => ({ url: EXPER_GETALL_PATH, method: "GET" }),
+    // GET /exper/getall?user_id=...
+    getAllExperience: build.query<ExperienceResponseI[], number | void>({
+      query: (userId) => ({
+        url: EXPER_GETALL_PATH,
+        method: "GET",
+        //params: userId ? { user_id: userId } : undefined,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map((e) => ({ type: "Experience" as const, id: e.id })),
+              { type: "Experience" as const, id: "LIST" },
+            ]
+          : [{ type: "Experience" as const, id: "LIST" }],
     }),
+
     getExperienceById: build.query<ExperienceResponseI, number>({
       query: (experience_id) => `${EXPER_GET_PATH}/${experience_id}`,
+      providesTags: (_r, _e, id) => [{ type: "Experience", id }],
     }),
+
+    // POST /exper/add — для текущего пользователя (user_id из токена)
     addExperienceForSelf: build.mutation<ExperienceResponseI, ExperienceCreateI>({
       query: (body) => ({ url: EXPER_ADD_SELF_PATH, method: "POST", body }),
+      invalidatesTags: [{ type: "Experience", id: "LIST" }],
     }),
+
+    // POST /exper/add/:user_id — для конкретного пользователя
     addExperienceForUser: build.mutation<ExperienceResponseI, { user_id: number; data: ExperienceCreateI }>({
       query: ({ user_id, data }) => ({ url: `${EXPER_ADD_FOR_USER_PATH}/${user_id}`, method: "POST", body: data }),
+      invalidatesTags: [{ type: "Experience", id: "LIST" }],
     }),
+
+    // PUT /exper/update/:experience_id
     updateExperience: build.mutation<ExperienceResponseI, { experience_id: number; data: ExperienceUpdateI }>({
-      query: ({ experience_id, data }) => ({ url: `${EXPER_UPDATE_PATH}/${experience_id}`, method: "PUT", body: data }),
+      query: ({ experience_id, data }) => ({
+        url: `${EXPER_UPDATE_PATH}/${experience_id}`,
+        method: "PUT",
+        body: data, // ВАЖНО: именно data -> body
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "Experience", id: arg.experience_id },
+        { type: "Experience", id: "LIST" },
+      ],
     }),
+
+    // DELETE /exper/delete/:experience_id
     deleteExperience: build.mutation<void, number>({
       query: (experience_id) => ({ url: `${EXPER_DELETE_PATH}/${experience_id}`, method: "DELETE" }),
+      invalidatesTags: (_r, _e, id) => [
+        { type: "Experience", id },
+        { type: "Experience", id: "LIST" },
+      ],
     }),
   }),
 });
