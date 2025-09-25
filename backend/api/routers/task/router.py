@@ -21,7 +21,7 @@ router = APIRouter()
 #     status_code=status.HTTP_200_OK,
 #     response_model=List[TaskResponse],
 # )
-# async def get_user_tasks(
+# async def get_all_tasks(
 #         task_repo: TaskRepository = Depends(get_task_repository),
 #         current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
 # ) -> List[TaskResponse]:

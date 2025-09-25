@@ -19,7 +19,7 @@ router = APIRouter()
 #     status_code=status.HTTP_200_OK,
 #     response_model=List[ExperienceResponse]
 # )
-# async def get_user_experiences(
+# async def get_all_experiences(
 #         experience_repo: ExperienceRepository = Depends(get_experience_repository),
 #         current_user: UserInfo = Depends(get_current_user)
 # ) -> List[ExperienceResponse]:

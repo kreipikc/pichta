@@ -20,7 +20,7 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
     response_model=List[SkillOnlyResponse],
 )
-async def get_user_skills(
+async def get_all_skills(
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> List[SkillOnlyResponse]:
