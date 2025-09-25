@@ -91,7 +91,7 @@ async def get_experience(
 async def add_experience_for_self(
         experience_data: ExperienceCreate,
         experience_repo: ExperienceRepository = Depends(get_experience_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+        current_user: UserInfo = Depends(get_current_user)
 ) -> ExperienceResponse:
     return await experience_repo.create_experience_for_self(current_user.id, experience_data)
 

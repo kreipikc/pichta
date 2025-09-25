@@ -92,7 +92,7 @@ async def get_education(
 async def add_education(
         education_data: EducationCreate,
         education_repository: EducationRepository = Depends(get_education_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+        current_user: UserInfo = Depends(get_current_user)
 ):
     return await education_repository.create_education(education_data)
 
