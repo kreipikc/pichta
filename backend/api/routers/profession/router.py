@@ -21,7 +21,7 @@ router = APIRouter()
 )
 async def read_professions(
         profession_repo: ProfessionRepository = Depends(get_profession_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.admin, UserRole.manager]))
+        current_user: UserInfo = Depends(get_current_user)
 ) -> List[ProfessionResponse]:
     profs = await profession_repo.get_all_professions()
     return [ProfessionResponse.model_validate(prof) for prof in profs]
@@ -38,7 +38,7 @@ async def read_professions(
 async def read_profession(
     profession_id: int,
     profession_repo: ProfessionRepository = Depends(get_profession_repository),
-    current_user: UserInfo = Depends(get_current_user)
+    current_user: UserInfo = Depends(require_roles([UserRole.admin]))
 ) -> ProfessionResponse:
     profession = await profession_repo.get_profession_by_id(profession_id)
     if not profession:

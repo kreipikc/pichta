@@ -5,25 +5,58 @@ from .service import get_experience_repository, ExperienceRepository
 from .schemas import ExperienceResponse, ExperienceUpdate, ExperienceCreate
 from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
-from ..auth.ident.dependencies import require_roles
+from ..auth.ident.dependencies import require_roles, get_current_user
 
 
 router = APIRouter()
 
 
+# @router.get(
+#     path="/getall",
+#     summary="Get all experiences",
+#     description="Get all experiences. All experiences (admin), all yourself (user)",
+#     response_description="List experiences",
+#     status_code=status.HTTP_200_OK,
+#     response_model=List[ExperienceResponse]
+# )
+# async def get_user_experiences(
+#         experience_repo: ExperienceRepository = Depends(get_experience_repository),
+#         current_user: UserInfo = Depends(get_current_user)
+# ) -> List[ExperienceResponse]:
+#     if current_user.role == UserRole.admin:
+#         exper_list = await experience_repo.get_all_experience()
+#     else:
+#         exper_list = await experience_repo.get_user_experiences(current_user.id)
+#
+#     if not exper_list:
+#         return []
+#
+#     return [ExperienceResponse.model_validate(exp) for exp in exper_list]
+
+
 @router.get(
-    path="/getall",
-    summary="Get all experiences",
-    description="Get all experiences",
+    path="/getall/{user_id}",
+    summary="Get all experiences for user by user_id",
+    description="Get all experiences for user by user_id. All users (admin), yourself (user)",
     response_description="List experiences",
     status_code=status.HTTP_200_OK,
     response_model=List[ExperienceResponse]
 )
 async def get_user_experiences(
+        user_id: int,
         experience_repo: ExperienceRepository = Depends(get_experience_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+        current_user: UserInfo = Depends(get_current_user)
 ) -> List[ExperienceResponse]:
-    return await experience_repo.get_user_experiences(current_user.id)
+    if current_user.role != UserRole.admin:
+        if current_user.id != user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
+    exper_list = await experience_repo.get_user_experiences(user_id)
+
+    if not exper_list:
+        return []
+
+    return [ExperienceResponse.model_validate(exp) for exp in exper_list]
 
 
 @router.get(

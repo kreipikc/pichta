@@ -14,6 +14,10 @@ class EducationRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def get_all_education(self) -> list[Education]:
+        result = await self.session.execute(select(Education))
+        return result.scalars().all()
+
     async def get_education_by_user(self, user_id: int) -> list[Education]:
         query = select(Education).where(Education.id_user == user_id)
         result = await self.session.execute(query)

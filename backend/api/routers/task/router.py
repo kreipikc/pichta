@@ -4,7 +4,7 @@ from fastapi.exceptions import ResponseValidationError
 
 from .service import TaskRepository, get_task_repository
 from .schemas import TaskCreate, TaskResponse, TaskCreateSelf, TaskUpdate
-from ..auth.ident.dependencies import require_roles
+from ..auth.ident.dependencies import require_roles, get_current_user
 from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
 from ..auth.user.service import UserRepository
@@ -13,10 +13,33 @@ from ..auth.user.service import UserRepository
 router = APIRouter()
 
 
+# @router.get(
+#     path="/getall",
+#     summary="Get all tasks for user by user_id",
+#     description="Get all tasks for user by user_id",
+#     response_description="List tasks",
+#     status_code=status.HTTP_200_OK,
+#     response_model=List[TaskResponse],
+# )
+# async def get_user_tasks(
+#         task_repo: TaskRepository = Depends(get_task_repository),
+#         current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+# ) -> List[TaskResponse]:
+#     if current_user.role == UserRole.admin:
+#         tasks = await task_repo.get_all_task()
+#     else:
+#         tasks = await task_repo.get_user_tasks(current_user.id)
+#
+#     if not tasks:
+#         return []
+#
+#     return [TaskResponse.model_validate(task) for task in tasks]
+
+
 @router.get(
-    path="/getall",
+    path="/getall/{user_id}",
     summary="Get all tasks for user by user_id",
-    description="Get all tasks for user by user_id",
+    description="Get all tasks for user by user_id.  All users (admin), yourself (user)",
     response_description="List tasks",
     status_code=status.HTTP_200_OK,
     response_model=List[TaskResponse],
@@ -24,9 +47,17 @@ router = APIRouter()
 async def get_user_tasks(
         user_id: int,
         task_repo: TaskRepository = Depends(get_task_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+        current_user: UserInfo = Depends(get_current_user)
 ) -> List[TaskResponse]:
+    if current_user.role != UserRole.admin:
+        if current_user.id != user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
     tasks = await task_repo.get_user_tasks(user_id)
+
+    if not tasks:
+        return []
+
     return [TaskResponse.model_validate(task) for task in tasks]
 
 

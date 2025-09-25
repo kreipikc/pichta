@@ -3,7 +3,7 @@ from typing import List
 
 from .schemas import EducationResponse, EducationCreate, EducationUpdate
 from .service import EducationRepository, get_education_repository
-from ..auth.ident.dependencies import require_roles
+from ..auth.ident.dependencies import require_roles, get_current_user
 from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
 
@@ -11,20 +11,52 @@ from ..auth.user.schemas import UserInfo
 router = APIRouter()
 
 
+# @router.get(
+#     path="/getall",
+#     summary="Getting all educations",
+#     description="Getting all educations by user_id",
+#     response_description="List educations",
+#     status_code=status.HTTP_200_OK,
+#     response_model=List[EducationResponse],
+# )
+# async def get_all_education(
+#         education_repository: EducationRepository = Depends(get_education_repository),
+#         current_user: UserInfo = Depends(get_current_user)
+# ) -> List[EducationResponse]:
+#     if current_user.role == UserRole.admin:
+#         educ_list = await education_repository.get_all_education()
+#     else:
+#         educ_list = await education_repository.get_education_by_user(current_user.id)
+#
+#     if not educ_list:
+#         return []
+#
+#     return [EducationResponse.model_validate(ed) for ed in educ_list]
+
+
 @router.get(
-    path="/getall",
-    summary="Getting all educations",
-    description="Getting all educations by user_id",
+    path="/getall/{user_id}",
+    summary="Getting all educations for user by user_id",
+    description="Getting all educations for user by user_id. All users (admin), yourself (user)",
     response_description="List educations",
     status_code=status.HTTP_200_OK,
     response_model=List[EducationResponse],
 )
-async def get_all_education(
+async def get_all_education_for_user(
         user_id: int,
         education_repository: EducationRepository = Depends(get_education_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
-):
-    return await education_repository.get_education_by_user(user_id)
+        current_user: UserInfo = Depends(get_current_user)
+) -> List[EducationResponse]:
+    if current_user.role != UserRole.admin:
+        if user_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
+    educ_list = await education_repository.get_education_by_user(user_id)
+
+    if not educ_list:
+        return []
+
+    return [EducationResponse.model_validate(ed) for ed in educ_list]
 
 
 @router.get(
@@ -38,7 +70,7 @@ async def get_all_education(
 async def get_education(
         education_id: int,
         education_repository: EducationRepository = Depends(get_education_repository),
-        current_user: UserInfo = Depends(require_roles([UserRole.manager, UserRole.admin]))
+        current_user: UserInfo = Depends(get_current_user)
 ):
     education = await education_repository.get_education_by_id(education_id)
     if not education:

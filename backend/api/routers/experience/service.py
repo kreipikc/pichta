@@ -10,6 +10,10 @@ class ExperienceRepository:
     def __init__(self, session: AsyncSession = Depends(get_db)):
         self.session = session
 
+    async def get_all_experience(self) -> list[WorkExperience]:
+        exp_list = await self.session.execute(select(WorkExperience))
+        return exp_list.scalars().all()
+
     async def create_experience_for_self(self, user_id: int, experience_data: ExperienceCreate) -> ExperienceResponse:
         try:
             experience_dict = experience_data.model_dump()

@@ -11,6 +11,10 @@ class TaskRepository:
     def __init__(self, session: AsyncSession = Depends(get_db)):
         self.session = session
 
+    async def get_all_task(self) -> list[TaskOrm]:
+        tasks = await self.session.execute(select(TaskOrm))
+        return tasks.scalars().all()
+
     async def create_task_for_self(
             self,
             user_id: int,
