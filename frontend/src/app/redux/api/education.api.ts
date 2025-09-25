@@ -22,12 +22,10 @@ export const educationApi = createApi({
   }),
   tagTypes: ["Education"],
   endpoints: (build) => ({
-    // GET /educ/getall?user_id=:id
-    getAllEducation: build.query<EducationResponseI[], number | void>({
+    getAllEducation: build.query<EducationResponseI[], number>({
       query: (userId) => ({
-        url: EDUC_GETALL_PATH,
+        url: `${EDUC_GETALL_PATH}/${userId}`,
         method: "GET",
-        params: userId ? { user_id: userId } : undefined,
       }),
       providesTags: (result) =>
         result
@@ -38,7 +36,7 @@ export const educationApi = createApi({
           : [{ type: "Education" as const, id: "LIST" }],
     }),
 
-    // GET /educ/get/:education_id
+    // GET /educ/get/{education_id}
     getEducationById: build.query<EducationResponseI, number>({
       query: (education_id) => ({
         url: `${EDUC_GET_PATH}/${education_id}`,
@@ -57,8 +55,7 @@ export const educationApi = createApi({
       invalidatesTags: [{ type: "Education", id: "LIST" }],
     }),
 
-    // PUT /educ/update/:education_id
-    // ВАЖНО: используем { education_id, body }, чтобы совпасть с вызовами в компоненте
+    // PUT /educ/update/{education_id}
     updateEducation: build.mutation<EducationResponseI, { education_id: number; body: EducationUpdateI }>({
       query: ({ education_id, body }) => ({
         url: `${EDUC_UPDATE_PATH}/${education_id}`,
@@ -71,7 +68,7 @@ export const educationApi = createApi({
       ],
     }),
 
-    // DELETE /educ/delete/:education_id
+    // DELETE /educ/delete/{education_id}
     deleteEducation: build.mutation<void, number>({
       query: (education_id) => ({
         url: `${EDUC_DELETE_PATH}/${education_id}`,

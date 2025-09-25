@@ -15,7 +15,6 @@ import type {
   TaskUpdateI,
 } from "@/shared/types/api/TaskI";
 
-// Обновление — частичный патч, а не полный объект
 export type TaskUpdatePatch = Partial<TaskUpdateI>;
 
 export const taskApi = createApi({
@@ -31,12 +30,10 @@ export const taskApi = createApi({
   }),
   tagTypes: ["Tasks"],
   endpoints: (build) => ({
-    // GET /task/getall?user_id={id}
     getAllTasks: build.query<TaskResponseI[], number>({
       query: (user_id) => ({
-        url: `${TASK_GETALL_PATH}`,
+        url: `${TASK_GETALL_PATH}/${user_id}`,
         method: "GET",
-        params: { user_id },
       }),
       providesTags: (result) =>
         result
@@ -76,7 +73,7 @@ export const taskApi = createApi({
       invalidatesTags: [{ type: "Tasks", id: "LIST" }],
     }),
 
-    // PUT /task/update/{task_id} — ЧАСТИЧНЫЙ ПАТЧ
+    // PUT /task/update/{task_id}
     updateTask: build.mutation<void, { task_id: number; body: TaskUpdatePatch }>({
       query: ({ task_id, body }) => ({
         url: `${TASK_UPDATE_PATH}/${task_id}`,
