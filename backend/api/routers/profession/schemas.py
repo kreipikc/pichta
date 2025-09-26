@@ -16,7 +16,7 @@ class ProfessionUpdate(BaseModel):
     lvl: Optional[str] = None
 
 
-class ProfessionResponse(ProfessionBase):
+class ProfessionRead(ProfessionBase):
     id: int
 
     class Config:
