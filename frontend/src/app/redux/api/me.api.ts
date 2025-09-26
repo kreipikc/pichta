@@ -14,10 +14,14 @@ export const meApi = createApi({
     credentials: "include",
   }),
   endpoints: (build) => ({
-    addWantedProfession: build.mutation<void, WantedProfessionCreateI>({
-      query: (body) => ({ url: ME_WANTED_PROFESSION_ADD_PATH, method: "POST", body }),
+    addWantedProfessions: build.mutation<void, WantedProfessionCreateI[] | WantedProfessionCreateI>({
+      query: (body) => ({
+        url: ME_WANTED_PROFESSION_ADD_PATH,
+        method: "POST",
+        body: Array.isArray(body) ? body : [body],
+      }),
     }),
   }),
 });
 
-export const { useAddWantedProfessionMutation } = meApi;
+export const { useAddWantedProfessionsMutation } = meApi;

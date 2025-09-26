@@ -1,5 +1,5 @@
 import { createContext, FC, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   useGetMeQuery,
   useRefreshTokenMutation,
@@ -51,19 +51,56 @@ function parseJwtExpMs(token?: string | null): number | null {
   }
 }
 
+// --- анкета: правила завершённости ---
+function isQuestionnaireCompleted(user: any): boolean {
+  if (!user) return false;
+
+  // 1) "О себе"
+  const aboutOk = typeof user.about_me === 'string' && user.about_me.trim().length > 0;
+
+  // 2) Навыки — разные варианты с сервера/стора
+  const skillsCount =
+    (Array.isArray(user.skills) ? user.skills.length : 0) ||
+    (typeof user.skills_count === 'number' ? user.skills_count : 0) ||
+    0;
+
+  // 3) «Желаемые профессии» — разные варианты
+  const wantedCount =
+    (Array.isArray(user.wanted_professions) ? user.wanted_professions.length : 0) ||
+    (Array.isArray(user.wanted) ? user.wanted.length : 0) ||
+    (typeof user.wanted_count === 'number' ? user.wanted_count : 0) ||
+    0;
+
+  // Образование/опыт считаем опционально завершёнными (добавьте проверки при необходимости)
+  return aboutOk && skillsCount > 0 && wantedCount > 0;
+}
+
+// Куда не редиректим из-под онбординга
+const NEVER_REDIRECT = new Set<string>([
+  '/questionnaire',
+  '/auth/login',
+  '/auth/register',
+  '/auth/restore',
+]);
+
 const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [status, setStatus] = useState<AuthStatus>(AuthStatus.Initializing);
   const dispatch = useAppDispatch();
   const { addUser, deleteUser } = userActions;
   const navigate = useNavigate();
+  const location = useLocation();
   const { paths } = useRoutes();
 
   const { data, isFetching } = useGetMeQuery();
   const [refreshToken] = useRefreshTokenMutation();
   const [logoutMutation] = useLogoutMutation();
 
+  // user из стора — запасной источник
+  const currentUser = useAppSelector((s) => s.user?.currentUser);
+
   // setTimeout id
   const refreshTimeoutRef = useRef<number | null>(null);
+  const redirectedRef = useRef(false);
 
   const clearRefreshTimeout = () => {
     if (refreshTimeoutRef.current) {
@@ -201,6 +238,32 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [status]);
 
+  // --- АНКЕТА: проверка и автопереход ---
+  useEffect(() => {
+    if (redirectedRef.current) return;
+    if (status !== AuthStatus.Authenticated) return;
+
+    // ждём, пока прилетит хоть какой-то user (из запроса или стора)
+    const user = (data as any) || currentUser;
+    if (!user) return;
+
+    const path = location.pathname;
+    if (NEVER_REDIRECT.has(path)) return;
+
+    const needsOnboarding = !isQuestionnaireCompleted(user);
+    const pendingCheck = sessionStorage.getItem('pending_questionnaire_check');
+
+    // редиректим сразу после логина (флажок) ИЛИ если юзер идёт на главную/в профиль
+    if (
+      needsOnboarding &&
+      (pendingCheck === '1' || path === '/' || path.startsWith('/user'))
+    ) {
+      redirectedRef.current = true;
+      sessionStorage.removeItem('pending_questionnaire_check');
+      navigate('/questionnaire', { replace: true });
+    }
+  }, [status, data, currentUser, location.pathname, navigate]);
+
   const value = useMemo<AuthContextProps>(
     () => ({
       initializing: status === AuthStatus.Initializing || isFetching,
@@ -213,6 +276,7 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         } catch {}
         localStorage.removeItem('access_token');
         localStorage.removeItem('token_type');
+        sessionStorage.removeItem('pending_questionnaire_check');
         dispatch(deleteUser());
         setStatus(AuthStatus.Unauthenticated);
         clearRefreshTimeout();

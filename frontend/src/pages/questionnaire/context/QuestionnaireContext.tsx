@@ -1,50 +1,73 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
-type Experience = { name: string; level: string };
-type QuestionnaireData = {
-  education: { institution: string; degree: string };
-  experience: Experience[];
-  about: string;
-  skills: string[];
-  orientation: string;
-  goals: string;
+type EduItem = {
+  institution: string;   // direction на бэке
+  degree: string;        // type на бэке
+  start?: string | null; // ISO (NOT NULL на бэке - гарантируем при отправке)
+  end?: string | null;   // ISO | null
 };
 
-type QuestionnaireContextType = {
+type Level = 'Intern' | 'Junior' | 'Middle' | 'Senior' | 'Lead';
+type ExpItem = {
+  name: string;
+  level: Level;
+  description?: string | null;
+  start?: string | null; // ISO (NOT NULL на бэке - гарантируем при отправке)
+  end?: string | null;   // ISO | null
+};
+
+export type QuestionnaireData = {
+  // ранее существовавшие поля
+  about?: string;
+  orientation?: string;
+  skills: string[];
+  goals: string; // "id1||id2"
+
+  // добавили поддержу множественных списков
+  educationList: EduItem[];
+  experienceList: ExpItem[];
+
+  // для совместимости со старой формой (не используем напрямую)
+  education?: { institution?: string; degree?: string };
+  experience?: any[];
+};
+
+type Ctx = {
   data: QuestionnaireData;
-  updateData: (newData: Partial<QuestionnaireData>) => void;
+  updateData: (patch: Partial<QuestionnaireData>) => void;
   reset: () => void;
 };
 
-const defaultData: QuestionnaireData = {
-  education: { institution: "", degree: "" },
-  experience: [],
-  about: "",
+const QuestionnaireContext = createContext<Ctx>({} as Ctx);
+
+const initialState: QuestionnaireData = {
+  about: '',
+  orientation: '',
   skills: [],
-  orientation: "",
-  goals: "",
+  goals: '',
+  educationList: [],
+  experienceList: [],
+  education: { institution: '', degree: '' },
+  experience: [],
 };
 
-const QuestionnaireContext = createContext<QuestionnaireContextType | null>(null);
+export function QuestionnaireProvider({ children }: { children: ReactNode }) {
+  const [data, setData] = useState<QuestionnaireData>(initialState);
 
-export const useQuestionnaire = () => {
-  const context = useContext(QuestionnaireContext);
-  if (!context) throw new Error("useQuestionnaire must be used within Provider");
-  return context;
-};
+  const updateData = (patch: Partial<QuestionnaireData>) =>
+    setData((prev) => ({ ...prev, ...patch }));
 
-export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => {
-  const [data, setData] = useState<QuestionnaireData>(defaultData);
+  const reset = () => setData(initialState);
 
-  const updateData = (newData: Partial<QuestionnaireData>) => {
-    setData((prev) => ({ ...prev, ...newData }));
-  };
-
-  const reset = () => setData(defaultData);
+  const value = useMemo(() => ({ data, updateData, reset }), [data]);
 
   return (
-    <QuestionnaireContext.Provider value={{ data, updateData, reset }}>
+    <QuestionnaireContext.Provider value={value}>
       {children}
     </QuestionnaireContext.Provider>
   );
-};
+}
+
+export function useQuestionnaire() {
+  return useContext(QuestionnaireContext);
+}

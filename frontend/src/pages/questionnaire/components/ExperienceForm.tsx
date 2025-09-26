@@ -1,116 +1,113 @@
-import { useEffect, useState } from 'react';
-import {
-  TextInput,
-  Select,
-  Button,
-  Textarea,
-  Box,
-  Stack,
-  Group,
-  Paper,
-  Title,
-  Text,
-  Autocomplete,
-} from '@mantine/core';
+import { useEffect } from 'react';
+import { Button, Group, Paper, Stack, Text, TextInput, Textarea, Select } from '@mantine/core';
+import { AppDateField } from '@/components/date-time-picker/AppDateField';
 import { FormWrapper } from '@/components/form-wrapper/FormWrapper';
-import { useQuestionnaire } from './../context/QuestionnaireContext';
+import { useQuestionnaire } from '../context/QuestionnaireContext';
 
-const MOCK_PROFESSIONS = [
-  'Frontend Developer',
-  'Backend Developer',
-  'Fullstack Developer',
-  'DevOps Engineer',
-  'QA Engineer',
-  'Data Scientist',
-  'UI/UX Designer',
-  'Project Manager',
-  'Mobile Developer',
-  'Business Analyst',
-];
+const LEVELS = ['Intern', 'Junior', 'Middle', 'Senior', 'Lead'] as const;
+type Level = (typeof LEVELS)[number];
 
-export const ExperienceForm = () => {
+type ExpItem = {
+  name: string;          // должность/позиция
+  level: Level;          // грейд
+  description?: string | null;
+  start?: string | null; // ISO (NOT NULL для бэка — гарантируем при отправке)
+  end?: string | null;   // ISO | null
+};
+
+export default function ExperienceForm() {
   const { data, updateData } = useQuestionnaire();
-  const [profession, setProfession] = useState('');
-  const [level, setLevel] = useState('');
-  const [about, setAbout] = useState(data.about || '');
-  const [experiences, setExperiences] = useState(data.experience || []);
 
-  const handleAdd = () => {
-    if (profession && level) {
-      setExperiences((prev) => [...prev, { name: profession, level }]);
-      setProfession('');
-      setLevel('');
-    }
-  };
-
-  const handleRemove = (index: number) => {
-    setExperiences((prev) => prev.filter((_, i) => i !== index));
-  };
+  const list: ExpItem[] = Array.isArray((data as any).experienceList)
+    ? (data as any).experienceList
+    : Array.isArray(data.experience) && data.experience.length
+      ? data.experience.map((e: any) => ({ ...e, start: null, end: null }))
+      : [];
 
   useEffect(() => {
-    updateData({ experience: experiences, about });
-  }, [experiences, about]);
+    // нормализуем в массив и обнуляем старое поле совместимости
+    updateData({ experienceList: list, experience: [] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addRow = () => {
+    updateData({ experienceList: [...list, { name: '', level: 'Junior', description: '', start: null, end: null }] });
+  };
+
+  const removeRow = (idx: number) => {
+    const next = list.slice();
+    next.splice(idx, 1);
+    updateData({ experienceList: next });
+  };
+
+  const patch = (idx: number, patch: Partial<ExpItem>) => {
+    const next = list.slice();
+    next[idx] = { ...next[idx], ...patch };
+    updateData({ experienceList: next });
+  };
 
   return (
     <FormWrapper formId="experience">
-      <Stack>
-        <Title order={2}>Профессиональный опыт в IT</Title>
+      <Stack gap="md">
+        <Group justify="space-between">
+          <Text fw={600}>Опыт работы</Text>
+          <Button size="xs" onClick={addRow}>Добавить</Button>
+        </Group>
 
-        <Autocomplete
-          label="IT профессия"
-          placeholder="Введите IT профессию"
-          value={profession}
-          data={MOCK_PROFESSIONS}
-          onChange={(value) => setProfession(value)}
-        />
-
-        <Select
-          label="Уровень"
-          placeholder="Выберите уровень"
-          data={["Intern", "Junior", "Middle", "Senior", "Lead"]}
-          value={level}
-          onChange={(v) => setLevel(v || '')}
-        />
-
-        <Button onClick={handleAdd} color="teal" variant="filled">
-          Добавить профессию
-        </Button>
-
-        {experiences.length > 0 && (
-          <Box>
-            <Text fw={600} mt="md">Добавленный опыт:</Text>
-            {experiences.map((exp, index) => (
-              <Paper key={index} withBorder p="sm" mt="xs" radius="md">
-                <Group justify="space-between">
-                  <div>
-                    <Text><strong>Профессия:</strong> {exp.name}</Text>
-                    <Text><strong>Уровень:</strong> {exp.level}</Text>
-                  </div>
-                  <Button
-                    size="xs"
-                    color="red"
-                    variant="subtle"
-                    onClick={() => handleRemove(index)}
-                  >
-                    Удалить
-                  </Button>
-                </Group>
-              </Paper>
-            ))}
-          </Box>
+        {list.length === 0 && (
+          <Paper withBorder p="md">
+            <Text c="dimmed">Пока пусто. Нажмите «Добавить», чтобы создать запись об опыте.</Text>
+          </Paper>
         )}
 
-        <Textarea
-          label="О себе"
-          placeholder="Расскажите о своем опыте и навыках"
-          value={about}
-          onChange={(e) => setAbout(e.currentTarget.value)}
-          autosize
-          minRows={3}
-        />
+        {list.map((row, i) => (
+          <Paper key={i} withBorder p="md" radius="md">
+            <Stack gap="sm">
+              <Group grow>
+                <TextInput
+                  label="Название роли / должности"
+                  placeholder="Frontend Developer"
+                  value={row.name}
+                  onChange={(e) => patch(i, { name: e.currentTarget.value })}
+                />
+                <Select
+                  label="Уровень"
+                  data={LEVELS.map((l) => ({ value: l, label: l }))}
+                  value={row.level}
+                  onChange={(v) => patch(i, { level: (v as Level) ?? 'Junior' })}
+                />
+              </Group>
+              <Textarea
+                label="Описание (необязательно)"
+                autosize
+                minRows={2}
+                value={row.description ?? ''}
+                onChange={(e) => patch(i, { description: e.currentTarget.value })}
+              />
+              <Group grow>
+                <AppDateField
+                  kind="date"
+                  label="Дата начала"
+                  placeholder="Выберите дату"
+                  value={row.start ? new Date(row.start) : null}
+                  onChange={(d: Date | null) => patch(i, { start: d ? new Date(d).toISOString() : null })}
+                  required
+                />
+                <AppDateField
+                  kind="date"
+                  label="Дата окончания"
+                  placeholder="Если ещё работаете — оставьте пустым"
+                  value={row.end ? new Date(row.end) : null}
+                  onChange={(d: Date | null) => patch(i, { end: d ? new Date(d).toISOString() : null })}
+                />
+              </Group>
+              <Group justify="flex-end">
+                <Button variant="light" color="red" onClick={() => removeRow(i)}>Удалить</Button>
+              </Group>
+            </Stack>
+          </Paper>
+        ))}
       </Stack>
     </FormWrapper>
   );
-};
-
-export default ExperienceForm;
+}

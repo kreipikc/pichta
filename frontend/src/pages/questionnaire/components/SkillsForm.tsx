@@ -1,156 +1,83 @@
-import { useEffect, useState } from 'react';
-import {
-  Title,
-  TextInput,
-  Stack,
-  Text,
-  Badge,
-  Group,
-  Button,
-  Box,
-  SimpleGrid,
-} from '@mantine/core';
+import { useEffect, useMemo, useState } from 'react';
+import { Title, TextInput, Stack, Text, Button, Box, SimpleGrid, Group, Badge } from '@mantine/core';
 import { FormWrapper } from '@/components/form-wrapper/FormWrapper';
-import {
-  IconBrandJavascript,
-  IconBrandTypescript,
-  IconBrandReact,
-  IconBrandNodejs,
-  IconBrandPython,
-  IconBrandDocker,
-  IconDatabase,
-  IconBrandGraphql,
-  IconBrandGit,
-  IconCode,
-} from '@tabler/icons-react';
 import { useQuestionnaire } from '../context/QuestionnaireContext';
-
-// Иконки к предопределённым навыкам
-const skillIcons: Record<string, JSX.Element> = {
-  'JavaScript': <IconBrandJavascript size={16} />,
-  'TypeScript': <IconBrandTypescript size={16} />,
-  'React': <IconBrandReact size={16} />,
-  'Node.js': <IconBrandNodejs size={16} />,
-  'Python': <IconBrandPython size={16} />,
-  'SQL': <IconDatabase size={16} />,
-  'PostgreSQL': <IconDatabase size={16} />,
-  'Docker': <IconBrandDocker size={16} />,
-  'Next.js': <IconCode size={16} />,
-  'GraphQL': <IconBrandGraphql size={16} />,
-  'Git': <IconBrandGit size={16} />,
-  'Java': <IconCode size={16} />,
-};
-
-const predefinedSkills = Object.keys(skillIcons);
+import { useGetAllSkillsQuery } from '@/app/redux/api/skill.api';
 
 const SkillsForm = () => {
   const { data, updateData } = useQuestionnaire();
+  const { data: skillsDict } = useGetAllSkillsQuery();
+
+  const dictByName = useMemo(() => {
+    const map = new Map<string, number>();
+    (skillsDict ?? []).forEach((s) => map.set(s.name, s.id));
+    return map;
+  }, [skillsDict]);
+
   const [input, setInput] = useState('');
   const [skills, setSkills] = useState<string[]>(data.skills || []);
-  const [customSkills, setCustomSkills] = useState<string[]>(
-    data.skills.filter((s) => !predefinedSkills.includes(s))
-  );
 
-  const allSkills = [...new Set([...predefinedSkills, ...customSkills])];
-  const filteredSkills = allSkills.filter((skill) =>
-    skill.toLowerCase().includes(input.toLowerCase())
-  );
-
-  const handleToggleSkill = (skill: string) => {
-    setSkills((prev) =>
-      prev.includes(skill)
-        ? prev.filter((s) => s !== skill)
-        : [...prev, skill]
-    );
-  };
-
-  const handleAddCustomSkill = () => {
-    const trimmed = input.trim();
-    if (!trimmed) return;
-    if (!allSkills.includes(trimmed)) {
-      setCustomSkills((prev) => [...prev, trimmed]);
-    }
-    if (!skills.includes(trimmed)) {
-      setSkills((prev) => [...prev, trimmed]);
-    }
-    setInput('');
-  };
+  const allSkillNames = useMemo(() => Array.from(dictByName.keys()), [dictByName]);
+  const merged = useMemo(() => Array.from(new Set([...allSkillNames, ...skills.filter(s => !allSkillNames.includes(s))])), [allSkillNames, skills]);
+  const filtered = merged.filter((s) => s.toLowerCase().includes(input.toLowerCase()));
 
   useEffect(() => {
     updateData({ skills });
   }, [skills]);
 
+  const toggleSkill = (name: string) => {
+    setSkills((prev) => (prev.includes(name) ? prev.filter((v) => v !== name) : [...prev, name]));
+  };
+
+  const addCustom = () => {
+    const v = input.trim();
+    if (!v) return;
+    if (!skills.includes(v)) setSkills((p) => [...p, v]);
+    setInput('');
+  };
+
   return (
     <FormWrapper formId="skills">
-      <Stack>
-        <Title order={2}>Диагностика IT навыков</Title>
-
+      <Stack gap="sm">
+        <Title order={2}>Навыки</Title>
         <Text fw={500}>Поиск IT навыков</Text>
         <TextInput
           placeholder="Начните вводить IT навык"
           value={input}
           onChange={(e) => setInput(e.currentTarget.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAddCustomSkill()}
+          onKeyDown={(e) => e.key === 'Enter' && addCustom()}
         />
-
         <Text fw={500}>Выберите ваши IT навыки:</Text>
         <SimpleGrid cols={3} spacing="sm">
-          {filteredSkills.map((skill) => (
+          {filtered.map((name) => (
             <Button
-              key={skill}
-              variant={skills.includes(skill) ? 'filled' : 'default'}
-              color={skills.includes(skill) ? 'teal' : 'gray'}
-              onClick={() => handleToggleSkill(skill)}
+              key={name}
+              variant={skills.includes(name) ? 'filled' : 'default'}
+              onClick={() => toggleSkill(name)}
               radius="md"
-              leftSection={skillIcons[skill] || <IconCode size={16} />}
             >
-              {skill}
+              {name}
             </Button>
           ))}
-
-          {input.trim() &&
-            !allSkills.some(
-              (s) => s.toLowerCase() === input.trim().toLowerCase()
-            ) && (
-              <Button
-                color="green"
-                variant="light"
-                radius="md"
-                onClick={handleAddCustomSkill}
-              >
-                + Добавить "{input.trim()}"
-              </Button>
-            )}
+          {input.trim() && !merged.some((s) => s.toLowerCase() === input.trim().toLowerCase()) && (
+            <Button variant="light" onClick={addCustom}>
+              Добавить «{input.trim()}»
+            </Button>
+          )}
         </SimpleGrid>
 
         {skills.length > 0 && (
           <Box mt="md">
-            <Text fw={500} mb={4}>
-              Выбранные навыки:
-            </Text>
-            <Group gap="xs">
-              {skills.map((skill) => (
+            <Text fw={500}>Вы выбрали:</Text>
+            <Group gap="xs" mt="xs">
+              {skills.map((s) => (
                 <Badge
-                  key={skill}
-                  color="teal"
-                  variant="filled"
-                  radius="xl"
-                  rightSection={
-                    <span
-                      style={{
-                        cursor: 'pointer',
-                        marginLeft: 8,
-                        fontWeight: 700,
-                      }}
-                      onClick={() =>
-                        setSkills((prev) => prev.filter((s) => s !== skill))
-                      }
-                    >
-                      ×
-                    </span>
-                  }
+                  key={s}
+                  radius="sm"
+                  onClick={() => toggleSkill(s)}
+                  style={{ cursor: 'pointer' }}
                 >
-                  {skill}
+                  {s}
                 </Badge>
               ))}
             </Group>

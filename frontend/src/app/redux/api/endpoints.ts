@@ -18,7 +18,8 @@ export const USER_DELETE_PATH = `${USER_PREFIX}/delete` // + /{user_id}
 
 // For Myself
 export const ME_PREFIX = 'me'
-export const ME_WANTED_PROFESSION_ADD_PATH = `${ME_PREFIX}/wanted_profession/add`
+// Backend route is /me/wanted_prof/add
+export const ME_WANTED_PROFESSION_ADD_PATH = `${ME_PREFIX}/wanted_prof/add`
 
 // Education
 export const EDUC_PREFIX = 'educ'

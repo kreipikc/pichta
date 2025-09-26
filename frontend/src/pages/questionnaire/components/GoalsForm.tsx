@@ -1,74 +1,57 @@
-import { useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  Grid,
-  Stack,
-  Title,
-  Text,
-  Paper,
-} from "@mantine/core";
+import { useEffect, useMemo, useState } from "react";
+import { Grid, Stack, Title, Text, Paper, Loader, Center } from "@mantine/core";
 import { FormWrapper } from "@/components/form-wrapper/FormWrapper";
 import { useQuestionnaire } from "../context/QuestionnaireContext";
-
-// Ключи и названия профессий
-const goalMap: Record<string, string> = {
-  "1c": "1C Developer",
-  "c#": "C# Developer",
-  "c++": "C++ Developer",
-  "ios": "iOS Developer",
-  "java": "Java Developer",
-  "javascript": "JavaScript разработчик",
-  "oracle": "Oracle Developer",
-  "php": "PHP Developer",
-  "python": "Python Developer",
-  "sql": "SQL Developer",
-  "бизнес": "Бизнес-аналитик",
-  "маркетинговый": "Маркетинговый аналитик",
-  "системный": "Системный аналитик",
-  "финансовый": "Финансовый аналитик",
-};
+import { useGetAllProfessionQuery } from "@/app/redux/api/profession.api";
 
 const GoalsForm = () => {
   const { data, updateData } = useQuestionnaire();
-  const [selected, setSelected] = useState<string[]>(
-    data.goals ? data.goals.split("||") : []
-  );
+  const { data: professions, isLoading } = useGetAllProfessionQuery();
 
-  const handleToggle = (key: string) => {
-    setSelected((prev) =>
-      prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]
-    );
-  };
+  // keep legacy storage: ids joined by `||`
+  const initiallySelected = useMemo(() => {
+    if (!data.goals) return [];
+    return data.goals.split("||").filter(Boolean).map((x) => Number(x));
+  }, [data.goals]);
+
+  const [selected, setSelected] = useState<number[]>(initiallySelected);
 
   useEffect(() => {
     updateData({ goals: selected.join("||") });
   }, [selected]);
+
+  if (isLoading) {
+    return (
+      <FormWrapper formId="goals">
+        <Center><Loader /></Center>
+      </FormWrapper>
+    );
+  }
 
   return (
     <FormWrapper formId="goals">
       <Stack gap="md">
         <Title order={2}>Выберите желаемые профессии</Title>
         <Grid gutter="sm">
-          {Object.entries(goalMap).map(([key, title]) => (
-            <Grid.Col span={6} key={key}>
+          {(professions ?? []).map((prof) => (
+            <Grid.Col span={6} key={prof.id}>
               <Paper
                 p="sm"
                 withBorder
                 radius="md"
-                onClick={() => handleToggle(key)}
+                onClick={() =>
+                  setSelected((prev) =>
+                    prev.includes(prof.id) ? prev.filter((v) => v !== prof.id) : [...prev, prof.id]
+                  )
+                }
                 style={{
                   cursor: "pointer",
-                  backgroundColor: selected.includes(key)
-                    ? "var(--mantine-color-teal-light)"
-                    : "white",
-                  borderColor: selected.includes(key)
-                    ? "var(--mantine-color-teal-5)"
-                    : undefined,
+                  borderColor: selected.includes(prof.id) ? "var(--mantine-color-teal-6)" : undefined,
+                  background: selected.includes(prof.id) ? "var(--mantine-color-teal-0)" : undefined,
                   transition: "all 0.2s",
                 }}
               >
-                <Text>{title}</Text>
+                <Text>{prof.name}</Text>
               </Paper>
             </Grid.Col>
           ))}
