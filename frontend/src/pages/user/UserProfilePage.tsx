@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Tabs, Loader, Group } from "@mantine/core";
+import { Tabs } from "@mantine/core";
 import { IconUser, IconBriefcase, IconListCheck, IconSettings } from "@tabler/icons-react";
-import { useGetMeQuery } from "@/app/redux/api/auth.api";
+import { useAppSelector } from "@/hooks/useAppSelector";
 
 import ProfileHeader from "./components/ProfileHeader";
 import SkillsSection from "./components/SkillsSection";
@@ -11,33 +11,12 @@ import SettingsSection from "./components/SettingsSection";
 
 export const UserProfilePage = () => {
   const [activeTab, setActiveTab] = useState<string | null>("profile");
-  const { data: user, isLoading, isFetching, isError } = useGetMeQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
-  });
+  const user = useAppSelector((s) => s.user.currentUser);
 
-  if (isLoading || isFetching) {
-    return (
-      <Group justify="center" my="xl">
-        <Loader />
-      </Group>
-    );
-  }
-
-  if (isError || !user) {
-    return (
-      <div className="user-profile-page">
-        <div className="user-profile-container">
-          <h1 className="user-profile-title">Профиль пользователя</h1>
-          <p>Не удалось загрузить пользователя.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!user) return null; // пока AuthProvider подтягивает /me
 
   return (
-    <div className="user-profile-page">
+    <div className="user-profile">
       <div className="user-profile-container">
         <h1 className="user-profile-title">Профиль пользователя</h1>
 
@@ -59,17 +38,14 @@ export const UserProfilePage = () => {
           </Tabs.List>
 
           <Tabs.Panel value="profile">
-            <EducationSection userId={user.id} key={`edu-${user.id}`} />
+            <EducationSection userId={user.id} />
           </Tabs.Panel>
-
           <Tabs.Panel value="skills">
-            <SkillsSection userId={user.id} key={`skills-${user.id}`} />
+            <SkillsSection userId={user.id} />
           </Tabs.Panel>
-
           <Tabs.Panel value="tasks">
-            <TasksSection userId={user.id} key={`tasks-${user.id}`} />
+            <TasksSection userId={user.id} />
           </Tabs.Panel>
-
           <Tabs.Panel value="settings">
             <SettingsSection />
           </Tabs.Panel>

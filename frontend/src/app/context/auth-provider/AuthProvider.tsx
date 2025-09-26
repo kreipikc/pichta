@@ -1,4 +1,13 @@
-import { createContext, FC, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  FC,
+  ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   useGetMeQuery,
@@ -6,76 +15,60 @@ import {
   useLogoutMutation,
   authApi,
 } from '@/app/redux/api/auth.api';
-import { userActions } from '@/app/redux/store/reducers/userSlice';
 import { useAppDispatch } from '@/hooks/useAppDispatch';
 import { useAppSelector } from '@/hooks/useAppSelector';
+import { userActions } from '@/app/redux/store/reducers/userSlice';
 import { useRoutes } from '@/hooks/useRoutes';
 import type { UserInfoI } from '@/shared/types/api/UserI';
+import { useGetWantedProfessionsByUserIdQuery } from '@/app/redux/api/me.api';
+
+// === Тайминги рефреша ===
+const EXPIRE_MINUTES_RAW = String(import.meta.env.VITE_ACCESS_TOKEN_EXPIRE_MINUTES ?? '15').trim();
+const ACCESS_EXPIRE_MIN = Number.isFinite(+EXPIRE_MINUTES_RAW) && +EXPIRE_MINUTES_RAW > 0
+  ? +EXPIRE_MINUTES_RAW
+  : 15;
+
+const LEEWAY_MS = 60_000;     // 1 минута до истечения
+const MIN_TIMEOUT_MS = 15_000; // минимум на всякий
 
 enum AuthStatus {
-  Initializing = 'Initializing',
-  Authenticated = 'Authenticated',
-  Unauthenticated = 'Unauthenticated',
+  Initializing = 'initializing',
+  Authenticated = 'authenticated',
+  Unauthenticated = 'unauthenticated',
 }
 
-interface AuthContextProps {
+type AuthContextProps = {
   initializing: boolean;
   authenticated: boolean;
   unauthenticated: boolean;
   login: () => void;
   logout: () => Promise<void>;
-  fetchUser: () => Promise<void>;
+  fetchUser: () => Promise<UserInfoI | null>;
   setInitializing: () => void;
   auth: () => void;
   refresh: () => Promise<void>;
-}
+};
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 
-// === env fallback ===
-const EXPIRE_MINUTES_RAW = import.meta.env.VITE_ACCESS_TOKEN_EXPIRE_MINUTES ?? '15';
-const EXPIRE_MINUTES = Number.isFinite(Number(EXPIRE_MINUTES_RAW)) ? Number(EXPIRE_MINUTES_RAW) : 15;
-const LEEWAY_MS = 60_000; // запас 1 минута
-const MIN_TIMEOUT_MS = 30_000; // минимум 30с
-
+// utils
 function parseJwtExpMs(token?: string | null): number | null {
   if (!token) return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
   try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    if (!payload?.exp) return null;
-    return payload.exp * 1000;
+    let base = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (base.length % 4) base += '=';
+    const payload = JSON.parse(atob(base));
+    const expSec = payload?.exp;
+    if (!expSec || !Number.isFinite(expSec)) return null;
+    return expSec * 1000;
   } catch {
     return null;
   }
 }
 
-// --- анкета: правила завершённости ---
-function isQuestionnaireCompleted(user: any): boolean {
-  if (!user) return false;
-
-  // 1) "О себе"
-  const aboutOk = typeof user.about_me === 'string' && user.about_me.trim().length > 0;
-
-  // 2) Навыки — разные варианты с сервера/стора
-  const skillsCount =
-    (Array.isArray(user.skills) ? user.skills.length : 0) ||
-    (typeof user.skills_count === 'number' ? user.skills_count : 0) ||
-    0;
-
-  // 3) «Желаемые профессии» — разные варианты
-  const wantedCount =
-    (Array.isArray(user.wanted_professions) ? user.wanted_professions.length : 0) ||
-    (Array.isArray(user.wanted) ? user.wanted.length : 0) ||
-    (typeof user.wanted_count === 'number' ? user.wanted_count : 0) ||
-    0;
-
-  // Образование/опыт считаем опционально завершёнными (добавьте проверки при необходимости)
-  return aboutOk && skillsCount > 0 && wantedCount > 0;
-}
-
-// Куда не редиректим из-под онбординга
+// страницы, куда не редиректим из онбординга
 const NEVER_REDIRECT = new Set<string>([
   '/questionnaire',
   '/auth/login',
@@ -83,25 +76,60 @@ const NEVER_REDIRECT = new Set<string>([
   '/auth/restore',
 ]);
 
-const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [status, setStatus] = useState<AuthStatus>(AuthStatus.Initializing);
+
   const dispatch = useAppDispatch();
   const { addUser, deleteUser } = userActions;
+
   const navigate = useNavigate();
   const location = useLocation();
   const { paths } = useRoutes();
 
-  const { data, isFetching } = useGetMeQuery();
-  const [refreshToken] = useRefreshTokenMutation();
-  const [logoutMutation] = useLogoutMutation();
-
-  // user из стора — запасной источник
-  const currentUser = useAppSelector((s) => s.user?.currentUser);
-
-  // setTimeout id
   const refreshTimeoutRef = useRef<number | null>(null);
   const redirectedRef = useRef(false);
 
+  const [refreshToken] = useRefreshTokenMutation();
+  const [logoutMutation] = useLogoutMutation();
+
+  const currentUser = useAppSelector((s) => s.user.currentUser);
+
+  // === единый /user/me ===
+  const hasToken = !!localStorage.getItem('access_token');
+  const shouldQueryMe = status === AuthStatus.Authenticated && hasToken;
+
+  const {
+    data: me,
+    isFetching: isMeFetching,
+    refetch,
+  } = useGetMeQuery(undefined, {
+    skip: !shouldQueryMe,
+    refetchOnMountOrArgChange: false,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+    pollingInterval: 0,
+  });
+
+  // id пользователя
+  const userId = (me?.id ?? currentUser?.id) as number | undefined;
+
+  // === wanted professions для онбординга ===
+  const {
+    data: wantedProfs,
+    isFetching: isWantedFetching,
+  } = useGetWantedProfessionsByUserIdQuery(userId!, {
+    skip: !userId,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+    pollingInterval: 0,
+  });
+
+  // Пишем me в стор
+  useEffect(() => {
+    if (me) dispatch(addUser(me));
+  }, [me, dispatch, addUser]);
+
+  // таймеры
   const clearRefreshTimeout = () => {
     if (refreshTimeoutRef.current) {
       window.clearTimeout(refreshTimeoutRef.current);
@@ -113,194 +141,165 @@ const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     clearRefreshTimeout();
 
     const accessToken = localStorage.getItem('access_token');
+    const now = Date.now();
     const expMs = parseJwtExpMs(accessToken);
 
-    let delay = MIN_TIMEOUT_MS;
-    const now = Date.now();
-
-    if (expMs && expMs > now) {
-      delay = Math.max(expMs - now - LEEWAY_MS, MIN_TIMEOUT_MS);
+    let delay: number;
+    if (typeof expMs === 'number' && expMs > now) {
+      delay = Math.max(MIN_TIMEOUT_MS, expMs - now - LEEWAY_MS);
     } else {
-      delay = Math.max(EXPIRE_MINUTES * 60_000 - LEEWAY_MS, MIN_TIMEOUT_MS);
+      delay = Math.max(MIN_TIMEOUT_MS, ACCESS_EXPIRE_MIN * 60_000 - LEEWAY_MS);
     }
+    if (!Number.isFinite(delay) || delay < MIN_TIMEOUT_MS) delay = MIN_TIMEOUT_MS;
 
     refreshTimeoutRef.current = window.setTimeout(async () => {
-      await doRefresh();
-    }, delay);
-  };
-
-  const doRefresh = async () => {
-    try {
-      await refreshToken().unwrap();
+      try {
+        await refreshToken().unwrap();
+      } catch {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('token_type');
+        setStatus(AuthStatus.Unauthenticated);
+        dispatch(authApi.util.resetApiState());
+        dispatch(deleteUser());
+        return;
+      }
       scheduleNextRefresh();
-    } catch {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('token_type');
-      dispatch(deleteUser());
-      setStatus(AuthStatus.Unauthenticated);
-      clearRefreshTimeout();
-    }
+    }, delay) as unknown as number;
   };
 
-  const getMeManually = async (): Promise<UserInfoI | null> => {
-    try {
-      const result = await dispatch(
-        authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true })
-      ).unwrap();
-      return result as UserInfoI;
-    } catch {
-      return null;
-    }
-  };
-
-  // Инициализация
+  // инициализация
   useEffect(() => {
     const init = async () => {
-      // нормализация формата токенов от бэка
-      const pickTokens = (t: any) => {
-        if (!t) return null;
-        const access =
-          t.access_token ?? t.accessToken ?? t.token ?? t.access ?? null;
-        const type = t.token_type ?? t.tokenType ?? 'Bearer';
-        return access ? { access_token: String(access), token_type: String(type) } : null;
-      };
+      const token = localStorage.getItem('access_token');
+      const type = localStorage.getItem('token_type');
 
-      const saveTokens = (t: { access_token: string; token_type: string } | null) => {
-        if (!t) return;
-        localStorage.setItem('access_token', t.access_token);
-        localStorage.setItem('token_type', t.token_type);
-      };
+      if (token && type) {
+        setStatus(AuthStatus.Authenticated);
+        scheduleNextRefresh();
+        return;
+      }
 
       try {
-        const me = await getMeManually();
-        if (me) {
-          dispatch(addUser(me));
+        const refreshed: any = await refreshToken().unwrap().catch(() => null);
+        const access =
+          refreshed?.access_token ?? refreshed?.accessToken ?? refreshed?.token ?? null;
+        const tokenType = refreshed?.token_type ?? refreshed?.tokenType ?? 'Bearer';
+        if (access) {
+          localStorage.setItem('access_token', String(access));
+          localStorage.setItem('token_type', String(tokenType));
           setStatus(AuthStatus.Authenticated);
           scheduleNextRefresh();
           return;
         }
+      } catch { /* ignore */ }
 
-        const refreshedRaw = await refreshToken().unwrap().catch(() => null);
-        const refreshed = pickTokens(refreshedRaw);
-        if (refreshed) {
-          saveTokens(refreshed);
-
-          const meAfter = await getMeManually();
-          if (meAfter) {
-            dispatch(addUser(meAfter));
-            setStatus(AuthStatus.Authenticated);
-            scheduleNextRefresh();
-            return;
-          }
-        }
-        dispatch(deleteUser());
-        setStatus(AuthStatus.Unauthenticated);
-      } catch {
-        dispatch(deleteUser());
-        setStatus(AuthStatus.Unauthenticated);
-      }
+      setStatus(AuthStatus.Unauthenticated);
     };
+
     void init();
+    return () => clearRefreshTimeout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Синхронизация user из кэша useGetMeQuery
-  useEffect(() => {
-    if (data) {
-      dispatch(addUser(data as UserInfoI));
-    }
-  }, [data, dispatch, addUser]);
-
-  // Управляем таймером в зависимости от статуса
-  useEffect(() => {
-    if (status === AuthStatus.Authenticated) {
-      scheduleNextRefresh();
-    } else {
-      clearRefreshTimeout();
-    }
-    return () => clearRefreshTimeout();
-  }, [status]);
-
+  // мягкий рефреш при возврате вкладки (если < 1 мин)
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
       if (status !== AuthStatus.Authenticated) return;
 
-      const accessToken = localStorage.getItem('access_token');
-      const expMs = parseJwtExpMs(accessToken);
-      if (!expMs) return;
-
+      const expMs = parseJwtExpMs(localStorage.getItem('access_token'));
       const now = Date.now();
-      if (expMs - now < LEEWAY_MS * 2) {
-        void doRefresh();
+      if (expMs && expMs - now < LEEWAY_MS) {
+        void refreshToken();
+        scheduleNextRefresh();
       }
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [status]);
+  }, [status, refreshToken]);
 
-  // --- АНКЕТА: проверка и автопереход ---
+  // --- редирект в анкету: простое правило по wantedProfs ---
   useEffect(() => {
     if (redirectedRef.current) return;
     if (status !== AuthStatus.Authenticated) return;
 
-    // ждём, пока прилетит хоть какой-то user (из запроса или стора)
-    const user = (data as any) || currentUser;
-    if (!user) return;
+    // ждём окончания загрузки me и wanted
+    if (isMeFetching || isWantedFetching) return;
 
     const path = location.pathname;
     if (NEVER_REDIRECT.has(path)) return;
 
-    const needsOnboarding = !isQuestionnaireCompleted(user);
-    const pendingCheck = sessionStorage.getItem('pending_questionnaire_check');
+    const wantedCount = Array.isArray(wantedProfs) ? wantedProfs.length : 0;
+    const needsOnboarding = wantedCount === 0;
 
-    // редиректим сразу после логина (флажок) ИЛИ если юзер идёт на главную/в профиль
-    if (
-      needsOnboarding &&
-      (pendingCheck === '1' || path === '/' || path.startsWith('/user'))
-    ) {
+    if (needsOnboarding) {
       redirectedRef.current = true;
-      sessionStorage.removeItem('pending_questionnaire_check');
       navigate('/questionnaire', { replace: true });
     }
-  }, [status, data, currentUser, location.pathname, navigate]);
+  }, [
+    status,
+    isMeFetching,
+    isWantedFetching,
+    wantedProfs,
+    location.pathname,
+    navigate,
+  ]);
 
-  const value = useMemo<AuthContextProps>(
-    () => ({
-      initializing: status === AuthStatus.Initializing || isFetching,
-      authenticated: status === AuthStatus.Authenticated,
-      unauthenticated: status === AuthStatus.Unauthenticated,
-      login: () => navigate(paths.Auth),
-      logout: async () => {
-        try {
-          await logoutMutation().unwrap();
-        } catch {}
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('token_type');
-        sessionStorage.removeItem('pending_questionnaire_check');
-        dispatch(deleteUser());
-        setStatus(AuthStatus.Unauthenticated);
-        clearRefreshTimeout();
-        navigate(paths.Auth);
-      },
-      fetchUser: async () => {
-        const me = await getMeManually();
-        if (me) dispatch(addUser(me));
-      },
-      setInitializing: () => setStatus(AuthStatus.Initializing),
-      auth: () => {
-        setStatus(AuthStatus.Authenticated);
-        scheduleNextRefresh();
-      },
-      refresh: async () => {
-        await doRefresh();
-      },
-    }),
-    [status, isFetching, navigate, paths.Auth, logoutMutation, dispatch, deleteUser]
-  );
+  // публичное API
+  const value = useMemo<AuthContextProps>(() => ({
+    initializing: status === AuthStatus.Initializing || isMeFetching || isWantedFetching,
+    authenticated: status === AuthStatus.Authenticated,
+    unauthenticated: status === AuthStatus.Unauthenticated,
+
+    login: () => navigate(paths.Auth),
+
+    logout: async () => {
+      try { await logoutMutation().unwrap(); } catch {}
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_type');
+
+      dispatch(authApi.util.resetApiState());
+      dispatch(deleteUser());
+
+      setStatus(AuthStatus.Unauthenticated);
+      clearRefreshTimeout();
+      navigate(paths.Auth);
+    },
+
+    fetchUser: async () => {
+      try {
+        const res = await refetch().unwrap();
+        if (res) dispatch(addUser(res));
+        return (res ?? null) as UserInfoI | null;
+      } catch {
+        return null;
+      }
+    },
+
+    setInitializing: () => setStatus(AuthStatus.Initializing),
+
+    auth: () => {
+      setStatus(AuthStatus.Authenticated);
+      scheduleNextRefresh();
+      void refetch();
+    },
+
+    refresh: async () => { await refreshToken().unwrap().catch(() => {}); },
+  }), [
+    status,
+    isMeFetching,
+    isWantedFetching,
+    navigate,
+    paths.Auth,
+    logoutMutation,
+    dispatch,
+    deleteUser,
+    addUser,
+    refetch,
+    refreshToken,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-const useAuth = (): AuthContextProps => useContext(AuthContext);
-
-export { AuthProvider, AuthContext, useAuth };
+export const useAuth = (): AuthContextProps => useContext(AuthContext);

@@ -33,7 +33,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
   // user id
   const { data: me } = useGetMeQuery();
   const userFromStore = useAppSelector((s) => s.user?.currentUser);
-  const userId: number | undefined = (me as any)?.id ?? (userFromStore as any)?.id;
+  const userId: number | undefined = (userFromStore as any)?.id;
 
   // словари
   const { data: skillsDict } = useGetAllSkillsQuery();
