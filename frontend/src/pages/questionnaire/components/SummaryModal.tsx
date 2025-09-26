@@ -33,7 +33,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
   // user id
   const { data: me } = useGetMeQuery();
   const userFromStore = useAppSelector((s) => s.user?.currentUser);
-  const userId: number | undefined = (userFromStore as any)?.id;
+  const userId: number | undefined = (userFromStore as any)?.id ?? (me as any)?.id;
 
   // словари
   const { data: skillsDict } = useGetAllSkillsQuery();
@@ -74,9 +74,17 @@ export default function SummaryModal({ opened, onClose }: Props) {
     return `${highest.level} ${highest.name}`;
   }, [experienceList]);
 
+  const isWantedValid = selectedWantedIds.length > 0;
+
   const handleConfirm = async () => {
     if (!userId) {
       onClose();
+      return;
+    }
+
+    // Жёсткое требование: минимум одна желаемая профессия
+    if (!isWantedValid) {
+      // мягко — просто блокируем, без уведомлений
       return;
     }
 
@@ -97,22 +105,20 @@ export default function SummaryModal({ opened, onClose }: Props) {
     // 2) Experience — self endpoint; start_time обязателен
     for (const exp of experienceList) {
       if (!exp?.name) continue;
-      const startIso = exp.start ?? dayjs().startOf('day').toISOString(); // safety fallback
+      const startIso = exp.start ?? dayjs().startOf('day').toISOString();
       const payload: ExperienceCreateI = {
         title: `${exp.level ?? ''} ${exp.name}`.trim(),
         id_profession: null,
         description: exp.description ?? null,
-        start_time: startIso,                     // 👈 не null
+        start_time: startIso,
         end_time: exp.end ?? null,
       };
       await addExperience(payload).unwrap();
     }
 
-    // 3) Wanted professions
-    if (selectedWantedIds.length) {
-      const body: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
-      await addWanted(body).unwrap();
-    }
+    // 3) Wanted professions — теперь обязательно есть хотя бы 1
+    const body: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
+    await addWanted(body).unwrap();
 
     // 4) Skills
     const dict = new Map<string, number>();
@@ -226,7 +232,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
                 ))}
               </List>
             ) : (
-              <Text>—</Text>
+              <Text c="red">Не выбрано ни одной профессии</Text>
             )}
           </Paper>
 
@@ -238,7 +244,9 @@ export default function SummaryModal({ opened, onClose }: Props) {
           <Divider />
           <Group justify="flex-end">
             <Button variant="default" onClick={onClose}>Отмена</Button>
-            <Button color="teal" onClick={handleConfirm}>Подтвердить и сохранить</Button>
+            <Button color="teal" onClick={handleConfirm} disabled={!isWantedValid}>
+              Подтвердить и сохранить
+            </Button>
           </Group>
         </Stack>
       </ScrollArea.Autosize>

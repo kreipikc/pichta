@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Grid, Stack, Title, Text, Paper, Loader, Center } from "@mantine/core";
+import { Grid, Stack, Title, Text, Paper, Loader, Center, Alert } from "@mantine/core";
+import { IconAlertCircle } from "@tabler/icons-react";
 import { FormWrapper } from "@/components/form-wrapper/FormWrapper";
 import { useQuestionnaire } from "../context/QuestionnaireContext";
 import { useGetAllProfessionQuery } from "@/app/redux/api/profession.api";
@@ -18,7 +19,7 @@ const GoalsForm = () => {
 
   useEffect(() => {
     updateData({ goals: selected.join("||") });
-  }, [selected]);
+  }, [selected, updateData]);
 
   if (isLoading) {
     return (
@@ -28,10 +29,24 @@ const GoalsForm = () => {
     );
   }
 
+  const noneSelected = selected.length === 0;
+
   return (
     <FormWrapper formId="goals">
       <Stack gap="md">
         <Title order={2}>Выберите желаемые профессии</Title>
+
+        {noneSelected && (
+          <Alert
+            variant="light"
+            color="red"
+            title="Нужно выбрать хотя бы одну профессию"
+            icon={<IconAlertCircle size={16} />}
+          >
+            Отметьте минимум один вариант, чтобы продолжить.
+          </Alert>
+        )}
+
         <Grid gutter="sm">
           {(professions ?? []).map((prof) => (
             <Grid.Col span={6} key={prof.id}>
@@ -51,11 +66,15 @@ const GoalsForm = () => {
                   transition: "all 0.2s",
                 }}
               >
-                <Text>{prof.name}</Text>
+                <Text fw={selected.includes(prof.id) ? 600 : 400}>{prof.name}</Text>
               </Paper>
             </Grid.Col>
           ))}
         </Grid>
+
+        <Text c="dimmed" size="sm">
+          Выбрано: {selected.length}
+        </Text>
       </Stack>
     </FormWrapper>
   );
