@@ -1,22 +1,39 @@
-import { useEffect } from 'react';
-import { Button, Group, Paper, Stack, Text, TextInput, Textarea, Select } from '@mantine/core';
+import { useEffect, useMemo } from 'react';
+import {
+  Button,
+  Group,
+  Paper,
+  Stack,
+  Text,
+  Textarea,
+  Select,
+  Autocomplete,
+} from '@mantine/core';
 import { AppDateField } from '@/components/date-time-picker/AppDateField';
 import { FormWrapper } from '@/components/form-wrapper/FormWrapper';
 import { useQuestionnaire } from '../context/QuestionnaireContext';
+import { useGetAllProfessionQuery } from '@/app/redux/api/profession.api';
 
 const LEVELS = ['Intern', 'Junior', 'Middle', 'Senior', 'Lead'] as const;
 type Level = (typeof LEVELS)[number];
 
 type ExpItem = {
-  name: string;          // должность/позиция
-  level: Level;          // грейд
+  name: string;          // свободный ввод ИЛИ выбор из списка
+  level: Level;
   description?: string | null;
-  start?: string | null; // ISO (NOT NULL для бэка — гарантируем при отправке)
+  start?: string | null; // ISO
   end?: string | null;   // ISO | null
 };
 
 export default function ExperienceForm() {
   const { data, updateData } = useQuestionnaire();
+
+  // подсказки из справочника профессий
+  const { data: profs } = useGetAllProfessionQuery();
+  const profNames: string[] = useMemo(
+    () => (profs ?? []).map((p: any) => p.name).filter(Boolean),
+    [profs]
+  );
 
   const list: ExpItem[] = Array.isArray((data as any).experienceList)
     ? (data as any).experienceList
@@ -25,13 +42,18 @@ export default function ExperienceForm() {
       : [];
 
   useEffect(() => {
-    // нормализуем в массив и обнуляем старое поле совместимости
-    updateData({ experienceList: list, experience: [] });
+    // нормализация в массив (если уже есть — ничего не меняется)
+    updateData({ experienceList: list });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addRow = () => {
-    updateData({ experienceList: [...list, { name: '', level: 'Junior', description: '', start: null, end: null }] });
+    updateData({
+      experienceList: [
+        ...list,
+        { name: '', level: 'Junior', description: '', start: null, end: null },
+      ],
+    });
   };
 
   const removeRow = (idx: number) => {
@@ -64,11 +86,15 @@ export default function ExperienceForm() {
           <Paper key={i} withBorder p="md" radius="md">
             <Stack gap="sm">
               <Group grow>
-                <TextInput
-                  label="Название роли / должности"
-                  placeholder="Frontend Developer"
+                <Autocomplete
+                  label="Должность / Профессия"
+                  placeholder="Начните вводить и выберите из списка или введите своё"
                   value={row.name}
-                  onChange={(e) => patch(i, { name: e.currentTarget.value })}
+                  data={profNames}
+                  onChange={(val) => patch(i, { name: val })}
+                  limit={100}
+                  withAsterisk
+                  comboboxProps={{ shadow: 'md' }}
                 />
                 <Select
                   label="Уровень"
@@ -77,6 +103,7 @@ export default function ExperienceForm() {
                   onChange={(v) => patch(i, { level: (v as Level) ?? 'Junior' })}
                 />
               </Group>
+
               <Textarea
                 label="Описание (необязательно)"
                 autosize
@@ -84,13 +111,16 @@ export default function ExperienceForm() {
                 value={row.description ?? ''}
                 onChange={(e) => patch(i, { description: e.currentTarget.value })}
               />
+
               <Group grow>
                 <AppDateField
                   kind="date"
                   label="Дата начала"
                   placeholder="Выберите дату"
                   value={row.start ? new Date(row.start) : null}
-                  onChange={(d: Date | null) => patch(i, { start: d ? new Date(d).toISOString() : null })}
+                  onChange={(d: Date | null) =>
+                    patch(i, { start: d ? new Date(d).toISOString() : null })
+                  }
                   required
                 />
                 <AppDateField
@@ -98,11 +128,16 @@ export default function ExperienceForm() {
                   label="Дата окончания"
                   placeholder="Если ещё работаете — оставьте пустым"
                   value={row.end ? new Date(row.end) : null}
-                  onChange={(d: Date | null) => patch(i, { end: d ? new Date(d).toISOString() : null })}
+                  onChange={(d: Date | null) =>
+                    patch(i, { end: d ? new Date(d).toISOString() : null })
+                  }
                 />
               </Group>
+
               <Group justify="flex-end">
-                <Button variant="light" color="red" onClick={() => removeRow(i)}>Удалить</Button>
+                <Button variant="light" color="red" onClick={() => removeRow(i)}>
+                  Удалить
+                </Button>
               </Group>
             </Stack>
           </Paper>

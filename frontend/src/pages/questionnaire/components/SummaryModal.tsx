@@ -83,12 +83,12 @@ export default function SummaryModal({ opened, onClose }: Props) {
     // 1) Education — с обязательным start_time
     for (const e of educationList) {
       if (!e?.institution && !e?.degree) continue;
-      const startIso = e.start ?? dayjs().startOf('day').toISOString(); // safety fallback
+      const startIso = e.start ?? dayjs().startOf('day').toISOString();
       const edu: EducationCreateI = {
         id_user: userId,
         type: e.degree || 'Не указано',
         direction: e.institution || 'Не указано',
-        start_time: startIso,                     // 👈 NOT NULL
+        start_time: startIso,
         end_time: e.end ?? null,
       };
       await addEducation(edu).unwrap();
@@ -122,8 +122,8 @@ export default function SummaryModal({ opened, onClose }: Props) {
       .filter((id): id is number => typeof id === 'number')
       .map((id_skill) => ({
         id_skill,
-        id_user: userId, // 👈 теперь из /me
-        proficiency: 50,
+        id_user: userId,
+        proficiency: 100,
         priority: null,
         start_date: null,
         end_date: null,
@@ -132,7 +132,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
     if (skillsPayload.length) await addSkills(skillsPayload).unwrap();
 
     onClose();
-    navigate('/user/profile');
+    navigate('/');
   };
 
   return (
