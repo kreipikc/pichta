@@ -1,7 +1,8 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Response
-from .schemas import WantedProfessionCreate, WantedProfessionRead
 
+from logger import app_logger
+from .schemas import WantedProfessionCreate, WantedProfessionRead
 from .service import get_for_myself_repository, ForMyselfRepository
 from ..auth.ident.dependencies import get_current_user
 from ..auth.user.roles import UserRole
@@ -24,16 +25,22 @@ async def get_wanted_profession(
         for_myself_repo: ForMyselfRepository = Depends(get_for_myself_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> List[WantedProfessionRead]:
-    if current_user.role != UserRole.admin:
-        if current_user.id != user_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+    try:
+        if current_user.role != UserRole.admin:
+            if current_user.id != user_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
 
-    prof_list = await for_myself_repo.get_wanted_professions_by_user_id(user_id)
+        prof_list = await for_myself_repo.get_wanted_professions_by_user_id(user_id)
 
-    if not prof_list:
-        return []
+        if not prof_list:
+            return []
 
-    return [WantedProfessionRead.model_validate(prof) for prof in prof_list]
+        return [WantedProfessionRead.model_validate(prof) for prof in prof_list]
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @router.post(
@@ -49,5 +56,11 @@ async def add_wanted_profession(
         for_myself_repo: ForMyselfRepository = Depends(get_for_myself_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> Response:
-    await for_myself_repo.create_wanted_professions(current_user.id, data)
-    return Response(status_code=status.HTTP_201_CREATED)
+    try:
+        await for_myself_repo.create_wanted_professions(current_user.id, data)
+        return Response(status_code=status.HTTP_201_CREATED)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

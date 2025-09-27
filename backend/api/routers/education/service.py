@@ -18,23 +18,31 @@ class EducationRepository:
         result = await self.session.execute(select(Education))
         return result.scalars().all()
 
-    async def get_education_by_user(self, user_id: int) -> list[Education]:
+    async def get_all_education_by_user(self, user_id: int) -> list[Education]:
         query = select(Education).where(Education.id_user == user_id)
         result = await self.session.execute(query)
         return result.scalars().all()
+
+    async def get_education_by_id_for_user(self, education_id: int, user_id: int) -> Optional[Education]:
+        education = await self.session.execute(
+            select(Education)
+            .where(Education.id == education_id)
+            .where(Education.id_user == user_id)
+        )
+        return education.scalar_one_or_none()
 
     async def get_education_by_id(self, education_id: int) -> Optional[Education]:
         result = await self.session.execute(select(Education).where(Education.id == education_id))
         return result.scalar_one_or_none()
 
-    async def create_education(self, education: EducationCreate) -> EducationResponse:
+    async def create_education(self, user_id: int, education: EducationCreate) -> EducationResponse:
         try:
             # Проверяем существование пользователя
-            user = await self.session.get(UserOrm, education.id_user)
+            user = await self.session.get(UserOrm, user_id)
             if not user:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"User with id {education.id_user} does not exist"
+                    detail=f"User with id {user_id} does not exist"
                 )
             # Преобразуем данные и удаляем временные зоны
             education_data = education.model_dump()
@@ -44,7 +52,7 @@ class EducationRepository:
                 education_data['end_time'] = education_data['end_time'].replace(tzinfo=None)
 
             # Создаем и сохраняем запись
-            db_education = Education(**education_data)
+            db_education = Education(id_user=user_id, **education_data)
             self.session.add(db_education)
             await self.session.commit()
             await self.session.refresh(db_education)
@@ -62,10 +70,10 @@ class EducationRepository:
                 detail=f"Error creating education record: {str(e)}"
             )
 
-    async def update_education(self, education_id: int, education: EducationUpdate) -> EducationResponse:
-        db_education = await self.get_education_by_id(education_id)
+    async def update_education(self, user_id: int, education_id: int, education: EducationUpdate) -> EducationResponse:
+        educ = await self.get_education_by_id_for_user(education_id, user_id)
 
-        if not db_education:
+        if not educ:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Education record not found"
@@ -80,14 +88,14 @@ class EducationRepository:
             update_data['end_time'] = update_data['end_time'].replace(tzinfo=None)
 
         for field, value in update_data.items():
-            setattr(db_education, field, value)
+            setattr(educ, field, value)
 
         await self.session.commit()
-        await self.session.refresh(db_education)
-        return EducationResponse.model_validate(db_education)
+        await self.session.refresh(educ)
+        return EducationResponse.model_validate(educ)
 
-    async def delete_education(self, education_id: int) -> None:
-        db_education = await self.get_education_by_id(education_id)
+    async def delete_user_education(self, user_id: int, education_id: int) -> None:
+        db_education = await self.get_education_by_id_for_user(education_id, user_id)
         if not db_education:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

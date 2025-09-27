@@ -23,11 +23,11 @@ class UserSkillCreate(BaseModel):
 
 
 class UserSkillUpdate(BaseModel):
-    proficiency: int
+    proficiency: Optional[int] = None
     priority: Optional[int] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    status: str
+    status: Optional[str] = None
 
 
 class UserSkillResponse(UserSkillBase):

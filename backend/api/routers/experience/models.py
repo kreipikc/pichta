@@ -1,5 +1,5 @@
 from database import Model
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, func
 
 
 class WorkExperience(Model):
