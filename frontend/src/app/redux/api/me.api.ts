@@ -15,20 +15,19 @@ export const meApi = createApi({
     credentials: "include",
   }),
   endpoints: (build) => ({
-    // GET /me/wanted_prof/getall/{user_id}
     getWantedProfessionsByUserId: build.query<WantedProfessionI[], number>({
-      query: (userId) => `${ME_WANTED_PROFESSION_GETALL_PATH}/${userId}`,
-      providesTags: (_res, _err, userId) => [{ type: "WantedProf", id: `LIST-${userId}` }],
+      // arg: user_id
+      query: (user_id) => ({ url: `${ME_WANTED_PROFESSION_GETALL_PATH}/${user_id}`, method: "GET" }),
+      providesTags: (_r, _e, user_id) => [{ type: "WantedProf", id: `LIST-${user_id}` }],
     }),
 
-    // POST /me/wanted_prof/add
-    addWantedProfessions: build.mutation<void, WantedProfessionCreateI[] | WantedProfessionCreateI>({
+    addWantedProfessions: build.mutation<void, WantedProfessionCreateI | WantedProfessionCreateI[]>({
       query: (body) => ({
         url: ME_WANTED_PROFESSION_ADD_PATH,
         method: "POST",
         body: Array.isArray(body) ? body : [body],
       }),
-      invalidatesTags: (_res, _err, _arg) => [{ type: "WantedProf", id: "LIST-SELF" }],
+      invalidatesTags: [{ type: "WantedProf", id: "LIST-SELF" }],
     }),
   }),
 });

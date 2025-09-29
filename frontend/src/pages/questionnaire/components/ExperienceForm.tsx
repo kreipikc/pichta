@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import {
+  ScrollArea,
   Button,
   Group,
   Paper,
@@ -75,7 +76,7 @@ export default function ExperienceForm() {
           <Text fw={600}>Опыт работы</Text>
           <Button size="xs" onClick={addRow}>Добавить</Button>
         </Group>
-
+        <ScrollArea.Autosize mah={420} type="auto" scrollbarSize={8} offsetScrollbars>
         {list.length === 0 && (
           <Paper withBorder p="md">
             <Text c="dimmed">Пока пусто. Нажмите «Добавить», чтобы создать запись об опыте.</Text>
@@ -142,6 +143,7 @@ export default function ExperienceForm() {
             </Stack>
           </Paper>
         ))}
+        </ScrollArea.Autosize>
       </Stack>
     </FormWrapper>
   );

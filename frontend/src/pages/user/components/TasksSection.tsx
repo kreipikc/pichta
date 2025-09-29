@@ -33,6 +33,7 @@ import dayjs from "dayjs";
 import { useTasks } from "@/hooks/useTasks";
 import type { TaskResponseI, TaskCreateSelfI } from "@/shared/types/api/TaskI";
 import type { TaskUpdatePatch } from "@/app/redux/api/task.api";
+import type { TaskUpdateI } from "@/shared/types/api/TaskI";
 
 type StatusOption = "pending" | "in_progress" | "done";
 
@@ -197,7 +198,7 @@ export default function TasksSection({ userId }: { userId: number }) {
   async function saveEdit(id: number) {
     const d = drafts[id];
     if (!d) return;
-    const body: TaskUpdatePatch = {
+    const body: TaskUpdateI = {
       title: d.title?.trim(),
       description: d.description?.trim() || null,
       status: d.status,

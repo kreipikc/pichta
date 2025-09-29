@@ -26,26 +26,28 @@ interface Props {
 
 const LEVEL_ORDER: Record<string, number> = { Lead: 5, Senior: 4, Middle: 3, Junior: 2, Intern: 1 };
 
+function toYMD(v?: string | null) {
+  if (!v) return null;
+  const d = dayjs(v);
+  return d.isValid() ? d.format('YYYY-MM-DD') : null;
+}
+
 export default function SummaryModal({ opened, onClose }: Props) {
   const { data } = useQuestionnaire();
   const navigate = useNavigate();
 
-  // user id
   const { data: me } = useGetMeQuery();
-  const userFromStore = useAppSelector((s) => s.user?.currentUser);
-  const userId: number | undefined = (userFromStore as any)?.id ?? (me as any)?.id;
+  const userFromStore = useAppSelector((s) => s.user?.currentUser as any);
+  const uid = Number(userFromStore?.id ?? (me as any)?.id) || 0;
 
-  // словари
   const { data: skillsDict } = useGetAllSkillsQuery();
   const { data: professionsDict } = useGetAllProfessionQuery();
 
-  // мутации
   const [addEducation] = useAddEducationMutation();
   const [addExperience] = useAddExperienceForSelfMutation();
   const [addWanted] = useAddWantedProfessionsMutation();
   const [addSkills] = useAddSkillMutation();
 
-  // нормализованные массивы из формы
   const educationList = Array.isArray((data as any).educationList) ? (data as any).educationList : [];
   const experienceList = Array.isArray((data as any).experienceList) ? (data as any).experienceList : [];
 
@@ -57,7 +59,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
   const selectedWantedNames = useMemo(() => {
     if (!professionsDict) return [];
     const byId = new Map<number, string>();
-    professionsDict.forEach((p: any) => byId.set(p.id, p.name));
+    (professionsDict as any[]).forEach((p: any) => byId.set(p.id, p.name));
     return selectedWantedIds.map((id) => byId.get(id)).filter(Boolean) as string[];
   }, [professionsDict, selectedWantedIds]);
 
@@ -77,50 +79,38 @@ export default function SummaryModal({ opened, onClose }: Props) {
   const isWantedValid = selectedWantedIds.length > 0;
 
   const handleConfirm = async () => {
-    if (!userId) {
+    if (!uid || !isWantedValid) {
       onClose();
       return;
     }
 
-    // Жёсткое требование: минимум одна желаемая профессия
-    if (!isWantedValid) {
-      // мягко — просто блокируем, без уведомлений
-      return;
-    }
-
-    // 1) Education — с обязательным start_time
     for (const e of educationList) {
       if (!e?.institution && !e?.degree) continue;
-      const startIso = e.start ?? dayjs().startOf('day').toISOString();
       const edu: EducationCreateI = {
-        id_user: userId,
+        id_user: uid,
         type: e.degree || 'Не указано',
         direction: e.institution || 'Не указано',
-        start_time: startIso,
-        end_time: e.end ?? null,
+        start_time: toYMD(e.start) ?? dayjs().format('YYYY-MM-DD'),
+        end_time: toYMD(e.end),
       };
-      await addEducation(edu).unwrap();
+      await addEducation({ user_id: uid, body: edu }).unwrap();
     }
 
-    // 2) Experience — self endpoint; start_time обязателен
     for (const exp of experienceList) {
       if (!exp?.name) continue;
-      const startIso = exp.start ?? dayjs().startOf('day').toISOString();
       const payload: ExperienceCreateI = {
         title: `${exp.level ?? ''} ${exp.name}`.trim(),
         id_profession: null,
         description: exp.description ?? null,
-        start_time: startIso,
-        end_time: exp.end ?? null,
+        start_time: toYMD(exp.start) ?? dayjs().format('YYYY-MM-DD'),
+        end_time: toYMD(exp.end),
       };
       await addExperience(payload).unwrap();
     }
 
-    // 3) Wanted professions — теперь обязательно есть хотя бы 1
-    const body: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
-    await addWanted(body).unwrap();
+    const wantedBody: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
+    await addWanted(wantedBody).unwrap();
 
-    // 4) Skills
     const dict = new Map<string, number>();
     (skillsDict ?? []).forEach((s: any) => dict.set(s.name, s.id));
     const skillsPayload: UserSkillCreateI[] = (data.skills || [])
@@ -128,14 +118,16 @@ export default function SummaryModal({ opened, onClose }: Props) {
       .filter((id): id is number => typeof id === 'number')
       .map((id_skill) => ({
         id_skill,
-        id_user: userId,
+        id_user: uid,
         proficiency: 100,
         priority: null,
         start_date: null,
         end_date: null,
         status: 'active',
       }));
-    if (skillsPayload.length) await addSkills(skillsPayload).unwrap();
+    if (skillsPayload.length) {
+      await addSkills({ body: skillsPayload }).unwrap();
+    }
 
     onClose();
     navigate('/');
@@ -171,10 +163,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
               >
                 {educationList.map((e: any, i: number) => (
                   <List.Item key={`edu-${i}`}>
-                    {e.degree || '—'} — {e.institution || '—'}{' '}
-                    ({e.start ? dayjs(e.start).format('YYYY-MM-DD') : '—'}
-                    {' '}–{' '}
-                    {e.end ? dayjs(e.end).format('YYYY-MM-DD') : 'по наст. время'})
+                    {e.degree || '—'} — {e.institution || '—'} ({e.start ? dayjs(e.start).format('YYYY-MM-DD') : '—'} – {e.end ? dayjs(e.end).format('YYYY-MM-DD') : 'по наст. время'})
                   </List.Item>
                 ))}
               </List>
@@ -197,11 +186,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
               >
                 {experienceList.map((exp: any, i: number) => (
                   <List.Item key={`exp-${i}`}>
-                    {(exp.level ? `${exp.level} ` : '') + (exp.name || '—')}{' '}
-                    ({exp.start ? dayjs(exp.start).format('YYYY-MM-DD') : '—'}
-                    {' '}–{' '}
-                    {exp.end ? dayjs(exp.end).format('YYYY-MM-DD') : 'по наст. время'})
-                    {exp.description ? ` — ${exp.description}` : ''}
+                    {(exp.level ? `${exp.level} ` : '') + (exp.name || '—')} ({exp.start ? dayjs(exp.start).format('YYYY-MM-DD') : '—'} – {exp.end ? dayjs(exp.end).format('YYYY-MM-DD') : 'по наст. время'}){exp.description ? ` — ${exp.description}` : ''}
                   </List.Item>
                 ))}
               </List>

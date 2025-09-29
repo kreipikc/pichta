@@ -1,66 +1,66 @@
 export const API_BASE_URL = '/api'
 
 // Auth
-export const AUTH_PREFIX = 'auth'
-export const AUTH_LOGIN_PATH = `${AUTH_PREFIX}/login`
-export const AUTH_REGISTER_PATH = `${AUTH_PREFIX}/register`
-export const AUTH_REFRESH_PATH = `${AUTH_PREFIX}/refresh_token`
-export const AUTH_LOGOUT_PATH = `${AUTH_PREFIX}/logout`
-export const AUTH_CHANGE_PASS_PATH = `${AUTH_PREFIX}/change_pass` 
+export const AUTH_PREFIX = 'auth';
+export const AUTH_LOGIN_PATH = `${AUTH_PREFIX}/login`;
+export const AUTH_REGISTER_PATH = `${AUTH_PREFIX}/register`;
+export const AUTH_REFRESH_PATH = `${AUTH_PREFIX}/refresh_token`;
+export const AUTH_LOGOUT_PATH = `${AUTH_PREFIX}/logout`;
+export const AUTH_CHANGE_PASS_PATH = `${AUTH_PREFIX}/change_pass`;
 
-// Users (self + admin)
-export const USER_PREFIX = 'user'
-export const USER_ME_PATH = `${USER_PREFIX}/me`
-export const USER_ABOUTME_PATH = `${USER_PREFIX}/aboutme`
+// User (self + admin block lives under /user as well)
+export const USER_PREFIX = 'user';
+export const USER_ME_PATH = `${USER_PREFIX}/me`;
+export const USER_ABOUTME_PATH = `${USER_PREFIX}/aboutme`;
 export const USER_GETALL_PATH = `${USER_PREFIX}/getall`
-export const USER_UPDATE_PATH = `${USER_PREFIX}/update` // + /{user_id}
-export const USER_DELETE_PATH = `${USER_PREFIX}/delete` // + /{user_id}
-
-// For Myself
-export const ME_PREFIX = 'me'
-// Backend route is /me/wanted_prof/add
-export const ME_WANTED_PROFESSION_ADD_PATH = `${ME_PREFIX}/wanted_prof/add`
-export const ME_WANTED_PROFESSION_GETALL_PATH = '/me/wanted_prof/getall';
+export const USER_UPDATE_PATH = `${USER_PREFIX}/update`             // + /{user_id}
+export const USER_DELETE_PATH = `${USER_PREFIX}/delete`             // + /{user_id}
 
 // Education
-export const EDUC_PREFIX = 'educ'
-export const EDUC_GETALL_PATH = `${EDUC_PREFIX}/getall`
-export const EDUC_GET_PATH = `${EDUC_PREFIX}/get` // + /{education_id}
-export const EDUC_ADD_PATH = `${EDUC_PREFIX}/add`
-export const EDUC_UPDATE_PATH = `${EDUC_PREFIX}/update` // + /{education_id}
-export const EDUC_DELETE_PATH = `${EDUC_PREFIX}/delete` // + /{education_id}
+export const EDUC_PREFIX = 'educ';
+export const EDUC_GETALL_PATH = `${EDUC_PREFIX}/getall`;            // + /{user_id}
+export const EDUC_GET_PATH = `${EDUC_PREFIX}/get`;                  // + /{education_id}
+export const EDUC_ADD_PATH = `${EDUC_PREFIX}/add`;                  // + /{user_id}
+export const EDUC_UPDATE_PATH = `${EDUC_PREFIX}/update`;            // + /{education_id}
+export const EDUC_DELETE_PATH = `${EDUC_PREFIX}/delete`;            // + /{education_id}
 
 // Experience
-export const EXPER_PREFIX = 'exper'
-export const EXPER_GETALL_PATH = `${EXPER_PREFIX}/getall`
-export const EXPER_GET_PATH = `${EXPER_PREFIX}/get` // + /{experience_id}
-export const EXPER_ADD_SELF_PATH = `${EXPER_PREFIX}/add`
-export const EXPER_ADD_FOR_USER_PATH = `${EXPER_PREFIX}/add` // + /{user_id}
-export const EXPER_UPDATE_PATH = `${EXPER_PREFIX}/update` // + /{experience_id}
-export const EXPER_DELETE_PATH = `${EXPER_PREFIX}/delete` // + /{experience_id}
-
-// Profession
-export const PROF_PREFIX = 'prof'
-export const PROF_GETALL_PATH = `${PROF_PREFIX}/getall`
-export const PROF_GET_PATH = `${PROF_PREFIX}/get` // + /{profession_id}
-export const PROF_ADD_PATH = `${PROF_PREFIX}/add`
-export const PROF_UPDATE_PATH = `${PROF_PREFIX}/update` // + /{profession_id}
-export const PROF_DELETE_PATH = `${PROF_PREFIX}/delete` // + /{profession_id}
+export const EXPER_PREFIX = 'exper';
+export const EXPER_GETALL_PATH = `${EXPER_PREFIX}/getall`;          // + /{user_id}
+export const EXPER_GET_PATH = `${EXPER_PREFIX}/get`;                // + /{experience_id}
+export const EXPER_ADD_SELF_PATH = `${EXPER_PREFIX}/add`;           // POST (self)
+export const EXPER_ADD_FOR_USER_PATH = `${EXPER_PREFIX}/add`;       // + /{user_id}
+export const EXPER_UPDATE_PATH = `${EXPER_PREFIX}/update`;          // + /{experience_id}
+export const EXPER_DELETE_PATH = `${EXPER_PREFIX}/delete`;          // + /{experience_id}
 
 // Skill
-export const SKILL_PREFIX = 'skill'
-export const SKILL_GETALL_BY_USER_PATH = `${SKILL_PREFIX}/getall`; // + /{user_id}
-export const SKILL_GETALL_PATH = `${SKILL_PREFIX}/getall`
-export const SKILL_GET_PATH = `${SKILL_PREFIX}/get`; // + /{skill_id} + ?user_id={id}
-export const SKILL_ADD_PATH = `${SKILL_PREFIX}/add`
-export const SKILL_UPDATE_PATH = `${SKILL_PREFIX}/update`
-export const SKILL_DELETE_PATH = `${SKILL_PREFIX}/delete` // + /{skill_id}
+export const SKILL_PREFIX = 'skill';
+export const SKILL_GETALL_PATH = `${SKILL_PREFIX}/getall`;          // (all skills, no user)
+export const SKILL_GETALL_BY_USER_PATH = `${SKILL_PREFIX}/getall`;  // + /{user_id}
+export const SKILL_GET_PATH = `${SKILL_PREFIX}/get`;                // + /{skill_id}
+export const SKILL_ADD_SELF_PATH = `${SKILL_PREFIX}/add`;           // POST (self)
+export const SKILL_ADD_FOR_USER_PATH = `${SKILL_PREFIX}/add`;       // + /{user_id}
+export const SKILL_UPDATE_PATH = `${SKILL_PREFIX}/update`;          // + /{skill_id}
+export const SKILL_DELETE_PATH = `${SKILL_PREFIX}/delete`;          // + /{skill_id}
 
 // Task
-export const TASK_PREFIX = 'task'
-export const TASK_GETALL_PATH = `${TASK_PREFIX}/getall`          // ?user_id={id}
-export const TASK_GET_PATH = `${TASK_PREFIX}/get`                // + /{task_id}
-export const TASK_ADD_SELF_PATH = `${TASK_PREFIX}/add`           // POST body TaskCreateSelf
-export const TASK_ADD_FOR_USER_PATH = `${TASK_PREFIX}/add`       // + /{user_id}
-export const TASK_UPDATE_PATH = `${TASK_PREFIX}/update`          // + /{task_id}
-export const TASK_DELETE_PATH = `${TASK_PREFIX}/delete`          // + /{task_id}
+export const TASK_PREFIX = 'task';
+export const TASK_GETALL_PATH = `${TASK_PREFIX}/getall`;            // + /{user_id}
+export const TASK_GET_PATH = `${TASK_PREFIX}/get`;                  // + /{task_id}
+export const TASK_ADD_SELF_PATH = `${TASK_PREFIX}/add`;             // POST (self)
+export const TASK_ADD_FOR_USER_PATH = `${TASK_PREFIX}/add`;         // + /{user_id}
+export const TASK_UPDATE_PATH = `${TASK_PREFIX}/update`;            // + /{task_id}
+export const TASK_DELETE_PATH = `${TASK_PREFIX}/delete`;            // + /{task_id}
+
+// For Myself (wanted professions)
+export const ME_PREFIX = 'me';
+export const ME_WANTED_PROFESSION_GETALL_PATH = `${ME_PREFIX}/wanted_prof/getall`; // + /{user_id}
+export const ME_WANTED_PROFESSION_ADD_PATH = `${ME_PREFIX}/wanted_prof/add`;
+
+// Professions catalog
+export const PROF_PREFIX = 'prof';
+export const PROF_GETALL_PATH = `${PROF_PREFIX}/getall`;
+export const PROF_GET_PATH = `${PROF_PREFIX}/get`;                  // + /{profession_id}
+export const PROF_ADD_PATH = `${PROF_PREFIX}/add`;
+export const PROF_UPDATE_PATH = `${PROF_PREFIX}/update`;            // + /{profession_id}
+export const PROF_DELETE_PATH = `${PROF_PREFIX}/delete`;            // + /{profession_id}```

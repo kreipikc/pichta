@@ -89,16 +89,16 @@ export default function SkillsSection({ userId }: { userId: number }) {
       status: edit.status || "active",
     };
     // ВАЖНО: PUT /skill/update/{skill_id}
-    await updateSkill({ skillId: selectedId, data: dto }).unwrap();
+    await updateSkill({ user_id: userId, skill_id: selectedId, body: dto }).unwrap();
     setSelectedId(null);
   };
 
   const handleDelete = async (skillId: number) => {
-    await deleteSkill(skillId).unwrap();
+    await deleteSkill({ user_id: userId, skill_id: skillId }).unwrap();
     setSelectedId(null);
   };
 
-  if (isLoading || isFetching) {
+  if (isLoading) {
     return (
       <Card withBorder>
         <Loader />
@@ -112,7 +112,7 @@ export default function SkillsSection({ userId }: { userId: number }) {
         <Text fw={700} size="lg">
           Навыки
         </Text>
-        <AddSkillModal />
+        <AddSkillModal userId={userId} />
       </Group>
 
       {items.length === 0 ? (

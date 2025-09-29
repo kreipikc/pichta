@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Button, Group, Paper, Stack, Text, TextInput } from '@mantine/core';
+import { ScrollArea, Button, Group, Paper, Stack, Text, TextInput } from '@mantine/core';
 import { AppDateField } from '@/components/date-time-picker/AppDateField';
 import { FormWrapper } from '@/components/form-wrapper/FormWrapper';
 import { useQuestionnaire } from '../context/QuestionnaireContext';
@@ -49,7 +49,7 @@ export default function EducationForm() {
           <Text fw={600}>Образование</Text>
           <Button size="xs" onClick={addRow}>Добавить</Button>
         </Group>
-
+      <ScrollArea.Autosize mah={420} type="auto" scrollbarSize={8} offsetScrollbars>
         {list.length === 0 && (
           <Paper withBorder p="md">
             <Text c="dimmed">Пока пусто. Нажмите «Добавить», чтобы создать запись об образовании.</Text>
@@ -96,6 +96,7 @@ export default function EducationForm() {
             </Stack>
           </Paper>
         ))}
+        </ScrollArea.Autosize>
       </Stack>
     </FormWrapper>
   );

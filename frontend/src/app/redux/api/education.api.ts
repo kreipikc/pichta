@@ -11,6 +11,7 @@ import type { EducationResponseI, EducationCreateI, EducationUpdateI } from "@/s
 
 export const educationApi = createApi({
   reducerPath: "educationApi",
+  tagTypes: ["Education"],
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders(headers) {
@@ -20,63 +21,52 @@ export const educationApi = createApi({
     },
     credentials: "include",
   }),
-  tagTypes: ["Education"],
   endpoints: (build) => ({
     getAllEducation: build.query<EducationResponseI[], number>({
-      query: (userId) => ({
-        url: `${EDUC_GETALL_PATH}/${userId}`,
-        method: "GET",
-      }),
-      providesTags: (result) =>
-        result
+      query: (user_id) => ({ url: `${EDUC_GETALL_PATH}/${user_id}`, method: "GET" }),
+      providesTags: (res, _e, user_id) =>
+        res
           ? [
-              ...result.map((e) => ({ type: "Education" as const, id: e.id })),
-              { type: "Education" as const, id: "LIST" },
+              ...res.map((r) => ({ type: "Education" as const, id: r.id })),
+              { type: "Education", id: `LIST-${user_id}` },
             ]
-          : [{ type: "Education" as const, id: "LIST" }],
+          : [{ type: "Education", id: `LIST-${user_id}` }],
     }),
 
-    // GET /educ/get/{education_id}
     getEducationById: build.query<EducationResponseI, number>({
-      query: (education_id) => ({
-        url: `${EDUC_GET_PATH}/${education_id}`,
-        method: "GET",
-      }),
+      query: (education_id) => ({ url: `${EDUC_GET_PATH}/${education_id}`, method: "GET" }),
       providesTags: (_r, _e, id) => [{ type: "Education", id }],
     }),
 
-    // POST /educ/add
-    addEducation: build.mutation<EducationResponseI, EducationCreateI>({
-      query: (body) => ({
-        url: EDUC_ADD_PATH,
+    addEducation: build.mutation<EducationResponseI, { user_id: number; body: EducationCreateI }>({
+      query: ({ user_id, body }) => ({
+        url: `${EDUC_ADD_PATH}/${user_id}`,
         method: "POST",
         body,
       }),
-      invalidatesTags: [{ type: "Education", id: "LIST" }],
+      invalidatesTags: (_r, _e, { user_id }) => [{ type: "Education", id: `LIST-${user_id}` }],
     }),
 
-    // PUT /educ/update/{education_id}
-    updateEducation: build.mutation<EducationResponseI, { education_id: number; body: EducationUpdateI }>({
-      query: ({ education_id, body }) => ({
-        url: `${EDUC_UPDATE_PATH}/${education_id}`,
+    updateEducation: build.mutation<EducationResponseI, { user_id: number; education_id: number; body: EducationUpdateI }>({
+      query: ({ user_id, education_id, body }) => ({
+        url: `${EDUC_UPDATE_PATH}/${education_id}?user_id=${user_id}`,
         method: "PUT",
         body,
       }),
-      invalidatesTags: (_r, _e, { education_id }) => [
+      invalidatesTags: (_r, _e, { user_id, education_id }) => [
         { type: "Education", id: education_id },
-        { type: "Education", id: "LIST" },
+        { type: "Education", id: `LIST-${user_id}` },
       ],
     }),
 
-    // DELETE /educ/delete/{education_id}
-    deleteEducation: build.mutation<void, number>({
-      query: (education_id) => ({
-        url: `${EDUC_DELETE_PATH}/${education_id}`,
+    deleteEducation: build.mutation<void, { user_id: number; education_id: number }>({
+      query: ({ user_id, education_id }) => ({
+        url: `${EDUC_DELETE_PATH}/${education_id}?user_id=${user_id}`,
         method: "DELETE",
       }),
-      invalidatesTags: (_r, _e, id) => [
-        { type: "Education", id },
-        { type: "Education", id: "LIST" },
+      invalidatesTags: (_r, _e, { user_id, education_id }) => [
+        { type: "Education", id: education_id },
+        { type: "Education", id: `LIST-${user_id}` },
       ],
     }),
   }),

@@ -18,13 +18,13 @@ export const professionApi = createApi({
       query: () => ({ url: PROF_GETALL_PATH, method: "GET" }),
     }),
     getProfessionById: build.query<ProfessionResponseI, number>({
-      query: (profession_id) => `${PROF_GET_PATH}/${profession_id}`,
+      query: (profession_id) => ({ url: `${PROF_GET_PATH}/${profession_id}`, method: "GET" }),
     }),
     addProfession: build.mutation<ProfessionResponseI, ProfessionCreateI>({
       query: (body) => ({ url: PROF_ADD_PATH, method: "POST", body }),
     }),
-    updateProfession: build.mutation<ProfessionResponseI, { profession_id: number; data: ProfessionUpdateI }>({
-      query: ({ profession_id, data }) => ({ url: `${PROF_UPDATE_PATH}/${profession_id}`, method: "PUT", body: data }),
+    updateProfession: build.mutation<ProfessionResponseI, { profession_id: number; body: ProfessionUpdateI }>({
+      query: ({ profession_id, body }) => ({ url: `${PROF_UPDATE_PATH}/${profession_id}`, method: "PUT", body }),
     }),
     deleteProfession: build.mutation<void, number>({
       query: (profession_id) => ({ url: `${PROF_DELETE_PATH}/${profession_id}`, method: "DELETE" }),

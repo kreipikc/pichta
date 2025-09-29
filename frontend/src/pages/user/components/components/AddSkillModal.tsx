@@ -14,12 +14,17 @@ import { toast } from "react-toastify";
 import {
   useAddSkillMutation,
   useGetAllSkillsQuery,
+  useGetUserSkillsQuery, // ⬅ добавили, чтобы получить refetch
 } from "@/app/redux/api/skill.api";
 import type { UserSkillCreateI } from "@/shared/types/api/SkillI";
 
-export default function AddSkillModal() {
+export default function AddSkillModal({ userId }: { userId: number }) {
   const [opened, setOpened] = useState(false);
   const { data: allSkills = [], isLoading } = useGetAllSkillsQuery();
+
+  // ⬇ возьмём refetch из текущего списка навыков пользователя и дернём его после успешного add
+  const { refetch: refetchUserSkills } = useGetUserSkillsQuery(userId);
+
   const [addSkill, addState] = useAddSkillMutation();
 
   const skillOptions = useMemo(() => {
@@ -62,14 +67,20 @@ export default function AddSkillModal() {
     }
     const dto: UserSkillCreateI = {
       id_skill: Number(skillId),
-      id_user: 0, // на бэке для self берется текущий пользователь; значение игнорируется
+      id_user: userId, // оставляем — бэку может быть нужно и в теле
       proficiency,
       priority,
       start_date: startDate ? startDate.toISOString() : null,
       end_date: null,
       status,
     };
-    await addSkill([dto]).unwrap(); // БЭК ЖДЕТ МАССИВ
+
+    // ⬇ ключевой момент: пробрасываем user_id аргументом, чтобы endpoint знал, что инвалидировать
+    await addSkill({ user_id: userId, body: [dto] }).unwrap();
+
+    // ⬇ и сразу обновим список навыков пользователя
+    await refetchUserSkills();
+
     toast.success("Навык добавлен");
     setOpened(false);
     reset();
