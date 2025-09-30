@@ -48,3 +48,8 @@ class SkillOnlyResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CourseResponse(BaseModel):
+    id: int
+    url: str

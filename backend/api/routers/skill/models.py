@@ -4,6 +4,8 @@ from sqlalchemy.orm import relationship
 from database import Model
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
 
+from ..courser.models import Course
+
 
 class Skill(Model):
     __tablename__ = 'skills'
@@ -30,3 +32,17 @@ class UserSkill(Model):
     def name(self) -> str:
         """Возвращает название навыка из связанной таблицы skills"""
         return self.skill.name if self.skill else None
+
+
+class CourserSkill(Model):
+    __tablename__ = 'skill_to_course'
+
+    id_skill = Column(Integer, ForeignKey('skills.id'), primary_key=True)
+    id_course = Column(Integer, ForeignKey('courses.id'), primary_key=True)
+
+    course = relationship("Course", backref="skill_to_course")
+
+    @property
+    def url(self) -> str:
+        """Возвращает название навыка из связанной таблицы skills"""
+        return self.url.name if self.url else None

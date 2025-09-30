@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 
 from logger import app_logger
 from .service import get_skill_repository, SkillRepository
-from .schemas import UserSkillCreate, UserSkillResponse, SkillResponse, UserSkillUpdate, SkillOnlyResponse
+from .schemas import UserSkillCreate, UserSkillResponse, SkillResponse, UserSkillUpdate, SkillOnlyResponse, CourseResponse
 from ..auth.ident.dependencies import get_current_user, require_roles
 from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
@@ -95,6 +95,28 @@ async def get_user_skill(
         return SkillResponse.model_validate(skill)
     except HTTPException:
         raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@router.get(
+    path="/get/{skill_id}/courses",
+    summary="Get all courses for skill",
+    description="Get all courses for skill",
+    response_description="List courses",
+    status_code=status.HTTP_200_OK,
+    response_model=List[CourseResponse]
+)
+async def get_user_skill(
+        skill_id: int,
+        skill_repo: SkillRepository = Depends(get_skill_repository),
+        current_user: UserInfo = Depends(get_current_user)
+) -> List[CourseResponse]:
+    try:
+        list_course = await skill_repo.get_courser_skill(skill_id)
+
+        return [CourseResponse(id=course.id, url=course.url) for course in list_course]
     except Exception as e:
         app_logger.error(f"Error: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -7,9 +7,10 @@ from fastapi import HTTPException, status, Depends
 from sqlalchemy.orm import selectinload
 
 from logger import app_logger
-from .models import Skill, UserSkill
+from .models import Skill, UserSkill, CourserSkill
 from .schemas import UserSkillCreate, UserSkillUpdate
 from database import get_db
+from ..courser.models import Course
 
 
 class SkillRepository:
@@ -25,6 +26,14 @@ class SkillRepository:
             select(UserSkill)
             .where(UserSkill.id_user == user_id)
             .options(selectinload(UserSkill.skill))  # загружаем связь skill
+        )
+        return result.scalars().all()
+
+    async def get_courser_skill(self, skill_id: int) -> list[Course]:
+        result = await self.session.execute(
+            select(Course)
+            .join(CourserSkill, Course.id == CourserSkill.id_course)
+            .where(CourserSkill.id_skill == skill_id)
         )
         return result.scalars().all()
 

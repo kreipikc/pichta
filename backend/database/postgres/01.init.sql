@@ -31,6 +31,13 @@ CREATE TABLE courses (
     url VARCHAR(500) UNIQUE NOT NULL
 );
 
+-- Связь навыков и курсов
+CREATE TABLE skill_to_course (
+    id_skill INTEGER NOT NULL REFERENCES skills(id),
+    id_course INTEGER NOT NULL REFERENCES courses(id),
+    PRIMARY KEY (id_skill, id_course)
+);
+
 -- Связь профессий и курсов
 CREATE TABLE profession_to_course (
     id_profession INTEGER NOT NULL REFERENCES professions(id),
