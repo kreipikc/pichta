@@ -1,18 +1,70 @@
-# Ruuun
-##0) не забудь удалить level из таблицу prefession, если есть
-1) берём json и копируем к нему путь
-2) заходим в скрипт deploy_bd.py там тыкам путь к json
-короче тут
+## Как JSON граф отправить в БД?
+Для этого используется python скрипт `deploy_db.py` в текущей директории.
 
-<img width="681" height="183" alt="image" src="https://github.com/user-attachments/assets/add002f0-c8ce-49e5-a290-d2426d336aae" />
+Для настройки необходимо перейти в файл и поменять настройки в константах, 
+а именно:
+```python
+# Заменить на свои данные от PostgreSQL
+POSTGRES_USER = "postgres"
+POSTGRES_PASSWORD = "postgrespass"
+POSTGRES_DB = "testdb"
+POSTGRES_HOST = "localhost"
+POSTGRES_PORT = 5432
 
-ну и в общем граф был добавлен в бд
+# Заменить на путь до графа в формате JSON
+PATH_TO_JSON = "C:\\Users\\User\\graphs\\graph_c++.json"
+```
+Теперь просто запускаем скрипт.
 
-у тебя в бд появилась новая профессия и навыки в реляшке, таблицах profession и skills
+### Примечание
+Создались необходимые профессии и навыки в таблицах profession и skills соответственно
 
-можешь глянуть какой id у каждого скила и добавить пользователю эти скилы с рандомными значеняими
-глянь ещё id у професси*
+## Мини проверка всё ли есть в БД
+Для теста можно запустить скрипт 
+check_bd.py
 
-ну и короче тыкай ручку (мне лень было переписывать я просто заскринил)
+Пример вывода:
 
-<img width="838" height="368" alt="image" src="https://github.com/user-attachments/assets/e51f16cc-94fb-443b-9435-6a1ec16f8f42" />
+<img width="1809" height="881" alt="image" src="https://github.com/user-attachments/assets/f077b141-c71a-4149-aef2-0e56c430ab49" />
+
+## Получаем json из бэка, на который наложили пользовательские скилы
+Для наглядности, добавим пользователю те навыки, которые были в профессии из json (профессия которую ранее добавили)
+смотрим на название навыка из json -> заходим в бд -> ищем по названию этот навык -> видим id навыка -> добавляем пользователю освоение этого навыка по id
+
+смотрим на название профессии из json -> заходим в бд -> ищем по названию эту прфоессию -> запоминаем id прфоессии 
+теперь можем дёргать ручку /graph/get/{id професси котроую добавили}
+пример json который получаем в итоге:
+```
+{
+  "C++ Developer": {
+    "programming_languages": {
+      "C++": {
+        "count": 240,
+        "subtopics": {
+          "STL": {
+            "count": 80,
+            "components": {
+              "containers": {
+                "count": 40,
+                "types": {
+                  "sequence_containers": {
+                    "count": 20,
+                    "implementations": {
+                      "vector": {"count": 10},
+                      "deque": {"count": 5},
+                      "list": {"count": 5}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "corrupted_vector": {"count": 52}
+    },
+    "corrupted_vqq": {"count": 52}
+  }
+}
+```
+
