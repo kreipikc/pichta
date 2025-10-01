@@ -1,5 +1,6 @@
 -- Создание enum типа
 CREATE TYPE user_role AS ENUM ('admin', 'user', 'manager');
+CREATE TYPE skill_status AS ENUM ('inactive', 'process', 'complete');
 
 -- Таблица пользователей
 CREATE TABLE users (
@@ -53,7 +54,7 @@ CREATE TABLE user_skills (
     priority INTEGER,
     start_date TIMESTAMP,
     end_date TIMESTAMP,
-    status VARCHAR(20) NOT NULL,
+    status skill_status NOT NULL,
     PRIMARY KEY (id_skill, id_user)
 );
 

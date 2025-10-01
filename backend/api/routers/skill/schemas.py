@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+from routers.skill.enums import UserSkillStatus
+
 
 class UserSkillBase(BaseModel):
     id_skill: int
@@ -10,7 +12,7 @@ class UserSkillBase(BaseModel):
     priority: Optional[int] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    status: str
+    status: UserSkillStatus
 
 
 class UserSkillCreate(BaseModel):
@@ -19,7 +21,7 @@ class UserSkillCreate(BaseModel):
     priority: Optional[int] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    status: str
+    status: UserSkillStatus
 
 
 class UserSkillUpdate(BaseModel):
@@ -27,7 +29,7 @@ class UserSkillUpdate(BaseModel):
     priority: Optional[int] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    status: Optional[str] = None
+    status: Optional[UserSkillStatus] = None
 
 
 class UserSkillResponse(UserSkillBase):

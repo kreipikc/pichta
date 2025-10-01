@@ -2,8 +2,9 @@ from datetime import datetime
 from sqlalchemy.orm import relationship
 
 from database import Model
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum as SQLEnum
 
+from .enums import UserSkillStatus
 from ..courser.models import Course
 
 
@@ -24,7 +25,7 @@ class UserSkill(Model):
     priority = Column(Integer)
     start_date = Column(DateTime, default=datetime.now)
     end_date = Column(DateTime)
-    status = Column(String(20), nullable=False)
+    status = Column(SQLEnum(UserSkillStatus, name='skill_status'), default=UserSkillStatus.inactive, nullable=False)
 
     skill = relationship("Skill", backref="user_skills")
 

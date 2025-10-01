@@ -122,10 +122,36 @@ async def get_user_skill(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@router.get(
+    path="/get/{user_id}/process",
+    summary="Get all skills in process",
+    description="Get all skills in process",
+    response_description="List skills",
+    status_code=status.HTTP_200_OK,
+    response_model=List[SkillResponse]
+)
+async def get_user_skill(
+        user_id: int,
+        skill_repo: SkillRepository = Depends(get_skill_repository),
+        current_user: UserInfo = Depends(get_current_user)
+):
+    try:
+        if current_user.role != UserRole.admin:
+            if current_user.id != user_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
+        skills = await skill_repo.get_user_skills_in_process(user_id)
+
+        return [SkillResponse.model_validate(skill) for skill in skills]
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @router.post(
     path="/add",
     summary="Add skill for yourself",
-    description="Add skill for yourself",
+    description="Add skill for yourself. Row status - enum('inactive', 'process', 'complete')",
     response_description="Status code",
     status_code=status.HTTP_201_CREATED,
     response_class=Response
@@ -148,7 +174,7 @@ async def add_my_skill(
 @router.post(
     path="/add/{user_id}",
     summary="Add skill for user",
-    description="Add skill for specific user (admin only)",
+    description="Add skill for specific user (admin only).  Row status - enum('inactive', 'process', 'complete')",
     response_description="Status code",
     status_code=status.HTTP_201_CREATED,
     response_class=Response
@@ -172,7 +198,7 @@ async def add_user_skill(
 @router.put(
     path="/update/{skill_id}",
     summary="Update skill for user",
-    description="Update skill for user. Admin - all users, user - yourself.",
+    description="Update skill for user. Admin - all users, user - yourself.  Row status - enum('inactive', 'process', 'complete')",
     response_description="Data of the updated object",
     status_code=status.HTTP_200_OK,
     response_model=UserSkillResponse,
