@@ -1,18 +1,11 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "./baseQuery";
 import { API_BASE_URL, USER_GETALL_PATH, USER_UPDATE_PATH, USER_DELETE_PATH } from "@/app/redux/api/endpoints";
 import type { UserInfoI, UserUpdateI } from "@/shared/types/api/UserI";
 
 export const userApi = createApi({
   reducerPath: "userApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    prepareHeaders(headers) {
-      const token = localStorage.getItem("access_token");
-      if (token) headers.set("authorization", `Bearer ${token}`);
-      return headers;
-    },
-    credentials: "include",
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (build) => ({
     getUsers: build.query<UserInfoI[], void>({
       query: () => ({

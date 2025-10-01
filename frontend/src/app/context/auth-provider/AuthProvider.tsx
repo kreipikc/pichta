@@ -22,15 +22,6 @@ import { useRoutes } from '@/hooks/useRoutes';
 import type { UserInfoI } from '@/shared/types/api/UserI';
 import { useGetWantedProfessionsByUserIdQuery } from '@/app/redux/api/me.api';
 
-// === Тайминги рефреша ===
-const EXPIRE_MINUTES_RAW = String(import.meta.env.VITE_ACCESS_TOKEN_EXPIRE_MINUTES ?? '15').trim();
-const ACCESS_EXPIRE_MIN = Number.isFinite(+EXPIRE_MINUTES_RAW) && +EXPIRE_MINUTES_RAW > 0
-  ? +EXPIRE_MINUTES_RAW
-  : 15;
-
-const LEEWAY_MS = 60_000;     // 1 минута до истечения
-const MIN_TIMEOUT_MS = 15_000; // минимум на всякий
-
 enum AuthStatus {
   Initializing = 'initializing',
   Authenticated = 'authenticated',
@@ -51,23 +42,6 @@ type AuthContextProps = {
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 
-// utils
-function parseJwtExpMs(token?: string | null): number | null {
-  if (!token) return null;
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  try {
-    let base = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    while (base.length % 4) base += '=';
-    const payload = JSON.parse(atob(base));
-    const expSec = payload?.exp;
-    if (!expSec || !Number.isFinite(expSec)) return null;
-    return expSec * 1000;
-  } catch {
-    return null;
-  }
-}
-
 // страницы, куда не редиректим из онбординга
 const NEVER_REDIRECT = new Set<string>([
   '/questionnaire',
@@ -86,7 +60,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const location = useLocation();
   const { paths } = useRoutes();
 
-  const refreshTimeoutRef = useRef<number | null>(null);
   const redirectedRef = useRef(false);
 
   const [refreshToken] = useRefreshTokenMutation();
@@ -94,7 +67,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const currentUser = useAppSelector((s) => s.user.currentUser);
 
-  // === единый /user/me ===
+  // === /user/me ===
   const hasToken = !!localStorage.getItem('access_token');
   const shouldQueryMe = status === AuthStatus.Authenticated && hasToken;
 
@@ -129,94 +102,41 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (me) dispatch(addUser(me));
   }, [me, dispatch, addUser]);
 
-  // таймеры
-  const clearRefreshTimeout = () => {
-    if (refreshTimeoutRef.current) {
-      window.clearTimeout(refreshTimeoutRef.current);
-      refreshTimeoutRef.current = null;
-    }
-  };
-
-  const scheduleNextRefresh = () => {
-    clearRefreshTimeout();
-
-    const accessToken = localStorage.getItem('access_token');
-    const now = Date.now();
-    const expMs = parseJwtExpMs(accessToken);
-
-    let delay: number;
-    if (typeof expMs === 'number' && expMs > now) {
-      delay = Math.max(MIN_TIMEOUT_MS, expMs - now - LEEWAY_MS);
-    } else {
-      delay = Math.max(MIN_TIMEOUT_MS, ACCESS_EXPIRE_MIN * 60_000 - LEEWAY_MS);
-    }
-    if (!Number.isFinite(delay) || delay < MIN_TIMEOUT_MS) delay = MIN_TIMEOUT_MS;
-
-    refreshTimeoutRef.current = window.setTimeout(async () => {
-      try {
-        await refreshToken().unwrap();
-      } catch {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('token_type');
-        setStatus(AuthStatus.Unauthenticated);
-        dispatch(authApi.util.resetApiState());
-        dispatch(deleteUser());
-        return;
-      }
-      scheduleNextRefresh();
-    }, delay) as unknown as number;
-  };
-
-  // инициализация
+  // ===== ИНИЦИАЛИЗАЦИЯ БЕЗ ТАЙМЕРОВ =====
   useEffect(() => {
     const init = async () => {
       const token = localStorage.getItem('access_token');
       const type = localStorage.getItem('token_type');
 
+      // 1) если уже есть access — считаем аутентифицированным
       if (token && type) {
         setStatus(AuthStatus.Authenticated);
-        scheduleNextRefresh();
         return;
       }
 
+      // 2) пробуем один раз обновить токен (по cookie refresh)
       try {
         const refreshed: any = await refreshToken().unwrap().catch(() => null);
         const access =
           refreshed?.access_token ?? refreshed?.accessToken ?? refreshed?.token ?? null;
         const tokenType = refreshed?.token_type ?? refreshed?.tokenType ?? 'Bearer';
+
         if (access) {
           localStorage.setItem('access_token', String(access));
           localStorage.setItem('token_type', String(tokenType));
           setStatus(AuthStatus.Authenticated);
-          scheduleNextRefresh();
           return;
         }
-      } catch { /* ignore */ }
+      } catch {
+        // ignore — упадём в Unauthenticated ниже
+      }
 
       setStatus(AuthStatus.Unauthenticated);
     };
 
     void init();
-    return () => clearRefreshTimeout();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // мягкий рефреш при возврате вкладки (если < 1 мин)
-  useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState !== 'visible') return;
-      if (status !== AuthStatus.Authenticated) return;
-
-      const expMs = parseJwtExpMs(localStorage.getItem('access_token'));
-      const now = Date.now();
-      if (expMs && expMs - now < LEEWAY_MS) {
-        void refreshToken();
-        scheduleNextRefresh();
-      }
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [status, refreshToken]);
 
   // --- редирект в анкету: простое правило по wantedProfs ---
   useEffect(() => {
@@ -262,7 +182,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       dispatch(deleteUser());
 
       setStatus(AuthStatus.Unauthenticated);
-      clearRefreshTimeout();
       navigate(paths.Auth);
     },
 
@@ -280,11 +199,13 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
     auth: () => {
       setStatus(AuthStatus.Authenticated);
-      scheduleNextRefresh();
       void refetch();
     },
 
-    refresh: async () => { await refreshToken().unwrap().catch(() => {}); },
+    // Ручной рефреш по требованию (без расписаний).
+    refresh: async () => {
+      await refreshToken().unwrap().catch(() => {});
+    },
   }), [
     status,
     isMeFetching,

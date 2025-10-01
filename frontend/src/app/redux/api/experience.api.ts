@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "./baseQuery";
 import {
   API_BASE_URL,
   EXPER_GETALL_PATH,
@@ -13,15 +14,7 @@ import type { ExperienceResponseI, ExperienceCreateI, ExperienceUpdateI } from "
 export const experienceApi = createApi({
   reducerPath: "experienceApi",
   tagTypes: ["Experience"],
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    prepareHeaders(headers) {
-      const token = localStorage.getItem("access_token");
-      if (token) headers.set("authorization", `Bearer ${token}`);
-      return headers;
-    },
-    credentials: "include",
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (build) => ({
     getAllExperience: build.query<ExperienceResponseI[], number>({
       query: (user_id) => ({ url: `${EXPER_GETALL_PATH}/${user_id}`, method: "GET" }),

@@ -1,19 +1,12 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "./baseQuery";
 import { API_BASE_URL, ME_WANTED_PROFESSION_ADD_PATH, ME_WANTED_PROFESSION_GETALL_PATH } from "@/app/redux/api/endpoints";
 import type { WantedProfessionCreateI, WantedProfessionI } from "@/shared/types/api/ForMyselfI";
 
 export const meApi = createApi({
   reducerPath: "meApi",
   tagTypes: ["WantedProf"],
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    prepareHeaders(headers) {
-      const token = localStorage.getItem("access_token");
-      if (token) headers.set("authorization", `Bearer ${token}`);
-      return headers;
-    },
-    credentials: "include",
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (build) => ({
     getWantedProfessionsByUserId: build.query<WantedProfessionI[], number>({
       // arg: user_id

@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "./baseQuery";
 import {
   API_BASE_URL,
   TASK_GETALL_PATH,
@@ -15,15 +16,7 @@ export type TaskUpdatePatch = { user_id: number; task_id: number; body: TaskUpda
 export const taskApi = createApi({
   reducerPath: "taskApi",
   tagTypes: ["Tasks"],
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    prepareHeaders(headers) {
-      const token = localStorage.getItem("access_token");
-      if (token) headers.set("authorization", `Bearer ${token}`);
-      return headers;
-    },
-    credentials: "include",
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (build) => ({
     getAllTasks: build.query<TaskResponseI[], number>({
       query: (user_id) => ({ url: `${TASK_GETALL_PATH}/${user_id}`, method: "GET" }),

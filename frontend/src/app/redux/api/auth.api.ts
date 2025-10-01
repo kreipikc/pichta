@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "./baseQuery";
 import { 
   API_BASE_URL, 
   AUTH_LOGIN_PATH, AUTH_REFRESH_PATH, AUTH_LOGOUT_PATH, AUTH_REGISTER_PATH,
@@ -11,15 +12,7 @@ type ChangePasswordRequest = { old_password: string; new_password: string };
 
 export const authApi = createApi({
   reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    prepareHeaders(headers) {
-      const token = localStorage.getItem('access_token');
-      if (token) headers.set('authorization', `Bearer ${token}`);
-      return headers;
-    },
-    credentials: 'include',
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (build) => ({
     signIn: build.mutation<TokenI, LogInI>({
       query: (body) => ({ url: AUTH_LOGIN_PATH, method: 'POST', body }),
@@ -42,7 +35,6 @@ export const authApi = createApi({
     refreshToken: build.mutation<void, void>({
       query: () => ({ url: AUTH_REFRESH_PATH, method: 'POST' }),
     }),
-    // ← НОВОЕ: смена пароля
     changePassword: build.mutation<void, ChangePasswordRequest>({
       query: (body) => ({ url: AUTH_CHANGE_PASS_PATH, method: 'POST', body }),
     }),
