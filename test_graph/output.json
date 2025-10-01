@@ -1,0 +1,41 @@
+{
+  "C++ Developer": {
+    "programming_languages": {
+      "C++": {
+        "count": 240,
+        "subtopics": {
+          "STL": {
+            "count": 80,
+            "components": {
+              "containers": {
+                "count": 40,
+                "types": {
+                  "sequence_containers": {
+                    "count": 20,
+                    "implementations": {
+                      "vector": {
+                        "count": 10
+                      },
+                      "deque": {
+                        "count": 5
+                      },
+                      "list": {
+                        "count": 5
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "corrupted_vector": {
+        "count": 52
+      }
+    },
+    "corrupted_vqq": {
+      "count": 52
+    }
+  }
+}

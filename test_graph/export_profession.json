@@ -1,0 +1,215 @@
+{
+    "profession_id": 1,
+    "nodes": [
+        {
+            "id": 844424930131971,
+            "label": "Profession",
+            "properties": {
+                "name": "C++ Developer",
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1125899906842635,
+            "label": "Category",
+            "properties": {
+                "name": "programming_languages",
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1125899906842636,
+            "label": "Category",
+            "properties": {
+                "name": "subtopics",
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1125899906842637,
+            "label": "Category",
+            "properties": {
+                "name": "components",
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1125899906842638,
+            "label": "Category",
+            "properties": {
+                "name": "types",
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1125899906842639,
+            "label": "Category",
+            "properties": {
+                "name": "implementations",
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263952,
+            "label": "Skill",
+            "properties": {
+                "name": "C++",
+                "value": 240,
+                "skill_id": 1,
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263953,
+            "label": "Skill",
+            "properties": {
+                "name": "STL",
+                "value": 80,
+                "skill_id": 2,
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263954,
+            "label": "Skill",
+            "properties": {
+                "name": "containers",
+                "value": 40,
+                "skill_id": 3,
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263955,
+            "label": "Skill",
+            "properties": {
+                "name": "sequence_containers",
+                "value": 20,
+                "skill_id": 4,
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263956,
+            "label": "Skill",
+            "properties": {
+                "name": "vector",
+                "value": 10,
+                "skill_id": 5,
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263957,
+            "label": "Skill",
+            "properties": {
+                "name": "deque",
+                "value": 5,
+                "skill_id": 6,
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263958,
+            "label": "Skill",
+            "properties": {
+                "name": "list",
+                "value": 5,
+                "skill_id": 7,
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263959,
+            "label": "Skill",
+            "properties": {
+                "name": "corrupted_vector",
+                "value": 52,
+                "skill_id": 8,
+                "profession_id": 1
+            }
+        },
+        {
+            "id": 1688849860263960,
+            "label": "Skill",
+            "properties": {
+                "name": "corrupted_vqq",
+                "value": 52,
+                "skill_id": 9,
+                "profession_id": 1
+            }
+        }
+    ],
+    "relationships": [
+        {
+            "from": 844424930131971,
+            "to": 1125899906842635,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1688849860263952,
+            "to": 1125899906842636,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1688849860263953,
+            "to": 1125899906842637,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1688849860263954,
+            "to": 1125899906842638,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1688849860263955,
+            "to": 1125899906842639,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1125899906842635,
+            "to": 1688849860263952,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1125899906842636,
+            "to": 1688849860263953,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1125899906842637,
+            "to": 1688849860263954,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1125899906842638,
+            "to": 1688849860263955,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1125899906842639,
+            "to": 1688849860263956,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1125899906842639,
+            "to": 1688849860263957,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1125899906842639,
+            "to": 1688849860263958,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 1125899906842635,
+            "to": 1688849860263959,
+            "type": "CONTAINS"
+        },
+        {
+            "from": 844424930131971,
+            "to": 1688849860263960,
+            "type": "CONTAINS"
+        }
+    ]
+}
