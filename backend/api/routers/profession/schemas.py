@@ -4,7 +4,6 @@ from typing import Optional
 
 class ProfessionBase(BaseModel):
     name: str
-    lvl: Optional[str] = None
 
 
 class ProfessionCreate(ProfessionBase):
@@ -13,7 +12,6 @@ class ProfessionCreate(ProfessionBase):
 
 class ProfessionUpdate(BaseModel):
     name: Optional[str] = None
-    lvl: Optional[str] = None
 
 
 class ProfessionRead(ProfessionBase):

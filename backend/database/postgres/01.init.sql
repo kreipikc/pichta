@@ -22,8 +22,7 @@ CREATE TABLE skills (
 -- Таблица профессий
 CREATE TABLE professions (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    lvl VARCHAR(50) NOT NULL
+    name VARCHAR(100) NOT NULL
 );
 
 -- Таблица курсов
