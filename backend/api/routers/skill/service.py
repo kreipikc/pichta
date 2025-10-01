@@ -30,12 +30,23 @@ class SkillRepository:
         )
         return result.scalars().all()
 
+    async def get_user_skills_dict(self, user_id: int) -> dict[str, int]:
+        objects = await self.get_user_skills(user_id)
+        return {
+            user_skill.skill.name: user_skill.proficiency
+            for user_skill in objects
+        }
+
     async def get_user_skills_in_process(self, user_id: int):
         result = await self.session.execute(
             select(UserSkill)
             .where(UserSkill.id_user == user_id)
             .where(UserSkill.status == UserSkillStatus.process)
             .options(selectinload(UserSkill.skill))
+            .order_by(
+                UserSkill.priority.desc(),
+                UserSkill.start_date.desc()
+            )
         )
         return result.scalars().all()
 

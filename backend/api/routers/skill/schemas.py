@@ -10,8 +10,8 @@ class UserSkillBase(BaseModel):
     id_user: int
     proficiency: int
     priority: Optional[int] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime
+    end_date: datetime
     status: UserSkillStatus
 
 
@@ -19,8 +19,8 @@ class UserSkillCreate(BaseModel):
     id_skill: int
     proficiency: int
     priority: Optional[int] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime
+    end_date: datetime
     status: UserSkillStatus
 
 

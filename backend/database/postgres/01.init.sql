@@ -52,8 +52,8 @@ CREATE TABLE user_skills (
     id_user INTEGER NOT NULL REFERENCES users(id),
     proficiency INTEGER NOT NULL,
     priority INTEGER,
-    start_date TIMESTAMP,
-    end_date TIMESTAMP,
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
     status skill_status NOT NULL,
     PRIMARY KEY (id_skill, id_user)
 );
