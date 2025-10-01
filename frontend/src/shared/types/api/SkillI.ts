@@ -32,3 +32,14 @@ export interface SkillResponseI {
   id: number;
   name: string;
 }
+
+export interface SkillProcessI {
+  id_skill: number;
+  id_user: number;
+  proficiency: number; // 0..100
+  priority: number;
+  start_date: string;  // ISO
+  end_date: string;    // ISO
+  status?: "process";  // приходит как "process", но мы не используем
+  name: string;
+}

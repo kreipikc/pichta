@@ -1,357 +1,215 @@
-import { useEffect, useRef, useState } from "react";
-import { Card, Title, Text, Drawer } from "@mantine/core";
-import Cookies from "js-cookie";
-import { Gantt, Task } from "gantt-task-react";
-import "gantt-task-react/dist/index.css";
+import { useMemo } from "react";
+import {
+  Card,
+  Title,
+  Text,
+  Group,
+  Badge,
+  ActionIcon,
+  Tooltip,
+  Loader,
+  Center,
+  SegmentedControl,
+  useMantineTheme,
+  useMantineColorScheme,
+} from "@mantine/core";
+import { IconRefresh } from "@tabler/icons-react";
+import { useAppSelector } from "@/hooks/useAppSelector";
+import { useGetUserSkillProcessesQuery } from "@/app/redux/api/skill.api";
 
-import styles from "./GanttChartPage.module.css";
-import { skillCourses } from "@/data/cources/skillCourses";
+import { useGanttLayout, type NormalizedSkill } from "./components/useGanttLayout";
+import { GanttHeader } from "./components/GanttHeader";
+import { GanttRow } from "./components/GanttRow";
+import { SkillModal } from "./components/SkillModal";
+import { SkillProcessI } from "@/shared/types/api/SkillI";
 
-// Импорт графов
-import graph_python_1 from "@/data/graphs/graph_python_1.json";
-import graph_python_2 from "@/data/graphs/graph_python_2.json";
-import graph_python_3 from "@/data/graphs/graph_python_3.json";
+export default function GanttChartPage() {
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === "dark";
 
-import graph_java_1 from "@/data/graphs/graph_java_1.json";
-import graph_java_2 from "@/data/graphs/graph_java_2.json";
-import graph_java_3 from "@/data/graphs/graph_java_3.json";
+  const user = useAppSelector((s) => s.user.currentUser);
+  const userId = user?.id ?? 0;
 
-import graph_javascript_1 from "@/data/graphs/graph_javascript_1.json";
-import graph_javascript_2 from "@/data/graphs/graph_javascript_2.json";
-import graph_javascript_3 from "@/data/graphs/graph_javascript_3.json";
+  const { data, isLoading, refetch } = useGetUserSkillProcessesQuery(userId, {
+    skip: !userId,
+  });
 
-import graph_php_1 from "@/data/graphs/graph_php_1.json";
-import graph_php_2 from "@/data/graphs/graph_php_2.json";
-import graph_php_3 from "@/data/graphs/graph_php_3.json";
+  const skills = useMemo<NormalizedSkill[]>(
+    () =>
+      (data ?? []).map((r: SkillProcessI) => {
+        const s = new Date(r.start_date);
+        const e = new Date(r.end_date);
+        const start = s <= e ? s : e;
+        const end = e >= s ? e : s;
+        return {
+          id: r.id_skill,
+          title: r.name,
+          start,
+          end,
+          proficiency: r.proficiency,
+          priority: r.priority,
+          raw: r,
+        };
+      }),
+    [data]
+  );
 
-import graph_sql_1 from "@/data/graphs/graph_sql_1.json";
-import graph_sql_2 from "@/data/graphs/graph_sql_2.json";
-import graph_sql_3 from "@/data/graphs/graph_sql_3.json";
+  // Лейаут: измерения, даты, подписи, модалка и т.п.
+  const gantt = useGanttLayout(skills);
 
-import graph_1c_1 from "@/data/graphs/graph_1c_1.json";
-import graph_1c_2 from "@/data/graphs/graph_1c_2.json";
-import graph_1c_3 from "@/data/graphs/graph_1c_3.json";
+  // Цвета для «зебры»
+  const zebraEven = isDark ? theme.colors.dark[6] : theme.colors.gray[0];
+  const zebraOdd = "transparent";
+  const gridLine = isDark ? theme.colors.dark[4] : theme.colors.gray[3];
 
-import graph_ios_1 from "@/data/graphs/graph_ios_1.json";
-import graph_ios_2 from "@/data/graphs/graph_ios_2.json";
-import graph_ios_3 from "@/data/graphs/graph_ios_3.json";
-
-import graph_oracle_1 from "@/data/graphs/graph_oracle_1.json";
-import graph_oracle_2 from "@/data/graphs/graph_oracle_2.json";
-import graph_oracle_3 from "@/data/graphs/graph_oracle_3.json";
-
-import graph_csharp_1 from "@/data/graphs/graph_csharp_1.json";
-import graph_csharp_2 from "@/data/graphs/graph_csharp_2.json";
-import graph_csharp_3 from "@/data/graphs/graph_csharp_3.json";
-
-import graph_cplusplus_1 from "@/data/graphs/graph_c++_1.json";
-import graph_cplusplus_2 from "@/data/graphs/graph_c++_2.json";
-import graph_cplusplus_3 from "@/data/graphs/graph_c++_3.json";
-
-import graph_бизнес_1 from "@/data/graphs/graph_бизнес_1.json";
-import graph_бизнес_2 from "@/data/graphs/graph_бизнес_2.json";
-import graph_бизнес_3 from "@/data/graphs/graph_бизнес_3.json";
-
-import graph_маркетинговый_1 from "@/data/graphs/graph_маркетинговый_1.json";
-import graph_маркетинговый_2 from "@/data/graphs/graph_маркетинговый_2.json";
-import graph_маркетинговый_3 from "@/data/graphs/graph_маркетинговый_3.json";
-
-import graph_системный_1 from "@/data/graphs/graph_системный_1.json";
-import graph_системный_2 from "@/data/graphs/graph_системный_2.json";
-import graph_системный_3 from "@/data/graphs/graph_системный_3.json";
-
-import graph_финансовый_1 from "@/data/graphs/graph_финансовый_1.json";
-import graph_финансовый_2 from "@/data/graphs/graph_финансовый_2.json";
-import graph_финансовый_3 from "@/data/graphs/graph_финансовый_3.json";
-
-
-const graphFiles: Record<string, Record<number, any>> = {
-  "Python Developer": {
-    1: graph_python_1,
-    2: graph_python_2,
-    3: graph_python_3,
-  },
-  "Java Developer": {
-    1: graph_java_1,
-    2: graph_java_2,
-    3: graph_java_3,
-  },
-  "1C Developer": {
-    1: graph_1c_1,
-    2: graph_1c_2,
-    3: graph_1c_3,
-  },
-  "C# Developer": {
-    1: graph_csharp_1,
-    2: graph_csharp_2,
-    3: graph_csharp_3,
-  },
-  "C++ Developer": {
-    1: graph_cplusplus_1,
-    2: graph_cplusplus_2,
-    3: graph_cplusplus_3,
-  },
-  "iOS Developer": {
-    1: graph_ios_1,
-    2: graph_ios_2,
-    3: graph_ios_3,
-  },
-  "JavaScript разработчик": {
-    1: graph_javascript_1,
-    2: graph_javascript_2,
-    3: graph_javascript_3,
-  },
-  "Oracle Developer": {
-    1: graph_oracle_1,
-    2: graph_oracle_2,
-    3: graph_oracle_3,
-  },
-  "PHP Developer": {
-    1: graph_php_1,
-    2: graph_php_2,
-    3: graph_php_3,
-  },
-  "SQL Developer": {
-    1: graph_sql_1,
-    2: graph_sql_2,
-    3: graph_sql_3,
-  },
-  "Бизнес-аналитик": {
-    1: graph_бизнес_1,
-    2: graph_бизнес_2,
-    3: graph_бизнес_3,
-  },
-  "Маркетинговый аналитик": {
-    1: graph_маркетинговый_1,
-    2: graph_маркетинговый_2,
-    3: graph_маркетинговый_3,
-  },
-  "Системный аналитик": {
-    1: graph_системный_1,
-    2: graph_системный_2,
-    3: graph_системный_3,
-  },
-  "Финансовый аналитик": {
-    1: graph_финансовый_1,
-    2: graph_финансовый_2,
-    3: graph_финансовый_3,
-  },
-};
-
-const goalToGraphMap: Record<string, string> = {
-  "1c": "1C Developer",
-  "c#": "C# Developer",
-  "c++": "C++ Developer",
-  ios: "iOS Developer",
-  java: "Java Developer",
-  javascript: "JavaScript разработчик",
-  oracle: "Oracle Developer",
-  php: "PHP Developer",
-  python: "Python Developer",
-  sql: "SQL Developer",
-  бизнес: "Бизнес-аналитик",
-  маркетинговый: "Маркетинговый аналитик",
-  системный: "Системный аналитик",
-  финансовый: "Финансовый аналитик",
-};
-
-const LEVEL_ORDER: Record<string, number> = {
-  Intern: 1,
-  Junior: 1,
-  Middle: 2,
-  Senior: 3,
-  Lead: 3,
-};
-
-const getUserLevelForGoal = (): number => {
-  const position = Cookies.get("mock_position"); // Например: "Senior Frontend Developer"
-  if (!position) return 1;
-
-  // Извлекаем первое слово (уровень)
-  const levelMatch = position.split(" ")[0];
-  return LEVEL_ORDER[levelMatch] || 1;
-};
-
-
-export const GanttChartPage = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [ganttKey, setGanttKey] = useState(0);
-
-  // Drag-scroll
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let isDown = false;
-    let startX = 0;
-    let scrollLeft = 0;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      isDown = true;
-      startX = e.pageX - container.offsetLeft;
-      scrollLeft = container.scrollLeft;
-      container.classList.add(styles.dragging);
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - container.offsetLeft;
-      const walk = (x - startX) * 1.5;
-      container.scrollLeft = scrollLeft - walk;
-    };
-
-    const stopDragging = () => {
-      isDown = false;
-      container.classList.remove(styles.dragging);
-    };
-
-    container.addEventListener("mousedown", handleMouseDown);
-    container.addEventListener("mousemove", handleMouseMove);
-    container.addEventListener("mouseup", stopDragging);
-    container.addEventListener("mouseleave", stopDragging);
-
-    return () => {
-      container.removeEventListener("mousedown", handleMouseDown);
-      container.removeEventListener("mousemove", handleMouseMove);
-      container.removeEventListener("mouseup", stopDragging);
-      container.removeEventListener("mouseleave", stopDragging);
-    };
-  }, []);
-
-  useEffect(() => {
-    const stored = Cookies.get("questionnaireResult");
-    if (!stored) return;
-
-    const parsed = JSON.parse(stored);
-    const userSkills = (parsed.skills || []).map((s: string) => s.toLowerCase());
-    const selectedGoals: string[] = parsed.goals || [];
-    const experience = parsed.experience || [];
-
-    const unmastered: Set<string> = new Set();
-
-    selectedGoals.forEach((goalKey) => {
-      const graphName = goalToGraphMap[goalKey.toLowerCase()];
-      
-      const level = getUserLevelForGoal();
-      const graph = graphFiles[graphName]?.[level];
-
-      if (!graph) return;
-
-      const [role] = Object.keys(graph);
-      const categories = graph[role];
-
-      Object.entries(categories).forEach(([_, skills]: [string, any]) => {
-        Object.keys(skills).forEach((skill) => {
-          if (!userSkills.includes(skill.toLowerCase())) {
-            unmastered.add(skill);
-          }
-        });
-      });
-    });
-
-
-    const now = new Date();
-    const taskList: Task[] = Array.from(unmastered).map((skill, index) => {
-      const start = new Date(now);
-      start.setDate(start.getDate() + index * 7);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 6);
-
-      return {
-        start,
-        end,
-        name: skill,
-        id: `task-${index}`,
-        type: "task",
-        progress: 0,
-        isDisabled: true,
-        styles: {
-          backgroundColor: "teal",
-          progressColor: "#12b886",
-          backgroundSelectedColor: "#12b886",
-        },
-      };
-    });
-
-    setTasks(taskList);
-  }, []);
+  // Ширина контента таймлайна: либо занимает всю видимую область, либо равна числу дат * ширина дня
+  const contentWidthPx = gantt.dates.length * gantt.DAY_PX;
+  const contentWidthStyle = `max(100%, ${contentWidthPx}px)`;
 
   return (
     <>
-      <Card p="md" radius="md" withBorder className={styles.card}>
-        <Title order={2} mb="md">План изучения навыков</Title>
-        <div ref={containerRef} className={styles.scrollContainer}>
-          {tasks.length > 0 ? (
-            <Gantt
-              key={ganttKey}
-              tasks={tasks}
-              listCellWidth="220px"
-              locale="ru"
-              onSelect={(task) => setSelectedTask(task)}
+      <Card withBorder p="md" radius="lg" style={{ overflow: "hidden" }}>
+        <Group justify="space-between" mb="sm">
+          <Group gap="xs">
+            <Title order={3}>Диаграмма Ганта (Навыки)</Title>
+            <Badge variant="light" color={theme.primaryColor}>
+              {skills.length} навыков
+            </Badge>
+          </Group>
+
+          <Group gap="xs">
+            <SegmentedControl
+              size="xs"
+              value={gantt.segment}
+              onChange={(v) => gantt.setSegment(v as any)}
+              data={[
+                { value: "days", label: "Дни" },
+                { value: "weeks", label: "Недели" },
+                { value: "months", label: "Месяцы" },
+              ]}
             />
-          ) : (
-            <Text>Нет навыков для изучения</Text>
-          )}
-        </div>
+            <Tooltip label="Обновить">
+              <ActionIcon variant="default" onClick={() => refetch()}>
+                <IconRefresh size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        </Group>
+
+        {!userId ? (
+          <Center mih={200}>
+            <Text c="dimmed">Нет выбранного пользователя</Text>
+          </Center>
+        ) : isLoading ? (
+          <Center mih={200}>
+            <Loader />
+          </Center>
+        ) : (
+          <div
+            // Внешняя таблица — без ref (меряем только правую колонку)
+            style={{
+              display: "grid",
+              gridTemplateColumns: `320px 1fr`,
+              minHeight: 240,
+              borderRadius: 12,
+              border: `1px solid ${gridLine}`,
+              overflow: "hidden",
+            }}
+          >
+            {/* Левая колонка: названия навыков + зебра */}
+            <div style={{ borderRight: `1px solid ${gridLine}` }}>
+              <GanttHeader side="left" headerBg={gantt.headerBg} gridLine={gridLine}>
+                Навык
+              </GanttHeader>
+
+              <div>
+                {skills.map((t, i) => (
+                  <div
+                    key={`${t.id}-${i}`}
+                    style={{
+                      height: gantt.ROW_HEIGHT,
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "0 12px",
+                      background: i % 2 === 0 ? zebraEven : zebraOdd,
+                      borderBottom: `1px solid ${
+                        isDark ? theme.colors.dark[5] : theme.colors.gray[2]
+                      }`,
+                    }}
+                  >
+                    <Text size="sm" fw={500}>
+                      {t.title}
+                    </Text>
+                    {typeof t.proficiency === "number" && (
+                      <Badge
+                        ml="xs"
+                        size="xs"
+                        variant="outline"
+                        color={theme.primaryColor}
+                        title="Уровень освоения"
+                      >
+                        {t.proficiency}%
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Правая колонка: таймлайн — scroll-контейнер с ref для измерений */}
+            <div
+              ref={gantt.timelineRef}
+              style={{
+                position: "relative",
+                overflowX: "auto",
+                overflowY: "hidden",
+              }}
+            >
+              {/* Внутренний контент с шириной = max(100%, Npx), чтобы:
+                  - заполнять экран при малом количестве дат,
+                  - давать горизонтальный скролл при большом количестве дат */}
+              <div style={{ width: contentWidthStyle }}>
+                {/* Шапка (месяцы/недели/дни) — на русском */}
+                <GanttHeader
+                  side="right"
+                  headerBg={gantt.headerBg}
+                  gridLine={gridLine}
+                  DAY_PX={gantt.DAY_PX}
+                  monthSpans={gantt.monthSpans}
+                  weekSpans={gantt.weekSpans}
+                  dates={gantt.dates}
+                  segment={gantt.segment}
+                  textDimmed={gantt.textDimmed}
+                />
+
+                {/* ВНИМАНИЕ: вертикальная сетка дней полностью удалена */}
+
+                {/* Ряды с барами */}
+                <div style={{ position: "relative" }}>
+                  {skills.map((t, rowIndex) => (
+                    <GanttRow
+                      key={`${t.id}-${rowIndex}`}
+                      item={t}
+                      rowIndex={rowIndex}
+                      gantt={gantt}
+                      zebraEven={zebraEven}
+                      zebraOdd={zebraOdd}
+                      hideDaySplits
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
-      <Drawer
-        opened={!!selectedTask}
-        onClose={() => {
-          setSelectedTask(null);
-          setGanttKey((k) => k + 1);
-        }}
-        title="Информация о задаче"
-        position="right"
-        padding="md"
-        size="md"
-      >
-        {selectedTask && (
-          <>
-            <Text fw={600} size="lg" mb="xs">
-              Что изучаем:
-            </Text>
-            <Text mb="md">{selectedTask.name}</Text>
-
-            <Text fw={600} size="lg" mb="xs">
-              Сроки изучения:
-            </Text>
-            <Text mb="md">
-              {selectedTask.start.toLocaleDateString()} — {selectedTask.end.toLocaleDateString()}
-            </Text>
-
-            <Text fw={600} size="lg" mb="xs">
-              Курсы:
-            </Text>
-            {skillCourses[selectedTask.name] ? (
-              <ul className={styles.courseList}>
-                {Object.entries(skillCourses[selectedTask.name]).map(([title, link]) => (
-                  <li key={title} className={styles.courseItem}>
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.courseLink}
-                    >
-                      {title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Text size="sm" color="dimmed">
-                Курсы для этого навыка пока не найдены.
-              </Text>
-            )}
-          </>
-        )}
-      </Drawer>
-
+      <SkillModal
+        opened={gantt.modal.opened}
+        onClose={gantt.modal.close}
+        active={gantt.modal.active}
+      />
     </>
   );
-};
-
-export default GanttChartPage;
+}

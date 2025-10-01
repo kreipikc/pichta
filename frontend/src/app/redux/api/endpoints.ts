@@ -42,6 +42,7 @@ export const SKILL_ADD_SELF_PATH = `${SKILL_PREFIX}/add`;           // POST (sel
 export const SKILL_ADD_FOR_USER_PATH = `${SKILL_PREFIX}/add`;       // + /{user_id}
 export const SKILL_UPDATE_PATH = `${SKILL_PREFIX}/update`;          // + /{skill_id}
 export const SKILL_DELETE_PATH = `${SKILL_PREFIX}/delete`;          // + /{skill_id}
+export const SKILL_GET_PROCESS_BY_USER_PATH = "/skill/get"; 
 
 // Task
 export const TASK_PREFIX = 'task';
