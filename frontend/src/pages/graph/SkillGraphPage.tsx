@@ -1,370 +1,291 @@
-import { useMemo, useState } from "react";
-import { Card, Text, Drawer, Badge, TextInput } from "@mantine/core";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Text, Drawer, Badge, TextInput, Select, Loader, Center, Anchor } from "@mantine/core";
+import { useElementSize } from "@mantine/hooks";
 import ForceGraph2D from "react-force-graph-2d";
-import Cookies from "js-cookie";
+
+import styles from "./SkillGraphPage.module.css";
+
+import { useGetMeQuery } from "@/app/redux/api/auth.api";
+import { useGetWantedProfessionsByUserIdQuery } from "@/app/redux/api/me.api";
+import { useGetGraphByProfessionQuery } from "@/app/redux/api/graph.api";
+import { useGetAllSkillsQuery, useGetSkillCoursesQuery } from "@/app/redux/api/skill.api";
+import { useSkillGraphData } from "@/hooks/useSkillGraph";
 import { getIconUrl } from "@/assets/icons/Icons";
-import { skillCourses } from "@/data/cources/skillCourses";
-import styles from './SkillGraphPage.module.css';
 
-import graph_python_1 from "@/data/graphs/graph_python_1.json";
-import graph_python_2 from "@/data/graphs/graph_python_2.json";
-import graph_python_3 from "@/data/graphs/graph_python_3.json";
-
-import graph_java_1 from "@/data/graphs/graph_java_1.json";
-import graph_java_2 from "@/data/graphs/graph_java_2.json";
-import graph_java_3 from "@/data/graphs/graph_java_3.json";
-
-import graph_javascript_1 from "@/data/graphs/graph_javascript_1.json";
-import graph_javascript_2 from "@/data/graphs/graph_javascript_2.json";
-import graph_javascript_3 from "@/data/graphs/graph_javascript_3.json";
-
-import graph_php_1 from "@/data/graphs/graph_php_1.json";
-import graph_php_2 from "@/data/graphs/graph_php_2.json";
-import graph_php_3 from "@/data/graphs/graph_php_3.json";
-
-import graph_sql_1 from "@/data/graphs/graph_sql_1.json";
-import graph_sql_2 from "@/data/graphs/graph_sql_2.json";
-import graph_sql_3 from "@/data/graphs/graph_sql_3.json";
-
-import graph_1c_1 from "@/data/graphs/graph_1c_1.json";
-import graph_1c_2 from "@/data/graphs/graph_1c_2.json";
-import graph_1c_3 from "@/data/graphs/graph_1c_3.json";
-
-import graph_ios_1 from "@/data/graphs/graph_ios_1.json";
-import graph_ios_2 from "@/data/graphs/graph_ios_2.json";
-import graph_ios_3 from "@/data/graphs/graph_ios_3.json";
-
-import graph_oracle_1 from "@/data/graphs/graph_oracle_1.json";
-import graph_oracle_2 from "@/data/graphs/graph_oracle_2.json";
-import graph_oracle_3 from "@/data/graphs/graph_oracle_3.json";
-
-import graph_csharp_1 from "@/data/graphs/graph_csharp_1.json";
-import graph_csharp_2 from "@/data/graphs/graph_csharp_2.json";
-import graph_csharp_3 from "@/data/graphs/graph_csharp_3.json";
-
-import graph_cplusplus_1 from "@/data/graphs/graph_c++_1.json";
-import graph_cplusplus_2 from "@/data/graphs/graph_c++_2.json";
-import graph_cplusplus_3 from "@/data/graphs/graph_c++_3.json";
-
-import graph_бизнес_1 from "@/data/graphs/graph_бизнес_1.json";
-import graph_бизнес_2 from "@/data/graphs/graph_бизнес_2.json";
-import graph_бизнес_3 from "@/data/graphs/graph_бизнес_3.json";
-
-import graph_маркетинговый_1 from "@/data/graphs/graph_маркетинговый_1.json";
-import graph_маркетинговый_2 from "@/data/graphs/graph_маркетинговый_2.json";
-import graph_маркетинговый_3 from "@/data/graphs/graph_маркетинговый_3.json";
-
-import graph_системный_1 from "@/data/graphs/graph_системный_1.json";
-import graph_системный_2 from "@/data/graphs/graph_системный_2.json";
-import graph_системный_3 from "@/data/graphs/graph_системный_3.json";
-
-import graph_финансовый_1 from "@/data/graphs/graph_финансовый_1.json";
-import graph_финансовый_2 from "@/data/graphs/graph_финансовый_2.json";
-import graph_финансовый_3 from "@/data/graphs/graph_финансовый_3.json";
-
-
-const graphFiles: Record<string, Record<number, any>> = {
-  "Python Developer": {
-    1: graph_python_1,
-    2: graph_python_2,
-    3: graph_python_3,
-  },
-  "Java Developer": {
-    1: graph_java_1,
-    2: graph_java_2,
-    3: graph_java_3,
-  },
-  "1C Developer": {
-    1: graph_1c_1,
-    2: graph_1c_2,
-    3: graph_1c_3,
-  },
-  "C# Developer": {
-    1: graph_csharp_1,
-    2: graph_csharp_2,
-    3: graph_csharp_3,
-  },
-  "C++ Developer": {
-    1: graph_cplusplus_1,
-    2: graph_cplusplus_2,
-    3: graph_cplusplus_3,
-  },
-  "iOS Developer": {
-    1: graph_ios_1,
-    2: graph_ios_2,
-    3: graph_ios_3,
-  },
-  "JavaScript разработчик": {
-    1: graph_javascript_1,
-    2: graph_javascript_2,
-    3: graph_javascript_3,
-  },
-  "Oracle Developer": {
-    1: graph_oracle_1,
-    2: graph_oracle_2,
-    3: graph_oracle_3,
-  },
-  "PHP Developer": {
-    1: graph_php_1,
-    2: graph_php_2,
-    3: graph_php_3,
-  },
-  "SQL Developer": {
-    1: graph_sql_1,
-    2: graph_sql_2,
-    3: graph_sql_3,
-  },
-  "Бизнес-аналитик": {
-    1: graph_бизнес_1,
-    2: graph_бизнес_2,
-    3: graph_бизнес_3,
-  },
-  "Маркетинговый аналитик": {
-    1: graph_маркетинговый_1,
-    2: graph_маркетинговый_2,
-    3: graph_маркетинговый_3,
-  },
-  "Системный аналитик": {
-    1: graph_системный_1,
-    2: graph_системный_2,
-    3: graph_системный_3,
-  },
-  "Финансовый аналитик": {
-    1: graph_финансовый_1,
-    2: graph_финансовый_2,
-    3: graph_финансовый_3,
-  },
-};
-
-
-const goalToGraphMap: Record<string, string> = {
-  "1c": "1C Developer",
-  "c#": "C# Developer",
-  "c++": "C++ Developer",
-  ios: "iOS Developer",
-  java: "Java Developer",
-  javascript: "JavaScript разработчик",
-  oracle: "Oracle Developer",
-  php: "PHP Developer",
-  python: "Python Developer",
-  sql: "SQL Developer",
-  бизнес: "Бизнес-аналитик",
-  маркетинговый: "Маркетинговый аналитик",
-  системный: "Системный аналитик",
-  финансовый: "Финансовый аналитик",
-};
+// Гарантированно получаем URL, а не ReactComponent
+import FALLBACK_ICON_URL from "@/assets/skill-fallback.svg?url";
 
 type NodeType = {
   id: string;
-  group: string;
+  group: "role" | "category" | "skill";
   count?: number;
-  color?: string;
+  user_proficiency?: number;
+  percent?: number;
   x?: number;
   y?: number;
   level?: number;
+  color?: string;
 };
 
-const iconCache = new Map<string, HTMLImageElement>();
-
-const LEVEL_ORDER: Record<string, number> = {
-  Intern: 1,
-  Junior: 1,
-  Middle: 2,
-  Senior: 3,
-  Lead: 3,
-};
-
-const getUserLevelForGoal = (): number => {
-  const position = Cookies.get("mock_position"); // Например: "Senior Frontend Developer"
-  if (!position) return 1;
-
-  // Извлекаем первое слово (уровень)
-  const levelMatch = position.split(" ")[0];
-  return LEVEL_ORDER[levelMatch] || 1;
+const hexToRgba = (hex: string, alpha = 1) => {
+  const m = /^#?([a-f\d]{3}|[a-f\d]{6})$/i.exec(hex);
+  if (!m) return `rgba(12,166,120,${alpha})`;
+  let c = m[1];
+  if (c.length === 3) c = c.split("").map((x) => x + x).join("");
+  const num = parseInt(c, 16);
+  const r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
 };
 
 export const SkillGraphPage = () => {
-  const [selected, setSelected] = useState<NodeType | null>(null);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<NodeType | null>(null);
 
-  const userData = useMemo(() => {
-    const stored = Cookies.get("questionnaireResult");
-    return stored ? JSON.parse(stored) : null;
-  }, []);
+  const { data: me } = useGetMeQuery();
+  const userId = me?.id;
 
-  const rawDataArray = useMemo(() => {
-    if (!userData?.goals) return [];
-  
-    const selectedGoals: string[] = userData.goals;
-  
-    const selectedGraphs = selectedGoals
-      .map((key: string) => goalToGraphMap[key.toLowerCase()])
-      .filter((name): name is keyof typeof graphFiles => !!name && graphFiles.hasOwnProperty(name));
-  
-    const userLevel = getUserLevelForGoal();
-  
-    return selectedGraphs.map((name) => {
-      return graphFiles[name][userLevel] || graphFiles[name][1];
-    });
-  }, [userData]);
-  
-  
+  const { data: wanted } = useGetWantedProfessionsByUserIdQuery(userId!, { skip: !userId });
+  const [selectedProfId, setSelectedProfId] = useState<number | null>(null);
 
-  const graphData = useMemo(() => {
-    const nodesMap = new Map<string, NodeType>();
-    const links: { source: string; target: string }[] = [];
-
-    const normalizedSkills = new Set<string>(
-      (userData?.skills || []).map((s: string) => s.toLowerCase())
-    );
-
-    rawDataArray.forEach((rawData) => {
-      const [role] = Object.keys(rawData);
-      const categories = rawData[role];
-
-      if (!nodesMap.has(role)) {
-        nodesMap.set(role, { id: role, group: "role", level: 0 });
-      }
-
-      Object.entries(categories).forEach(([category, skills]: [string, any]) => {
-        if (!nodesMap.has(category)) {
-          nodesMap.set(category, { id: category, group: "category", level: 1 });
-        }
-        links.push({ source: role, target: category });
-
-        Object.entries(skills).forEach(([skill, { count }]: [string, any]) => {
-          if (!nodesMap.has(skill)) {
-            const isMastered = normalizedSkills.has(skill.toLowerCase());
-            nodesMap.set(skill, {
-              id: skill,
-              group: "skill",
-              count,
-              level: 2,
-              color: isMastered ? "#12b886" : "#adb5bd",
-            });
-            links.push({ source: category, target: skill });
-          }
-        });
-      });
-    });
-
-    const allNodes = Array.from(nodesMap.values());
-
-    if (search.trim()) {
-      const query = search.toLowerCase();
-      const matchedIds = new Set<string>();
-      const relatedIds = new Set<string>();
-
-      // Найти совпадающие узлы
-      allNodes.forEach((node) => {
-        if (node.id.toLowerCase().includes(query)) {
-          matchedIds.add(node.id);
-        }
-      });
-
-      // Найти все связанные ноды (родителей и детей)
-      links.forEach(({ source, target }) => {
-        if (matchedIds.has(source) || matchedIds.has(target)) {
-          relatedIds.add(source.toString());
-          relatedIds.add(target.toString());
-        }
-      });
-
-      const finalIds = new Set([...matchedIds, ...relatedIds]);
-
-      return {
-        nodes: allNodes.filter((n) => finalIds.has(n.id)),
-        links: links.filter(
-          ({ source, target }) =>
-            finalIds.has(source.toString()) && finalIds.has(target.toString())
-        ),
-      };
+  useEffect(() => {
+    if (!selectedProfId && wanted && wanted.length > 0) {
+      setSelectedProfId(wanted[0].profession.id);
     }
+  }, [wanted, selectedProfId]);
 
-    return {
-      nodes: allNodes,
-      links,
+  const { data: rawGraph, isFetching } = useGetGraphByProfessionQuery(
+    { profId: selectedProfId ?? -1, userId: userId ?? -1 },
+    { skip: !userId || !selectedProfId }
+  );
+
+  const graphData = useSkillGraphData(rawGraph, search);
+
+  const profOptions = useMemo(
+    () => (wanted ?? []).map((w) => ({ value: String(w.profession.id), label: w.profession.name })),
+    [wanted]
+  );
+
+  // размеры контейнера — граф тянется на всю доступную область
+  const { ref: containerRef, width, height } = useElementSize();
+
+  // === Иконки: кэш + надёжный фоллбэк в любых состояниях ===
+  const iconCache = useRef(new Map<string, HTMLImageElement>());
+
+  const resolveIconUrl = (name: string) => {
+    const u = getIconUrl(name.toLowerCase());
+    return u && typeof u === "string" ? u : FALLBACK_ICON_URL;
+    // даже если вернулся мусор — подхватится фоллбэк
+  };
+
+  const loadImage = (url: string) => {
+    const cache = iconCache.current;
+    if (cache.has(url)) return cache.get(url)!;
+
+    const img = new Image();
+
+    // обработчик ошибок — переключаемся на fallback один раз
+    img.onerror = () => {
+      if (img.src !== FALLBACK_ICON_URL) img.src = FALLBACK_ICON_URL;
     };
 
-  }, [rawDataArray, userData, search]);
+    img.src = url || FALLBACK_ICON_URL;
+    cache.set(url, img);
+    return img;
+  };
+
+  // сопоставление skill name -> id для курсов
+  const { data: allSkills } = useGetAllSkillsQuery();
+  const selectedSkillId = useMemo(() => {
+    if (!selected || selected.group !== "skill" || !allSkills) return undefined;
+    const found = allSkills.find((s) => s.name.toLowerCase() === selected.id.toLowerCase());
+    return found?.id;
+  }, [selected, allSkills]);
+
+  const { data: courses, isFetching: coursesLoading } = useGetSkillCoursesQuery(selectedSkillId!, {
+    skip: !selectedSkillId,
+  });
+
+  // === единые метрики размеров (учитывают масштаб графа) ===
+  const sizeByLevel = [86, 72, 56]; // 0=role,1=category,2=skill
+
+  const getIconMetrics = (node: NodeType, globalScale: number) => {
+    const level = node.level ?? 2;
+    const baseSize = (sizeByLevel[level] || 56) / globalScale;
+
+    const iconUrl = resolveIconUrl(node.id);
+    const img = loadImage(iconUrl);
+
+    // если изображение уже "загрузилось с ошибкой" (naturalWidth === 0),
+    // принудительно переключаемся на fallback
+    if (img.complete && (img.naturalWidth === 0 || img.naturalHeight === 0) && img.src !== FALLBACK_ICON_URL) {
+      img.src = FALLBACK_ICON_URL;
+    }
+
+    const ar = img.width && img.height ? img.width / img.height : 1;
+    let w = baseSize;
+    let h = baseSize;
+    if (ar > 1) h = baseSize / ar;
+    else w = baseSize * ar;
+
+    return { baseSize, w, h, img };
+  };
+
+  const roundedRectPath = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number
+  ) => {
+    const rx = Math.min(r, w / 2);
+    const ry = Math.min(r, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x - w / 2 + rx, y - h / 2);
+    ctx.lineTo(x + w / 2 - rx, y - h / 2);
+    ctx.quadraticCurveTo(x + w / 2, y - h / 2, x + w / 2, y - h / 2 + ry);
+    ctx.lineTo(x + w / 2, y + h / 2 - ry);
+    ctx.quadraticCurveTo(x + w / 2, y + h / 2, x + w / 2 - rx, y + h / 2);
+    ctx.lineTo(x - w / 2 + rx, y + h / 2);
+    ctx.quadraticCurveTo(x - w / 2, y + h / 2, x - w / 2, y + h / 2 - ry);
+    ctx.lineTo(x - w / 2, y - h / 2 + ry);
+    ctx.quadraticCurveTo(x - w / 2, y - h / 2, x - w / 2 + rx, y - h / 2);
+    ctx.closePath();
+  };
+
+  // === рендер ноды: яркое мягкое свечение только для SKILL, + fallback-проверка ===
+  const drawNode = (node: NodeType, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const x = (node as any).x ?? 0;
+    const y = (node as any).y ?? 0;
+
+    const { w, h, img } = getIconMetrics(node, globalScale);
+    const color = node.color || "#0ca678";
+
+    // --- мягкое свечение (только для навыков)
+    if (node.group === "skill") {
+      ctx.save();
+      // более яркий градиент
+      const glowRadius = Math.max(w, h) * 0.9;
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+      grad.addColorStop(0, hexToRgba(color, 0.55));  // было 0.28
+      grad.addColorStop(0.55, hexToRgba(color, 0.26)); // было 0.12
+      grad.addColorStop(1, hexToRgba(color, 0));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(x, y, w * 0.8, h * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // лёгкая "подсветка-контур" поверх иконки
+      ctx.shadowBlur = Math.max(6, 22 / globalScale);
+      ctx.shadowColor = hexToRgba(color, 0.9);
+      ctx.strokeStyle = hexToRgba(color, 0.9);
+      ctx.lineWidth = Math.max(1, 2 / globalScale);
+      roundedRectPath(ctx, x, y, w * 1.02, h * 1.02, Math.min(w, h) * 0.16);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // --- сама иконка
+    if (img.complete && img.naturalWidth > 0) {
+      try {
+        ctx.drawImage(img, x - w / 2, y - h / 2, w, h);
+      } catch {
+        // если вдруг бросит, дорисуем заглушку
+        ctx.save();
+        ctx.fillStyle = "#f1f3f5";
+        ctx.beginPath();
+        ctx.ellipse(x, y, w * 0.48, h * 0.48, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    } else {
+      // заглушка пока грузится/ошиблась
+      ctx.save();
+      ctx.fillStyle = "#f1f3f5";
+      ctx.beginPath();
+      ctx.ellipse(x, y, w * 0.48, h * 0.48, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // --- подпись
+    const fontSize = 14 / globalScale;
+    ctx.font = `${fontSize}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.lineWidth = 4 / globalScale;
+    ctx.strokeStyle = "#ffffff";
+    ctx.strokeText(node.id, x, y + h * 0.55);
+    ctx.fillStyle = "#1f2937";
+    ctx.fillText(node.id, x, y + h * 0.55);
+  };
+
+  // === точная зона клика/драга — ровно по размеру иконки (скруглённая) ===
+  const paintPointerArea = (
+    node: NodeType,
+    color: string,
+    ctx: CanvasRenderingContext2D,
+    globalScale: number
+  ) => {
+    const x = (node as any).x ?? 0;
+    const y = (node as any).y ?? 0;
+    const { w, h } = getIconMetrics(node, globalScale);
+    ctx.save();
+    ctx.fillStyle = color;
+    roundedRectPath(ctx, x, y, w, h, Math.min(w, h) * 0.18);
+    ctx.fill();
+    ctx.restore();
+  };
+
+  const STAT = (v?: number, s = "") => (typeof v === "number" ? `${Math.round(v)}${s}` : "—");
+  const showGraph = width > 10 && height > 10 && !isFetching;
 
   return (
-    <Card p="md" radius="md" withBorder style={{ height: "100%", overflow: "hidden" }}>
-      <TextInput
-        placeholder="Поиск по навыкам..."
-        value={search}
-        onChange={(e) => setSearch(e.currentTarget.value)}
-        mb="md"
-      />
+    <div className={styles.root}>
+      <div className={styles.toolbar}>
+        <Select
+          data={profOptions}
+          value={selectedProfId ? String(selectedProfId) : null}
+          onChange={(v) => setSelectedProfId(v ? Number(v) : null)}
+          placeholder="Профессия"
+          searchable
+          nothingFoundMessage="Нет вариантов"
+          w={320}
+        />
+        <TextInput
+          placeholder="Поиск по навыкам..."
+          value={search}
+          onChange={(e) => setSearch(e.currentTarget.value)}
+          style={{ flex: 1, minWidth: 220 }}
+        />
+      </div>
 
-      <div className={styles.graphContainer}>
-      <ForceGraph2D
-        graphData={graphData}
-        nodeAutoColorBy="group"
-        onNodeClick={(node) => setSelected(node as NodeType)}
-        enableNodeDrag={graphData.links.length !== 0}
-        linkCurvature={0.15}
-        linkDirectionalArrowRelPos={1}
-        linkDirectionalArrowLength={4}
-
-        // Изменяем цвет стрелки
-        linkColor={(link) => {
-          const targetId = (link.target as NodeType).id?.toLowerCase?.();
-          return userData?.skills?.some((s: string) => s.toLowerCase() === targetId) ? "#12b886" : "teal";
-        }}
-
-        // Изменяем стиль стрелки — пунктир только для неосвоенных
-        linkLineDash={(link) => {
-          const targetId = (link.target as NodeType).id?.toLowerCase?.();
-          return userData?.skills?.some((s: string) => s.toLowerCase() === targetId) ? [] : [2, 2];
-        }}
-
-        // Толщина линии — чуть толще если освоен
-        linkWidth={(link) => {
-          const targetId = (link.target as NodeType).id?.toLowerCase?.();
-          return userData?.skills?.some((s: string) => s.toLowerCase() === targetId) ? 5 : 1;
-        }}
-
-        nodeCanvasObject={(node: NodeType, ctx, globalScale) => {
-          const label = node.id;
-          const level = node.level ?? 2;
-          const sizeByLevel = [70, 55, 40];
-          const baseSize = (sizeByLevel[level] || 40) / globalScale;
-          const fontSize = 14 / globalScale;
-        
-          const x = node.x ?? 0;
-          const y = node.y ?? 0;
-          const iconUrl = getIconUrl(label.toLowerCase());
-        
-          if (iconCache.has(iconUrl)) {
-            const img = iconCache.get(iconUrl)!;
-            const aspectRatio = img.width / img.height;
-            let drawWidth = baseSize;
-            let drawHeight = baseSize;
-        
-            if (aspectRatio > 1) drawHeight = baseSize / aspectRatio;
-            else drawWidth = baseSize * aspectRatio;
-        
-            // Draw icon
-            ctx.drawImage(img, x - drawWidth / 2, y - drawHeight / 2, drawWidth, drawHeight);
-        
-            // Draw label with outline
-            ctx.font = `${fontSize}px Inter`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "top";
-            ctx.lineWidth = 4 / globalScale;
-            ctx.strokeStyle = "#ffffff"; // Обводка белым
-            ctx.strokeText(label, x, y + baseSize * 0.3);
-            ctx.fillStyle = "#1f2937";   // Основной цвет текста
-            ctx.fillText(label, x, y + baseSize * 0.3);
-          } else {
-            const img = new Image();
-            img.src = iconUrl;
-            img.onload = () => iconCache.set(iconUrl, img);
-          }
-        }        
-      }
-      />
+      <div ref={containerRef} className={styles.graphContainer}>
+        {!showGraph ? (
+          <Center h="100%">
+            <Loader />
+          </Center>
+        ) : (
+          <ForceGraph2D
+            graphData={graphData}
+            width={Math.floor(width)}
+            height={Math.floor(height)}
+            backgroundColor="#ffffff"
+            nodeRelSize={6}
+            linkCurvature={0.15}
+            linkDirectionalParticles={0}
+            cooldownTicks={120}
+            // полностью заменяем базовый круг
+            nodeCanvasObjectMode={() => "replace"}
+            nodeCanvasObject={(n: any, ctx, scale) => drawNode(n as NodeType, ctx, scale)}
+            // кликабельная/drag зона = реальный размер иконки
+            nodePointerAreaPaint={(n: any, color, ctx, scale) =>
+              paintPointerArea(n as NodeType, color, ctx, scale)
+            }
+            onNodeClick={(n) => setSelected(n as NodeType)}
+          />
+        )}
       </div>
 
       <Drawer
@@ -375,57 +296,57 @@ export const SkillGraphPage = () => {
         position="right"
         size="md"
       >
-        {selected && (
+        {selected ? (
           <>
-            <Text fw={600} size="lg" mt="xs">{selected.id}</Text>
-
-            <div className={styles.iconWrapper}>
-              <img
-                src={getIconUrl(selected.id.toLowerCase())}
-                alt={selected.id}
-                className={styles.drawerIcon}
-              />
-            </div>
+            <Text fw={600} size="lg" mt="xs">
+              {selected.id}
+            </Text>
 
             {selected.group === "skill" ? (
               <>
                 <Text mt="sm">Освоенность:</Text>
-                <Badge color={userData?.skills?.some((s: string) => s.toLowerCase() === selected.id.toLowerCase()) ? "green" : "gray"}>
-                  {userData?.skills?.some((s: string) => s.toLowerCase() === selected.id.toLowerCase())
-                    ? "Освоен"
-                    : "Не освоен"}
+                <Badge color={(selected.user_proficiency ?? 0) > 0 ? "teal" : "gray"}>
+                  {(selected.user_proficiency ?? 0) > 0 ? "Есть базовые знания" : "Пока не изучено"}
                 </Badge>
 
-                <Text mt="sm">Популярность в графе: {selected.count ?? 0}</Text>
+                <Text mt="sm">Вклад в профиль:</Text>
+                <Badge variant="light">{STAT(selected.percent, "%")}</Badge>
+
+                <Text mt="sm">Встречаемость в вакансиях:</Text>
+                <Badge variant="light">{STAT(selected.count)}</Badge>
+
+                <Text mt="md" fw={500}>
+                  Курсы:
+                </Text>
+                {!selectedSkillId ? (
+                  <Text c="dimmed">Не найден id навыка — проверьте словарь навыков.</Text>
+                ) : coursesLoading ? (
+                  <Text c="dimmed">Загрузка...</Text>
+                ) : !courses || courses.length === 0 ? (
+                  <Text c="dimmed">Для этого навыка курсы не найдены.</Text>
+                ) : (
+                  <ul className={styles.courseList}>
+                    {courses.map((c) => (
+                      <li key={c.id} className={styles.courseItem}>
+                        <Anchor href={c.url} target="_blank" rel="noopener noreferrer" className={styles.courseLink}>
+                          {c.url}
+                        </Anchor>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </>
             ) : (
-              <Text mt="sm">Категория: {selected.group}</Text>
-            )}
-
-            {selected.group === "skill" && skillCourses[selected.id] && (
-              <>
-                <Text mt="md" fw={500}>Курсы по {selected.id}:</Text>
-                <ul className={styles.courseList}>
-                  {Object.entries(skillCourses[selected.id]).map(([title, link]) => (
-                    <li key={title} className={styles.courseItem}>
-                      <a
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.courseLink}
-                      >
-                        {title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </>
+              <Text c="dimmed" mt="sm">
+                Выберите конкретный навык, чтобы увидеть детали и курсы.
+              </Text>
             )}
           </>
-        )}
+        ) : null}
       </Drawer>
-    </Card>
+    </div>
   );
 };
 
+// и именованный, и дефолтный экспорт
 export default SkillGraphPage;

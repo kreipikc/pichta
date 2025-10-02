@@ -9,6 +9,7 @@ import {
   SKILL_UPDATE_PATH,
   SKILL_DELETE_PATH,
   SKILL_GET_PROCESS_BY_USER_PATH,
+  SKILL_GET_COURSES_PATH
 } from "@/app/redux/api/endpoints";
 import type {
   UserSkillResponseI,
@@ -16,6 +17,7 @@ import type {
   UserSkillUpdateI,
   SkillResponseI,
   SkillProcessI,
+  SkillCourseI,
 } from "@/shared/types/api/SkillI";
 
 export const skillApi = createApi({
@@ -116,6 +118,14 @@ export const skillApi = createApi({
         { type: "SkillProcesses", id: `LIST-${user_id}` },
       ],
     }),
+
+    getSkillCourses: build.query<SkillCourseI[], number>({
+      // skillId -> /skill/get/{id}/courses
+      query: (skillId) => ({
+        url: `${SKILL_GET_COURSES_PATH}/${skillId}/courses`,
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
@@ -127,4 +137,5 @@ export const {
   useUpdateSkillMutation,
   useDeleteSkillMutation,
   useGetUserSkillProcessesQuery,
+  useGetSkillCoursesQuery,
 } = skillApi;

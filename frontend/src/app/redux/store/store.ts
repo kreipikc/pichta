@@ -10,6 +10,7 @@ import { professionApi } from "@/app/redux/api/profession.api";
 import { skillApi } from "@/app/redux/api/skill.api";
 import { taskApi } from "@/app/redux/api/task.api";
 import { meApi } from "@/app/redux/api/me.api";
+import { graphApi } from "@/app/redux/api/graph.api";
 
 const rootReducer = combineReducers({
   user: userReducer,
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
   [skillApi.reducerPath]: skillApi.reducer,
   [taskApi.reducerPath]: taskApi.reducer,
   [meApi.reducerPath]: meApi.reducer,
+  [graphApi.reducerPath]: graphApi.reducer,
 });
 
 export const setupStore = () => {
@@ -36,6 +38,7 @@ export const setupStore = () => {
         .concat(skillApi.middleware)
         .concat(taskApi.middleware)
         .concat(meApi.middleware)
+        .concat(graphApi.middleware)
         .concat(errorToastMiddleware),
   });
 };

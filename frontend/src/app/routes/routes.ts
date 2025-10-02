@@ -5,7 +5,7 @@ import { Registration } from "@/pages/registration/Registration";
 import { ForgotPassword } from "@/pages/forgot_password/ForgotPassword";
 import { UserProfilePage } from "@/pages/user/UserProfilePage";
 import { QuestionnairePage } from "@/pages/questionnaire/QuestionnairePage"
-import { SkillGraphPage } from "@/pages/graph/SkillGraphPage"
+import SkillGraphPage from "@/pages/graph/SkillGraphPage"
 import GanttChartPage from "@/pages/gantt/GanttChart";
 
 export const routes: RoutesType = {

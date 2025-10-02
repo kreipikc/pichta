@@ -37,6 +37,7 @@ export const EXPER_DELETE_PATH = `${EXPER_PREFIX}/delete`;         // + /{experi
 export const SKILL_PREFIX = 'skill';
 export const SKILL_GETALL_PATH = `${SKILL_PREFIX}/getall`;
 export const SKILL_GETALL_BY_USER_PATH = `${SKILL_PREFIX}/getall`; // + /{user_id}
+export const SKILL_GET_COURSES_PATH = `${SKILL_PREFIX}/get`; // + /{skill_id}/courses
 export const SKILL_GET_PATH = `${SKILL_PREFIX}/get`;               // + /{skill_id}
 export const SKILL_ADD_SELF_PATH = `${SKILL_PREFIX}/add`;
 export const SKILL_ADD_FOR_USER_PATH = `${SKILL_PREFIX}/add`;      // + /{user_id}
@@ -65,3 +66,7 @@ export const PROF_GET_PATH = `${PROF_PREFIX}/get`;                  // + /{profe
 export const PROF_ADD_PATH = `${PROF_PREFIX}/add`;
 export const PROF_UPDATE_PATH = `${PROF_PREFIX}/update`;            // + /{profession_id}
 export const PROF_DELETE_PATH = `${PROF_PREFIX}/delete`;            // + /{profession_id}```
+
+// Graphs
+export const GRAPH_PREFIX = 'graph';
+export const GRAPH_GET_PATH = `${GRAPH_PREFIX}/get`;  

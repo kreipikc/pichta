@@ -52,3 +52,6 @@ export interface SkillProcessI {
   status?: "process";  // приходит как "process", но мы не используем
   name: string;
 }
+
+export type SkillItemI = { id: number; name: string };
+export type SkillCourseI = { id: number; url: string };
