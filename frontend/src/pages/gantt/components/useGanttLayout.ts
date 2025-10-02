@@ -17,8 +17,8 @@ export type NormalizedSkill = {
   raw?: any;
 };
 
-export const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-export const diffDaysInclusive = (a: dayjs.Dayjs, b: dayjs.Dayjs) => Math.max(1, b.diff(a, "day") + 1);
+export const diffDaysInclusive = (a: dayjs.Dayjs, b: dayjs.Dayjs) =>
+  Math.max(1, b.diff(a, "day") + 1);
 
 export function buildRange(start: dayjs.Dayjs, days: number): dayjs.Dayjs[] {
   const arr: dayjs.Dayjs[] = [];
@@ -48,9 +48,16 @@ export function useGanttLayout(items: NormalizedSkill[]) {
     return min;
   }, [items]);
 
-  // === КЛЮЧЕВОЕ: измеряем ШИРИНУ ТОЛЬКО ПРАВОЙ КОЛОНКИ (таймлайна), а не всей таблицы ===
+  // === КЛЮЧЕВОЕ: измеряем ширину только ПРАВОЙ колонки (таймлайна) ===
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const [timelineWidth, setTimelineWidth] = useState(0);
+
+  // первичная оценка ширины до первого срабатывания ResizeObserver
+  const [initialClientWidth] = useState<number>(() =>
+    typeof window !== "undefined" ? window.innerWidth : 0
+  );
+  // грубая оценка ширины правой колонки (левый сайдбар 320px + бордеры/паддинги ~32px)
+  const estimatedRightWidth = Math.max(0, initialClientWidth - 320 - 32);
 
   useLayoutEffect(() => {
     const el = timelineRef.current;
@@ -62,9 +69,10 @@ export function useGanttLayout(items: NormalizedSkill[]) {
     return () => ro.disconnect();
   }, []);
 
-  // сколько дней отображать, чтобы закрыть ПРАВУЮ колонку + покрыть все элементы
+  // сколько дней показывать, чтобы занять ширину и покрыть все элементы
   const daysToShow = useMemo(() => {
-    const minDaysByWidth = Math.max(7, Math.ceil(timelineWidth / DAY_PX));
+    const widthForCalc = timelineWidth || estimatedRightWidth;
+    const minDaysByWidth = Math.max(7, Math.ceil(widthForCalc / DAY_PX));
     if (!items.length) return minDaysByWidth;
 
     let maxEnd = dayjs(items[0].end).endOf("day");
@@ -74,13 +82,21 @@ export function useGanttLayout(items: NormalizedSkill[]) {
     }
     const spanTasks = diffDaysInclusive(minStart, maxEnd);
     return Math.max(minDaysByWidth, spanTasks);
-  }, [timelineWidth, items, minStart]);
+  }, [timelineWidth, estimatedRightWidth, items, minStart]);
 
   const viewStart = minStart;
   const viewDays = daysToShow;
-  const dates = useMemo(() => buildRange(viewStart, viewDays), [viewStart, viewDays]);
 
-  // заголовки RU
+  const dates = useMemo(
+    () => buildRange(viewStart, viewDays),
+    [viewStart, viewDays]
+  );
+
+  // подсветки/цвета
+  const headerBg = isDark ? theme.colors.dark[6] : theme.white;
+  const textDimmed = isDark ? theme.colors.dark[2] : theme.colors.gray[6];
+
+  // группы по месяцам
   const monthSpans = useMemo(() => {
     const spans: { key: string; label: string; days: number }[] = [];
     let i = 0;
@@ -89,13 +105,19 @@ export function useGanttLayout(items: NormalizedSkill[]) {
       const label = curr.format("MMM YYYY");
       const key = curr.format("YYYY-MM");
       let j = i + 1;
-      while (j < dates.length && dates[j].month() === curr.month() && dates[j].year() === curr.year()) j++;
+      while (
+        j < dates.length &&
+        dates[j].month() === curr.month() &&
+        dates[j].year() === curr.year()
+      )
+        j++;
       spans.push({ key, label, days: j - i });
       i = j;
     }
     return spans;
   }, [dates]);
 
+  // группы по неделям
   const weekSpans = useMemo(() => {
     const spans: { key: string; label: string; days: number }[] = [];
     let i = 0;
@@ -105,22 +127,25 @@ export function useGanttLayout(items: NormalizedSkill[]) {
       const label = `Неделя ${week}`;
       const key = `${curr.year()}-W${week}`;
       let j = i + 1;
-      while (j < dates.length && dates[j].isoWeek() === week && dates[j].year() === curr.year()) j++;
+      while (
+        j < dates.length &&
+        dates[j].isoWeek() === week &&
+        dates[j].year() === curr.year()
+      )
+        j++;
       spans.push({ key, label, days: j - i });
       i = j;
     }
     return spans;
   }, [dates]);
 
-  const headerBg = isDark ? theme.colors.dark[7] : theme.colors.gray[1];
-  const textDimmed = isDark ? theme.colors.gray[4] : theme.colors.gray[7];
-
-
-  // позиционирование баров
-  const leftOffsetPx = (d: Date) => {
-    const idx = dayjs(d).startOf("day").diff(viewStart, "day");
-    return idx * DAY_PX;
+  // позиции баров
+  const leftOffsetPx = (start: Date) => {
+    const s = dayjs(start).startOf("day");
+    const d = Math.max(0, s.diff(viewStart, "day"));
+    return d * DAY_PX;
   };
+
   const widthPx = (start: Date, end: Date) => {
     const s = dayjs(start).startOf("day");
     const e = dayjs(end).endOf("day");
@@ -147,8 +172,9 @@ export function useGanttLayout(items: NormalizedSkill[]) {
     ROW_HEIGHT,
     HEADER_HEIGHT,
 
-    // ВАЖНО: отдаём ref именно ПРАВОЙ колонке
+    // отдаём ref и измеренную ширину
     timelineRef,
+    timelineWidth,
 
     dates,
     monthSpans,

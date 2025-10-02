@@ -16,14 +16,15 @@ import {
 import { IconRefresh } from "@tabler/icons-react";
 import { useAppSelector } from "@/hooks/useAppSelector";
 import { useGetUserSkillProcessesQuery } from "@/app/redux/api/skill.api";
-
-import { useGanttLayout, type NormalizedSkill } from "./components/useGanttLayout";
+import type { SkillProcessI } from "@/shared/types/api/SkillI";
+import {
+  NormalizedSkill,
+  useGanttLayout,
+} from "./components/useGanttLayout";
 import { GanttHeader } from "./components/GanttHeader";
-import { GanttRow } from "./components/GanttRow";
 import { SkillModal } from "./components/SkillModal";
-import { SkillProcessI } from "@/shared/types/api/SkillI";
 
-export default function GanttChartPage() {
+export default function GanttChart() {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
@@ -55,7 +56,6 @@ export default function GanttChartPage() {
     [data]
   );
 
-  // Лейаут: измерения, даты, подписи, модалка и т.п.
   const gantt = useGanttLayout(skills);
 
   // Цвета для «зебры»
@@ -63,9 +63,10 @@ export default function GanttChartPage() {
   const zebraOdd = "transparent";
   const gridLine = isDark ? theme.colors.dark[4] : theme.colors.gray[3];
 
-  // Ширина контента таймлайна: либо занимает всю видимую область, либо равна числу дат * ширина дня
+  // Ширина контента таймлайна + показ скролла только при реальной необходимости
   const contentWidthPx = gantt.dates.length * gantt.DAY_PX;
   const contentWidthStyle = `max(100%, ${contentWidthPx}px)`;
+  const showScroll = contentWidthPx > gantt.timelineWidth + 1;
 
   return (
     <>
@@ -80,9 +81,10 @@ export default function GanttChartPage() {
 
           <Group gap="xs">
             <SegmentedControl
-              size="xs"
               value={gantt.segment}
-              onChange={(v) => gantt.setSegment(v as any)}
+              onChange={(v) =>
+                gantt.setSegment(v as "days" | "weeks" | "months")
+              }
               data={[
                 { value: "days", label: "Дни" },
                 { value: "weeks", label: "Недели" },
@@ -152,6 +154,17 @@ export default function GanttChartPage() {
                         {t.proficiency}%
                       </Badge>
                     )}
+                    {typeof t.priority === "number" && (
+                      <Badge
+                        ml="xs"
+                        size="xs"
+                        variant="light"
+                        color="orange"
+                        title="Приоритет"
+                      >
+                        P{t.priority}
+                      </Badge>
+                    )}
                   </div>
                 ))}
               </div>
@@ -162,13 +175,12 @@ export default function GanttChartPage() {
               ref={gantt.timelineRef}
               style={{
                 position: "relative",
-                overflowX: "auto",
+                overflowX: showScroll ? "auto" : "hidden",
                 overflowY: "hidden",
               }}
             >
-              {/* Внутренний контент с шириной = max(100%, Npx), чтобы:
-                  - заполнять экран при малом количестве дат,
-                  - давать горизонтальный скролл при большом количестве дат */}
+              {/* Внутренний контент: ширина = max(100%, Npx).
+                  Так он либо занимает весь экран, либо даёт горизонтальный скролл. */}
               <div style={{ width: contentWidthStyle }}>
                 {/* Шапка (месяцы/недели/дни) — на русском */}
                 <GanttHeader
@@ -183,20 +195,42 @@ export default function GanttChartPage() {
                   textDimmed={gantt.textDimmed}
                 />
 
-                {/* ВНИМАНИЕ: вертикальная сетка дней полностью удалена */}
-
-                {/* Ряды с барами */}
-                <div style={{ position: "relative" }}>
-                  {skills.map((t, rowIndex) => (
-                    <GanttRow
-                      key={`${t.id}-${rowIndex}`}
-                      item={t}
-                      rowIndex={rowIndex}
-                      gantt={gantt}
-                      zebraEven={zebraEven}
-                      zebraOdd={zebraOdd}
-                      hideDaySplits
-                    />
+                {/* Ряд за рядом: зебра + бары (без дневной сетки) */}
+                <div>
+                  {skills.map((t, i) => (
+                    <div
+                      key={`${t.id}-${i}-row`}
+                      style={{
+                        height: gantt.ROW_HEIGHT,
+                        position: "relative",
+                        background: i % 2 === 0 ? zebraEven : zebraOdd,
+                        borderBottom: `1px solid ${gridLine}`,
+                      }}
+                    >
+                      {/* Бар */}
+                      <div
+                        onClick={() => gantt.modal.openModal(t)}
+                        title={`${t.title}: ${t.start.toLocaleDateString()} — ${t.end.toLocaleDateString()}`}
+                        style={{
+                          position: "absolute",
+                          left: gantt.leftOffsetPx(t.start),
+                          top: 6,
+                          height: gantt.ROW_HEIGHT - 12,
+                          width: gantt.widthPx(t.start, t.end),
+                          borderRadius: 8,
+                          border: `1px solid ${
+                            isDark ? theme.colors.dark[3] : theme.colors.gray[3]
+                          }`,
+                          background: isDark
+                            ? theme.colors.teal[9]
+                            : theme.colors.teal[2],
+                          boxShadow: isDark
+                            ? "inset 0 -1px 0 rgba(255,255,255,0.04)"
+                            : "inset 0 -1px 0 rgba(0,0,0,0.06)",
+                          cursor: "pointer",
+                        }}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
