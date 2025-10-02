@@ -24,8 +24,7 @@ interface Props {
   onClose: () => void;
 }
 
-const LEVEL_ORDER: Record<string, number> = { Lead: 5, Senior: 4, Middle: 3, Junior: 2, Intern: 1 };
-
+// форматирование дат в YYYY-MM-DD (как вы и делали ранее)
 function toYMD(v?: string | null) {
   if (!v) return null;
   const d = dayjs(v);
@@ -48,8 +47,21 @@ export default function SummaryModal({ opened, onClose }: Props) {
   const [addWanted] = useAddWantedProfessionsMutation();
   const [addSkills] = useAddSkillMutation();
 
+  // образование (как было)
   const educationList = Array.isArray((data as any).educationList) ? (data as any).educationList : [];
-  const experienceList = Array.isArray((data as any).experienceList) ? (data as any).experienceList : [];
+
+  // ✳️ опыт: поддерживаем и новый, и старый ключи
+  const rawExperience =
+    (Array.isArray((data as any).experienceList) && (data as any).experienceList) ||
+    (Array.isArray((data as any).experience) && (data as any).experience) ||
+    [];
+
+  // карта профессий для рендера
+  const profById = useMemo(() => {
+    const m = new Map<number, string>();
+    (professionsDict ?? []).forEach((p: any) => m.set(p.id, p.name));
+    return m;
+  }, [professionsDict]);
 
   const selectedWantedIds = useMemo(
     () => (data.goals ? data.goals.split('||').filter(Boolean).map(Number) : []),
@@ -69,13 +81,6 @@ export default function SummaryModal({ opened, onClose }: Props) {
     (me as any)?.about_me ||
     '—';
 
-  const highestPosition = useMemo(() => {
-    if (experienceList.length === 0) return '';
-    const sorted = [...experienceList].sort((a, b) => (LEVEL_ORDER[b.level] || 0) - (LEVEL_ORDER[a.level] || 0));
-    const highest = sorted[0];
-    return `${highest.level} ${highest.name}`;
-  }, [experienceList]);
-
   const isWantedValid = selectedWantedIds.length > 0;
 
   const handleConfirm = async () => {
@@ -84,6 +89,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
       return;
     }
 
+    // образование
     for (const e of educationList) {
       if (!e?.institution && !e?.degree) continue;
       const edu: EducationCreateI = {
@@ -96,18 +102,28 @@ export default function SummaryModal({ opened, onClose }: Props) {
       await addEducation({ user_id: uid, body: edu }).unwrap();
     }
 
-    for (const exp of experienceList) {
-      if (!exp?.name) continue;
+    // ✳️ опыт: поддержка обоих форматов
+    // Новый формат из формы: { org, professionId, start, end, description }
+    // Старый формат (если где-то остался): { name, level, start, end, description }
+    for (const exp of rawExperience as any[]) {
+      const titleFromNew = exp?.org?.trim?.();
+      const titleFromOld = exp?.title?.trim?.() || exp?.name?.trim?.();
+      const title = titleFromNew || titleFromOld || '';
+
+      if (!title) continue;
+
       const payload: ExperienceCreateI = {
-        title: `${exp.level ?? ''} ${exp.name}`.trim(),
-        id_profession: null,
-        description: exp.description ?? null,
-        start_time: toYMD(exp.start) ?? dayjs().format('YYYY-MM-DD'),
-        end_time: toYMD(exp.end),
+        title, // организация
+        id_profession: (exp?.professionId ?? exp?.id_profession) ?? null,
+        description: exp?.description ?? null,
+        start_time: toYMD(exp?.start) ?? dayjs().format('YYYY-MM-DD'),
+        end_time: toYMD(exp?.end),
       };
+
       await addExperience(payload).unwrap();
     }
 
+    // навыки (как было)
     const dict = new Map<string, number>();
     (skillsDict ?? []).forEach((s: any) => dict.set(s.name, s.id));
     const todayIso = new Date().toISOString();
@@ -121,15 +137,17 @@ export default function SummaryModal({ opened, onClose }: Props) {
         priority: null,
         start_date: todayIso,
         end_date: todayIso,
-        status: "inactive",
+        status: 'inactive',
       }));
 
     if (skillsPayload.length) {
       await addSkills({ body: skillsPayload }).unwrap();
     }
 
-    const wantedBody: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
-    await addWanted(wantedBody).unwrap();
+    if (selectedWantedIds.length) {
+      const wantedBody: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
+      await addWanted(wantedBody).unwrap();
+    }
 
     onClose();
     navigate('/');
@@ -165,7 +183,9 @@ export default function SummaryModal({ opened, onClose }: Props) {
               >
                 {educationList.map((e: any, i: number) => (
                   <List.Item key={`edu-${i}`}>
-                    {e.degree || '—'} — {e.institution || '—'} ({e.start ? dayjs(e.start).format('YYYY-MM-DD') : '—'} – {e.end ? dayjs(e.end).format('YYYY-MM-DD') : 'по наст. время'})
+                    {e.degree || '—'} — {e.institution || '—'} (
+                    {e.start ? dayjs(e.start).format('YYYY-MM-DD') : '—'} – {e.end ? dayjs(e.end).format('YYYY-MM-DD') : 'по наст. время'}
+                    )
                   </List.Item>
                 ))}
               </List>
@@ -176,7 +196,7 @@ export default function SummaryModal({ opened, onClose }: Props) {
 
           <Paper withBorder p="md">
             <Text fw={600}>Опыт</Text>
-            {experienceList.length ? (
+            {rawExperience.length ? (
               <List
                 spacing="xs"
                 size="sm"
@@ -186,19 +206,28 @@ export default function SummaryModal({ opened, onClose }: Props) {
                   </ThemeIcon>
                 }
               >
-                {experienceList.map((exp: any, i: number) => (
-                  <List.Item key={`exp-${i}`}>
-                    {(exp.level ? `${exp.level} ` : '') + (exp.name || '—')} ({exp.start ? dayjs(exp.start).format('YYYY-MM-DD') : '—'} – {exp.end ? dayjs(exp.end).format('YYYY-MM-DD') : 'по наст. время'}){exp.description ? ` — ${exp.description}` : ''}
-                  </List.Item>
-                ))}
+                {(rawExperience as any[]).map((exp: any, i: number) => {
+                  // для нового формата: профессия по id
+                  const profName =
+                    (typeof exp?.professionId === 'number' && profById.get(exp.professionId)) ||
+                    (typeof exp?.id_profession === 'number' && profById.get(exp.id_profession)) ||
+                    null;
+
+                  const titleText = exp?.org
+                    ? (profName ? `${profName} — ${exp.org}` : `${exp.org}`)
+                    : (exp?.name || exp?.title || '—');
+
+                  return (
+                    <List.Item key={`exp-${i}`}>
+                      {titleText} (
+                      {exp?.start ? dayjs(exp.start).format('YYYY-MM-DD') : '—'} – {exp?.end ? dayjs(exp.end).format('YYYY-MM-DD') : 'по наст. время'}
+                      ){exp?.description ? ` — ${exp.description}` : ''}
+                    </List.Item>
+                  );
+                })}
               </List>
             ) : (
               <Text>—</Text>
-            )}
-            {highestPosition && (
-              <Text c="dimmed" mt="xs">
-                Самая высокая позиция: {highestPosition}
-              </Text>
             )}
           </Paper>
 

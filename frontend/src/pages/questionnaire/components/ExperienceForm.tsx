@@ -1,148 +1,89 @@
-import { useEffect, useMemo } from 'react';
-import {
-  ScrollArea,
-  Button,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  Textarea,
-  Select,
-  Autocomplete,
-} from '@mantine/core';
+import { useMemo } from 'react';
+import { ScrollArea, Button, Group, Paper, Stack, Text, Textarea, Select, TextInput } from '@mantine/core';
 import { AppDateField } from '@/components/date-time-picker/AppDateField';
 import { FormWrapper } from '@/components/form-wrapper/FormWrapper';
 import { useQuestionnaire } from '../context/QuestionnaireContext';
 import { useGetAllProfessionQuery } from '@/app/redux/api/profession.api';
 
-const LEVELS = ['Intern', 'Junior', 'Middle', 'Senior', 'Lead'] as const;
-type Level = (typeof LEVELS)[number];
-
 type ExpItem = {
-  name: string;          // свободный ввод ИЛИ выбор из списка
-  level: Level;
+  org: string;
+  professionId: number | null;
   description?: string | null;
-  start?: string | null; // ISO
-  end?: string | null;   // ISO | null
+  start?: string | null;
+  end?: string | null;
 };
 
 export default function ExperienceForm() {
   const { data, updateData } = useQuestionnaire();
+  const { data: profs = [] } = useGetAllProfessionQuery();
+  const profOptions = (profs ?? []).map((p: any) => ({ value: String(p.id), label: p.name }));
 
-  // подсказки из справочника профессий
-  const { data: profs } = useGetAllProfessionQuery();
-  const profNames: string[] = useMemo(
-    () => (profs ?? []).map((p: any) => p.name).filter(Boolean),
-    [profs]
-  );
+  const list: ExpItem[] = ((data as any).experienceList ?? (data as any).experience ?? []) as any;
 
-  const list: ExpItem[] = Array.isArray((data as any).experienceList)
-    ? (data as any).experienceList
-    : Array.isArray(data.experience) && data.experience.length
-      ? data.experience.map((e: any) => ({ ...e, start: null, end: null }))
-      : [];
+  const sync = (next: ExpItem[]) =>
+    updateData({ experienceList: next, experience: next }); // поддерживаем оба ключа
 
-  useEffect(() => {
-    // нормализация в массив (если уже есть — ничего не меняется)
-    updateData({ experienceList: list });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const addRow = () => {
-    updateData({
-      experienceList: [
-        ...list,
-        { name: '', level: 'Junior', description: '', start: null, end: null },
-      ],
-    });
-  };
-
-  const removeRow = (idx: number) => {
+  const addRow = () => sync([...(list || []), { org: '', professionId: null, start: null, end: null }]);
+  const removeRow = (idx: number) => sync(list.filter((_, i) => i !== idx));
+  const patch = (idx: number, p: Partial<ExpItem>) => {
     const next = list.slice();
-    next.splice(idx, 1);
-    updateData({ experienceList: next });
-  };
-
-  const patch = (idx: number, patch: Partial<ExpItem>) => {
-    const next = list.slice();
-    next[idx] = { ...next[idx], ...patch };
-    updateData({ experienceList: next });
+    next[idx] = { ...next[idx], ...p };
+    sync(next);
   };
 
   return (
     <FormWrapper formId="experience">
-      <Stack gap="md">
+      <Stack>
         <Group justify="space-between">
           <Text fw={600}>Опыт работы</Text>
           <Button size="xs" onClick={addRow}>Добавить</Button>
         </Group>
-        <ScrollArea.Autosize mah={420} type="auto" scrollbarSize={8} offsetScrollbars>
-        {list.length === 0 && (
-          <Paper withBorder p="md">
-            <Text c="dimmed">Пока пусто. Нажмите «Добавить», чтобы создать запись об опыте.</Text>
-          </Paper>
-        )}
-
-        {list.map((row, i) => (
-          <Paper key={i} withBorder p="md" radius="md">
-            <Stack gap="sm">
-              <Group grow>
-                <Autocomplete
-                  label="Должность / Профессия"
-                  placeholder="Начните вводить и выберите из списка или введите своё"
-                  value={row.name}
-                  data={profNames}
-                  onChange={(val) => patch(i, { name: val })}
-                  limit={100}
-                  withAsterisk
-                  comboboxProps={{ shadow: 'md' }}
+        <ScrollArea.Autosize mah={420}>
+          {(list.length === 0) && (
+            <Paper p="lg" radius="md" withBorder>
+              <Text size="sm" c="dimmed">Нет записей. Добавьте первую запись.</Text>
+            </Paper>
+          )}
+          {list.map((row, i) => (
+            <Paper key={i} p="lg" radius="md" withBorder>
+              <Stack gap="sm">
+                <Group grow>
+                  <TextInput
+                    label="Организация"
+                    placeholder="Название организации"
+                    value={row.org ?? ''}
+                    onChange={(e) => patch(i, { org: e.currentTarget.value })}
+                    required
+                  />
+                  <Select
+                    label="Должность"
+                    placeholder="Выберите должность"
+                    searchable
+                    data={profOptions}
+                    nothingFoundMessage="Нет совпадений"
+                    value={row.professionId ? String(row.professionId) : null}
+                    onChange={(v) => patch(i, { professionId: v ? Number(v) : null })}
+                    required
+                  />
+                </Group>
+                <Group grow>
+                  <AppDateField kind="date" label="Начало" value={row.start ? new Date(row.start) : null}
+                    onChange={(d) => patch(i, { start: d ? d.toISOString() : null })} required />
+                  <AppDateField kind="date" label="Окончание" value={row.end ? new Date(row.end) : null}
+                    onChange={(d) => patch(i, { end: d ? d.toISOString() : null })} />
+                </Group>
+                <Textarea
+                  label="Описание (опционально)"
+                  autosize minRows={2} maxRows={4}
+                  value={row.description ?? ''}
+                  onChange={(e) => patch(i, { description: e.currentTarget.value })}
                 />
-                <Select
-                  label="Уровень"
-                  data={LEVELS.map((l) => ({ value: l, label: l }))}
-                  value={row.level}
-                  onChange={(v) => patch(i, { level: (v as Level) ?? 'Junior' })}
-                />
-              </Group>
-
-              <Textarea
-                label="Описание (необязательно)"
-                autosize
-                minRows={2}
-                value={row.description ?? ''}
-                onChange={(e) => patch(i, { description: e.currentTarget.value })}
-              />
-
-              <Group grow>
-                <AppDateField
-                  kind="date"
-                  label="Дата начала"
-                  placeholder="Выберите дату"
-                  value={row.start ? new Date(row.start) : null}
-                  onChange={(d: Date | null) =>
-                    patch(i, { start: d ? new Date(d).toISOString() : null })
-                  }
-                  required
-                />
-                <AppDateField
-                  kind="date"
-                  label="Дата окончания"
-                  placeholder="Если ещё работаете — оставьте пустым"
-                  value={row.end ? new Date(row.end) : null}
-                  onChange={(d: Date | null) =>
-                    patch(i, { end: d ? new Date(d).toISOString() : null })
-                  }
-                />
-              </Group>
-
-              <Group justify="flex-end">
-                <Button variant="light" color="red" onClick={() => removeRow(i)}>
-                  Удалить
-                </Button>
-              </Group>
-            </Stack>
-          </Paper>
-        ))}
+                <Group justify="flex-end">
+                  <Button variant="light" color="red" onClick={() => removeRow(i)}>Удалить</Button>
+                </Group>
+              </Stack>
+            </Paper>
+          ))}
         </ScrollArea.Autosize>
       </Stack>
     </FormWrapper>

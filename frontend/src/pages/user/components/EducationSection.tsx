@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 
 import { useEducation } from "@/hooks/useEducation";
 import { useExperience } from "@/hooks/useExperience";
+import { useGetAllProfessionQuery } from "@/app/redux/api/profession.api";
 
 import EducationModal, { type EducationModalValue } from "./components/EducationModal";
 import ExperienceModal, { type ExperienceModalValue } from "./components/ExperienceModal";
@@ -14,6 +15,8 @@ import type { ExperienceResponseI } from "@/shared/types/api/ExperienceI";
 export default function EducationSection({ userId }: { userId: number }) {
   const edu = useEducation(userId);
   const exp = useExperience(userId);
+  const { data: profs = [] } = useGetAllProfessionQuery();
+  const profMap = Object.fromEntries((profs ?? []).map((p:any) => [p.id, p.name]));
 
   useEffect(() => {
     if (userId) {
@@ -111,10 +114,10 @@ export default function EducationSection({ userId }: { userId: number }) {
               <Group justify="space-between" align="start">
                 <div>
                   <Group gap="sm" align="center">
-                    <Text fw={600}>{e.title}</Text>
+                    <Text fw={600}>{e.id_profession ? (profMap[e.id_profession] ?? "Должность") : "Должность"}</Text>
                     <Badge variant="light">{period(e.start_time, e.end_time ?? null)}</Badge>
                   </Group>
-                  {e.description && <Text c="dimmed" size="sm">{e.description}</Text>}
+                  <Text c="dimmed" size="sm">{e.title || "Организация"}</Text>
                 </div>
                 <Group gap="xs">
                   <Button variant="subtle" onClick={() => openEditExperience(e)}>Редактировать</Button>

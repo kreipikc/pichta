@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, TextInput, Button, Group, Textarea, Stack } from "@mantine/core";
+import { Modal, TextInput, Button, Group, Textarea, Stack, Select } from "@mantine/core";
+import { useGetAllProfessionQuery } from "@/app/redux/api/profession.api";
 import dayjs from "dayjs";
 import type { ExperienceCreateI, ExperienceResponseI } from "@/shared/types/api/ExperienceI";
 import { AppDateField } from "@/components/date-time-picker/AppDateField";
@@ -25,6 +26,8 @@ const EMPTY: ExperienceModalValue = {
 };
 
 export default function ExperienceModal({ opened, onClose, value, onSave, saving }: Props) {
+  const { data: profs = [] } = useGetAllProfessionQuery();
+  const profOptions = (profs ?? []).map(p => ({ value: String(p.id), label: p.name }));
   const [form, setForm] = useState<ExperienceModalValue>(EMPTY);
 
   const openedRef = useRef(false);
@@ -62,6 +65,17 @@ export default function ExperienceModal({ opened, onClose, value, onSave, saving
             const v = e.currentTarget.value;
             setForm((f) => ({ ...f, title: v }));
           }}
+          required
+        />
+
+        <Select
+          label="Должность"
+          placeholder="Выберите из списка"
+          searchable
+          data={profOptions}
+          value={form.id_profession ? String(form.id_profession) : null}
+          onChange={(v) => setForm((f) => ({ ...f, id_profession: v ? Number(v) : null }))}
+          nothingFoundMessage="Нет совпадений"
           required
         />
 

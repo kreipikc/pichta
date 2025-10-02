@@ -7,27 +7,23 @@ type EduItem = {
   end?: string | null;   // ISO | null
 };
 
-type Level = 'Intern' | 'Junior' | 'Middle' | 'Senior' | 'Lead';
-type ExpItem = {
-  name: string;
-  level: Level;
+export type ExperienceItem = {
+  org: string;
+  professionId: number | null;
   description?: string | null;
-  start?: string | null; // ISO (NOT NULL на бэке - гарантируем при отправке)
+  start?: string | null; // ISO
   end?: string | null;   // ISO | null
 };
 
 export type QuestionnaireData = {
-  // ранее существовавшие поля
   about?: string;
   orientation?: string;
   skills: string[];
-  goals: string; // "id1||id2"
+  goals: string;
 
-  // добавили поддержу множественных списков
   educationList: EduItem[];
-  experienceList: ExpItem[];
+  experienceList: ExperienceItem[];
 
-  // для совместимости со старой формой (не используем напрямую)
   education?: { institution?: string; degree?: string };
   experience?: any[];
 };
