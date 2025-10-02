@@ -28,7 +28,8 @@ CREATE TABLE professions (
 -- Таблица курсов
 CREATE TABLE courses (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    url VARCHAR(500) UNIQUE NOT NULL
+    url VARCHAR(500) UNIQUE NOT NULL,
+    title VARCHAR(100) NOT NULL
 );
 
 -- Связь навыков и курсов

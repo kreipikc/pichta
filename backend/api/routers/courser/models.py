@@ -8,3 +8,4 @@ class Course(Model):
 
     id = Column(Integer, primary_key=True)
     url = Column(String(500), unique=True, nullable=False)
+    title = Column(String(100), nullable=False)

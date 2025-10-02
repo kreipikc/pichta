@@ -87,7 +87,7 @@ class GraphExporter:
 
         node_value = props.get("value", 0)
         user_prof = self.user_skills.get(name, 0)
-        percent = round((user_prof / node_value * 100) if node_value else 0, 2)
+        percent = min(round((user_prof / node_value * 100) if node_value else 0, 2), 100)
 
         entry = {
             "count": node_value,
