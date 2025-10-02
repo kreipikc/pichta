@@ -11,10 +11,10 @@ export default defineConfig(() => {
     plugins: [react(), gltf(), svgr()],
     server: {
       host: '0.0.0.0',
-      port: 3000,
+      port: 8085,
       proxy: {
         '/api': {
-          target: 'http://localhost:8005',
+          target: 'http://backend:8005',
           changeOrigin: true,
           secure: false,
           rewrite: (p) => p.replace(/^\/api/, ''),
