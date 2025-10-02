@@ -20,7 +20,6 @@ const EMPTY: ExperienceModalValue = {
   title: "",
   id_profession: null,
   description: "",
-  // важный момент: во многих типах start_time = string | undefined (без null)
   start_time: dayjs().toISOString(),
   end_time: undefined,
 };
@@ -39,7 +38,6 @@ export default function ExperienceModal({ opened, onClose, value, onSave, saving
     if (!opened && openedRef.current) {
       openedRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened, isEdit, value?.id]);
 
   const canSave = useMemo(() => {
@@ -75,6 +73,7 @@ export default function ExperienceModal({ opened, onClose, value, onSave, saving
             onChange={(d) =>
               setForm((f) => ({ ...f, start_time: d ? d.toISOString() : undefined }))
             }
+            required
           />
           <AppDateField
             kind="date"

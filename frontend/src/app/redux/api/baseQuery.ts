@@ -58,7 +58,21 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
   let result = await rawBaseQuery(args, api, extraOptions);
 
   // 2) если не наш кейс — вернуть как есть
-  if (!needRefresh((result as any).error)) return result;
+  if (!needRefresh((result as any).error)) {
+  const err = (result as any).error as FetchBaseQueryError | undefined;
+  if (err && (err.status === 401 || err.status === 403)) {
+    // общий сценарий неавторизован — выходим из сессии
+    try {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_type');
+    } catch {}
+    // мягкий способ — принудительный редирект
+    if (typeof window !== 'undefined') {
+      window.location.assign('/auth/login');
+    }
+  }
+  return result;
+}
 
   // 3) один refresh для всех ожидающих
   if (!refreshPromise) {

@@ -3,26 +3,26 @@ import {
   Modal,
   Select,
   NumberInput,
-  TextInput,
   Group,
   Button,
   Stack,
   LoadingOverlay,
+  Text,
 } from "@mantine/core";
 import { AppDateField } from "@/components/date-time-picker/AppDateField";
 import { toast } from "react-toastify";
 import {
   useAddSkillMutation,
   useGetAllSkillsQuery,
-  useGetUserSkillsQuery, // ⬅ добавили, чтобы получить refetch
+  useGetUserSkillsQuery,
 } from "@/app/redux/api/skill.api";
 import type { UserSkillCreateI } from "@/shared/types/api/SkillI";
 
-export default function AddSkillModal({ userId }: { userId: number }) {
+type Props = { userId: number };
+
+export default function AddSkillModal({ userId }: Props) {
   const [opened, setOpened] = useState(false);
   const { data: allSkills = [], isLoading } = useGetAllSkillsQuery();
-
-  // ⬇ возьмём refetch из текущего списка навыков пользователя и дернём его после успешного add
   const { refetch: refetchUserSkills } = useGetUserSkillsQuery(userId);
 
   const [addSkill, addState] = useAddSkillMutation();
@@ -40,8 +40,11 @@ export default function AddSkillModal({ userId }: { userId: number }) {
   const [skillId, setSkillId] = useState<string | null>(null);
   const [proficiency, setProficiency] = useState<number>(0);
   const [priority, setPriority] = useState<number>(1);
+
   const [startDate, setStartDate] = useState<Date | null>(null);
-  const [status, setStatus] = useState<string>("");
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
+  const [status, setStatus] = useState<"inactive" | "process" | "complete">("inactive");
 
   const handleProficiencyChange = (val: string | number) => {
     const num = typeof val === "number" ? val : Number(val);
@@ -57,28 +60,49 @@ export default function AddSkillModal({ userId }: { userId: number }) {
     setProficiency(0);
     setPriority(1);
     setStartDate(null);
-    setStatus("");
+    setEndDate(null);
+    setStatus("inactive");
+  };
+
+  const validate = () => {
+    if (!skillId) {
+      toast.error("Выберите навык");
+      return false;
+    }
+    if (!startDate) {
+      toast.error("Укажите дату начала");
+      return false;
+    }
+    if (!endDate) {
+      toast.error("Укажите дату окончания");
+      return false;
+    }
+    if (endDate.getTime() < startDate.getTime()) {
+      toast.error("Дата окончания не может быть раньше даты начала");
+      return false;
+    }
+    if (!status) {
+      toast.error("Выберите статус");
+      return false;
+    }
+    return true;
   };
 
   const onSubmit = async () => {
-    if (!skillId) {
-      toast.error("Выберите навык");
-      return;
-    }
+    if (!validate()) return;
+
     const dto: UserSkillCreateI = {
       id_skill: Number(skillId),
-      id_user: userId, // оставляем — бэку может быть нужно и в теле
       proficiency,
       priority,
-      start_date: startDate ? startDate.toISOString() : null,
-      end_date: null,
-      status,
+      start_date: startDate!.toISOString(),
+      end_date: endDate!.toISOString(),
+      status, // "inactive" | "process" | "complete"
     };
 
-    // ⬇ ключевой момент: пробрасываем user_id аргументом, чтобы endpoint знал, что инвалидировать
-    await addSkill({ user_id: userId, body: [dto] }).unwrap();
+    // БЭК /skill/add принимает массив
+    await addSkill({ body: [dto] }).unwrap();
 
-    // ⬇ и сразу обновим список навыков пользователя
     await refetchUserSkills();
 
     toast.success("Навык добавлен");
@@ -86,12 +110,19 @@ export default function AddSkillModal({ userId }: { userId: number }) {
     reset();
   };
 
+  // чтобы при повторном открытии модалки звёздочки/required были чистыми
+  useEffect(() => {
+    if (!opened) reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened]);
+
   return (
     <>
       <Button onClick={() => setOpened(true)}>Добавить навык</Button>
       <Modal opened={opened} onClose={() => setOpened(false)} title="Добавить навык" centered>
         <Stack gap="sm" pos="relative">
           <LoadingOverlay visible={isLoading || addState.isLoading} />
+
           <Select
             label="Навык"
             placeholder="Выберите навык"
@@ -101,30 +132,81 @@ export default function AddSkillModal({ userId }: { userId: number }) {
             searchable
             clearable
             nothingFoundMessage="Нет совпадений"
+            withAsterisk
             required
           />
+
           <NumberInput
-            label="Уровень освоения"
+            label="Уровень освоения, %"
             value={proficiency}
             onChange={handleProficiencyChange}
             min={0}
             max={100}
             step={1}
+            withAsterisk
             required
           />
+
           <NumberInput
-            label="Приоритет"
+            label="Приоритет (1–5)"
             value={priority}
             onChange={handlePriorityChange}
             min={1}
             max={5}
             step={1}
           />
-          <AppDateField label="Дата начала" value={startDate} onChange={setStartDate} />
-          <TextInput label="Статус" value={status} onChange={(e) => setStatus(e.currentTarget.value)} />
+
+          <Group grow align="flex-start">
+            <div>
+              <AppDateField
+                label="Дата начала"
+                value={startDate}
+                onChange={(d) => {
+                  setStartDate(d);
+                  // если пользователь сдвинул начало после конца — подвинем конец
+                  if (d && endDate && endDate.getTime() < d.getTime()) {
+                    setEndDate(d);
+                  }
+                }}
+                maxDate={endDate ?? undefined}
+                required
+              />
+              <Text c="dimmed" fz="xs" mt={4}>
+                Обязательно
+              </Text>
+            </div>
+
+            <div>
+              <AppDateField
+                label="Дата окончания"
+                value={endDate}
+                onChange={setEndDate}
+                minDate={startDate ?? undefined}
+                required
+              />
+              <Text c="dimmed" fz="xs" mt={4}>
+                Обязательно
+              </Text>
+            </div>
+          </Group>
+
+          <Select
+            label="Статус"
+            data={[
+              { value: "inactive", label: "Изаначальный" },
+              { value: "process", label: "В процессе" },
+              { value: "complete", label: "Изучен" },
+            ]}
+            value={status}
+            onChange={(v) => setStatus((v as any) ?? "inactive")}
+            withAsterisk
+            required
+          />
 
           <Group justify="right" mt="sm">
-            <Button variant="light" onClick={reset}>Сброс</Button>
+            <Button variant="light" onClick={reset}>
+              Сброс
+            </Button>
             <Button onClick={onSubmit}>Добавить</Button>
           </Group>
         </Stack>

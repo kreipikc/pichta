@@ -25,7 +25,6 @@ const EMPTY: EducationModalValue = {
 export default function EducationModal({ opened, onClose, value, onSave, saving }: Props) {
   const [form, setForm] = useState<EducationModalValue>(EMPTY);
 
-  // Инициализация формы при открытии
   const openedRef = useRef(false);
   const isEdit = Boolean(value?.id);
 
@@ -37,13 +36,14 @@ export default function EducationModal({ opened, onClose, value, onSave, saving 
     if (!opened && openedRef.current) {
       openedRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened, isEdit, value?.id]);
 
-  const canSave = useMemo(
-    () => Boolean((form.type ?? "").trim() && (form.direction ?? "").trim()),
-    [form.type, form.direction]
-  );
+  const canSave = useMemo(() => {
+    const hasType = Boolean((form.type ?? "").trim());
+    const hasDirection = Boolean((form.direction ?? "").trim());
+    const hasStart = Boolean(form.start_time);
+    return hasType && hasDirection && hasStart;
+  }, [form.type, form.direction, form.start_time]);
 
   return (
     <Modal
@@ -83,6 +83,7 @@ export default function EducationModal({ opened, onClose, value, onSave, saving 
             onChange={(d) =>
               setForm((f) => ({ ...f, start_time: d ? d.toISOString() : null }))
             }
+            required
           />
           <AppDateField
             kind="date"

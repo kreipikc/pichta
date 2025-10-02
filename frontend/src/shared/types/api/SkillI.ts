@@ -14,8 +14,17 @@ export interface UserSkillWithNameI extends UserSkillBaseI {
   name: string;
 }
 
-// Для POST /skill/add (на бэке ждут массив таких объектов)
-export type UserSkillCreateI = UserSkillBaseI;
+export type UserSkillStatusI = "inactive" | "process" | "complete";
+
+// Для POST /skill/add
+export interface UserSkillCreateI {
+  id_skill: number;
+  proficiency: number;
+  priority?: number | null;
+  start_date: string;  // ISO
+  end_date: string;    // ISO
+  status: UserSkillStatusI;
+}
 
 // Для PATCH /skill/update (тоже массив). Поля частично optional, но id_skill обязателен.
 export interface UserSkillUpdateI {

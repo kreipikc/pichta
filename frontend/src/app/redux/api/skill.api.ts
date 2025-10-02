@@ -63,13 +63,17 @@ export const skillApi = createApi({
       { user_id?: number; body: UserSkillCreateI | UserSkillCreateI[] }
     >({
       query: ({ user_id, body }) => {
-        const payload = Array.isArray(body) ? body : [body];
+        const payload = (Array.isArray(body) ? body : [body]).map(({ ...dto }) => ({
+          id_skill: dto.id_skill,
+          proficiency: dto.proficiency,
+          priority: dto.priority ?? null,
+          start_date: dto.start_date,
+          end_date: dto.end_date,
+          status: dto.status,
+        }));
+
         return user_id
-          ? {
-              url: `${SKILL_ADD_FOR_USER_PATH}/${user_id}`,
-              method: "POST",
-              body: payload,
-            }
+          ? { url: `${SKILL_ADD_FOR_USER_PATH}/${user_id}`, method: "POST", body: payload }
           : { url: `${SKILL_ADD_SELF_PATH}`, method: "POST", body: payload };
       },
       invalidatesTags: (_r, _e, args) => [

@@ -42,7 +42,9 @@ type EditState = {
 
 export default function SkillsSection({ userId }: { userId: number }) {
   // список навыков конкретного пользователя
-  const { data, isLoading, isFetching } = useGetUserSkillsQuery(userId);
+  const { data, isLoading, isFetching } = useGetUserSkillsQuery(userId, {
+    refetchOnMountOrArgChange: true,
+  });
   const items: SkillItem[] = useMemo(() => data ?? [], [data]);
 
   // состояние выбора и модалки

@@ -1,127 +1,26 @@
-import { useState, useMemo, ReactNode } from "react";
+import { useMemo, useState } from "react";
 import {
-  Card,
-  Group,
   Button,
+  Card,
+  Center,
+  Group,
   ActionIcon,
-  Modal,
+  Tooltip,
   TextInput,
   Textarea,
-  Select,
-  Stack,
-  CloseButton,
-  rem,
-  Box,
-  Center,
-  Tooltip,
 } from "@mantine/core";
-// ⬇⬇⬇ заменили Mantine DateTimePicker на наш кастом:
-import { AppDateField } from "@/components/date-time-picker/AppDateField";
-import {
-  IconPlus,
-  IconTrash,
-  IconCheck,
-  IconClock,
-  IconAlertCircle,
-  IconCircleFilled,
-  IconPencil,
-  IconX,
-} from "@tabler/icons-react";
+import { IconPlus, IconPencil, IconTrash, IconCheck, IconX } from "@tabler/icons-react";
 import { DataTable } from "mantine-datatable";
 import dayjs from "dayjs";
 
 import { useTasks } from "@/hooks/useTasks";
 import type { TaskResponseI, TaskCreateSelfI } from "@/shared/types/api/TaskI";
-import type { TaskUpdatePatch } from "@/app/redux/api/task.api";
 import type { TaskUpdateI } from "@/shared/types/api/TaskI";
 
-type StatusOption = "pending" | "in_progress" | "done";
-
-const STATUS_LABELS: Record<StatusOption, string> = {
-  pending: "ожидает",
-  in_progress: "в процессе",
-  done: "выполнено",
-};
-const STATUS_ICON: Record<StatusOption, ReactNode> = {
-  pending: <IconAlertCircle size={14} />,
-  in_progress: <IconClock size={14} />,
-  done: <IconCheck size={14} />,
-};
-const STATUS_COLOR: Record<StatusOption, { bgVar: string; fgVar: string }> = {
-  pending: {
-    bgVar: "var(--mantine-color-yellow-light)",
-    fgVar: "var(--mantine-color-yellow-light-color)",
-  },
-  in_progress: {
-    bgVar: "var(--mantine-color-blue-light)",
-    fgVar: "var(--mantine-color-blue-light-color)",
-  },
-  done: {
-    bgVar: "var(--mantine-color-green-light)",
-    fgVar: "var(--mantine-color-green-light-color)",
-  },
-};
-const STATUS_SELECT_DATA = (Object.keys(STATUS_LABELS) as StatusOption[]).map((v) => ({
-  value: v,
-  label: STATUS_LABELS[v],
-}));
-
-function StatusSelect({
-  value,
-  onChange,
-  maw = 160,
-}: {
-  value: StatusOption;
-  onChange: (val: StatusOption) => void;
-  maw?: number;
-}) {
-  const colors = STATUS_COLOR[value];
-  return (
-    <Select
-      data={STATUS_SELECT_DATA}
-      value={value}
-      onChange={(val) => val && onChange(val as StatusOption)}
-      allowDeselect={false}
-      size="xs"
-      radius="xl"
-      variant="filled"
-      comboboxProps={{
-        withinPortal: true,
-        zIndex: 4000,
-        position: "bottom-start",
-      }}
-      styles={{
-        input: {
-          background: colors.bgVar,
-          color: colors.fgVar,
-          paddingLeft: rem(28),
-          paddingRight: rem(28),
-          borderColor: "transparent",
-        },
-      }}
-      leftSection={
-        <Box style={{ display: "flex", alignItems: "center", color: colors.fgVar }}>
-          {STATUS_ICON[value]}
-        </Box>
-      }
-      renderOption={({ option }) => {
-        const val = option.value as StatusOption;
-        const c = STATUS_COLOR[val];
-        return (
-          <Group gap="xs">
-            <IconCircleFilled size={10} style={{ color: c.fgVar }} />
-            <span>{STATUS_LABELS[val]}</span>
-          </Group>
-        );
-      }}
-      withCheckIcon={false}
-      maw={maw}
-      rightSectionPointerEvents="none"
-      clearable={false}
-      searchable={false}
-    />
-  );
-}
+import StatusSelect, { StatusOption } from "./components/task/StatusSelect";
+import AddTaskModal from "./components/task/AddTaskModal";
+import { AppDateField } from "@/components/date-time-picker/AppDateField";
+import classes from "./components/task/tasks.module.css";
 
 type RowDraft = {
   title: string;
@@ -134,6 +33,7 @@ type RowDraft = {
 export default function TasksSection({ userId }: { userId: number }) {
   const { tasks, isLoading, addForMe, patch, remove, states } = useTasks(userId);
 
+  // --- Модалка добавления ---
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<RowDraft>({
     title: "",
@@ -142,9 +42,6 @@ export default function TasksSection({ userId }: { userId: number }) {
     start_time: null,
     end_time: null,
   });
-
-  const [editing, setEditing] = useState<Record<number, boolean>>({});
-  const [drafts, setDrafts] = useState<Record<number, RowDraft>>({});
 
   async function handleAdd() {
     if (!userId) return;
@@ -167,8 +64,13 @@ export default function TasksSection({ userId }: { userId: number }) {
     });
   }
   function canSaveNew() {
-    return form.title.trim().length > 0;
+    // название + обязательная дата начала
+    return form.title.trim().length > 0 && !!form.start_time;
   }
+
+  // --- Редактирование строк в таблице ---
+  const [editing, setEditing] = useState<Record<number, boolean>>({});
+  const [drafts, setDrafts] = useState<Record<number, RowDraft>>({});
 
   function startEdit(t: TaskResponseI) {
     setEditing((e) => ({ ...e, [t.id]: true }));
@@ -214,34 +116,13 @@ export default function TasksSection({ userId }: { userId: number }) {
   return (
     <>
       <Group justify="space-between" align="center" mb="md">
-        <h3 style={{ margin: 0 }}>Задачи</h3>
+        <h3 className={classes.pageTitle}>Задачи</h3>
         <Button leftSection={<IconPlus size={16} />} onClick={() => setAddOpen(true)}>
           Добавить
         </Button>
       </Group>
 
       <Card withBorder radius="md" p="md">
-        {hasRecords && (
-          <style>
-            {`
-              .mantine-datatable-empty-state { display: none !important; }
-              .mantine-datatable-loader { display: none !important; }
-
-              /* ед. стилизация для инпутов без рамок */
-              .task-input-unstyled .mantine-Input-input,
-              .task-textarea-unstyled .mantine-Input-input {
-                border: none !important;
-                background: transparent !important;
-                box-shadow: none !important;
-              }
-
-              /* фиксированная геометрия кнопок действий, чтобы высота строки не прыгала */
-              .task-actions-cell { height: 34px; display: flex; align-items: center; justify-content: center; }
-              .task-action { width: 32px; height: 32px; }
-            `}
-          </style>
-        )}
-
         {!isLoading && !hasRecords ? (
           <Center mih={120} c="dimmed">
             Задач пока нет
@@ -256,6 +137,9 @@ export default function TasksSection({ userId }: { userId: number }) {
             idAccessor="id"
             noRecordsText=""
             fetching={isLoading}
+            classNames={{
+              root: classes.tableRoot,
+            }}
             columns={[
               {
                 accessor: "title",
@@ -265,7 +149,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                   const d = drafts[t.id];
                   return isEdit ? (
                     <TextInput
-                      className="task-input-unstyled"
+                      className={classes.inputUnstyledMantine}
                       variant="unstyled"
                       value={d?.title ?? ""}
                       onChange={(e) =>
@@ -280,7 +164,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                       variant="unstyled"
                       value={t.title ?? ""}
                       readOnly
-                      className="task-input-unstyled"
+                      className={classes.inputUnstyledMantine}
                     />
                   );
                 },
@@ -294,7 +178,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                   const d = drafts[t.id];
                   return isEdit ? (
                     <Textarea
-                      className="task-textarea-unstyled"
+                      className={classes.textareaUnstyledMantine}
                       variant="unstyled"
                       autosize
                       minRows={2}
@@ -311,7 +195,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                     />
                   ) : (
                     <Textarea
-                      className="task-textarea-unstyled"
+                      className={classes.textareaUnstyledMantine}
                       variant="unstyled"
                       autosize
                       minRows={1}
@@ -404,18 +288,18 @@ export default function TasksSection({ userId }: { userId: number }) {
               {
                 accessor: "actions",
                 title: "",
-                width: 170, // шире, чтобы 3 кнопки влезали
+                width: 170,
                 render: (t) => {
                   const isEdit = !!editing[t.id];
 
                   if (isEdit) {
                     const saving = states.updating;
                     return (
-                      <div className="task-actions-cell">
+                      <div className={classes.actionsCell}>
                         <Group gap="xs" justify="center" wrap="nowrap">
                           <Tooltip label="Сохранить">
                             <ActionIcon
-                              className="task-action"
+                              className={classes.actionIcon}
                               color="green"
                               variant="subtle"
                               aria-label="Сохранить"
@@ -428,7 +312,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                           </Tooltip>
                           <Tooltip label="Отменить">
                             <ActionIcon
-                              className="task-action"
+                              className={classes.actionIcon}
                               variant="subtle"
                               aria-label="Отменить"
                               onClick={() => cancelEdit(t.id)}
@@ -439,7 +323,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                           </Tooltip>
                           <Tooltip label="Удалить">
                             <ActionIcon
-                              className="task-action"
+                              className={classes.actionIcon}
                               color="red"
                               variant="subtle"
                               aria-label="Удалить"
@@ -455,11 +339,11 @@ export default function TasksSection({ userId }: { userId: number }) {
                   }
 
                   return (
-                    <div className="task-actions-cell">
+                    <div className={classes.actionsCell}>
                       <Group gap="xs" justify="center" wrap="nowrap">
                         <Tooltip label="Редактировать">
                           <ActionIcon
-                            className="task-action"
+                            className={classes.actionIcon}
                             variant="subtle"
                             aria-label="Редактировать"
                             onClick={() => startEdit(t)}
@@ -469,7 +353,7 @@ export default function TasksSection({ userId }: { userId: number }) {
                         </Tooltip>
                         <Tooltip label="Удалить">
                           <ActionIcon
-                            className="task-action"
+                            className={classes.actionIcon}
                             color="red"
                             variant="subtle"
                             aria-label="Удалить"
@@ -488,75 +372,14 @@ export default function TasksSection({ userId }: { userId: number }) {
         )}
       </Card>
 
-      <Modal
+      <AddTaskModal
         opened={addOpen}
         onClose={() => setAddOpen(false)}
-        title="Новая задача"
-        centered
-        size="lg"
-      >
-        <Stack>
-          <TextInput
-            label="Название"
-            placeholder="Коротко о задаче"
-            value={form.title}
-            onChange={(e) => setForm((s) => ({ ...s, title: e.currentTarget.value }))}
-            required
-            rightSectionPointerEvents="none"
-            rightSection={
-              form.title ? (
-                <CloseButton
-                  onClick={() => setForm((s) => ({ ...s, title: "" }))}
-                  aria-label="Очистить поле"
-                />
-              ) : null
-            }
-          />
-          <Textarea
-            label="Описание"
-            placeholder="Детали"
-            value={form.description ?? ""}
-            onChange={(e) => setForm((s) => ({ ...s, description: e.currentTarget.value }))}
-            autosize
-            minRows={2}
-          />
-          <Group grow>
-            <div>
-              <div style={{ fontSize: rem(12), color: "var(--mantine-color-dimmed)" }}>Статус</div>
-              <StatusSelect
-                value={form.status}
-                onChange={(val) => setForm((s) => ({ ...s, status: val }))}
-              />
-            </div>
-            {/* ⬇⬇⬇ наши объединённые дата/время поля */}
-            <AppDateField
-              kind="datetime"
-              label="Начало"
-              clearable
-              value={form.start_time}
-              onChange={(val) => setForm((s) => ({ ...s, start_time: val }))}
-              dropdownWidth={320}
-            />
-            <AppDateField
-              kind="datetime"
-              label="Завершение"
-              clearable
-              value={form.end_time}
-              onChange={(val) => setForm((s) => ({ ...s, end_time: val }))}
-              dropdownWidth={320}
-            />
-          </Group>
-
-          <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={() => setAddOpen(false)}>
-              Отмена
-            </Button>
-            <Button onClick={handleAdd} disabled={!canSaveNew()}>
-              Создать
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        value={form}
+        onChange={setForm}
+        onSubmit={handleAdd}
+        canSubmit={canSaveNew()}
+      />
     </>
   );
 }

@@ -108,26 +108,28 @@ export default function SummaryModal({ opened, onClose }: Props) {
       await addExperience(payload).unwrap();
     }
 
-    const wantedBody: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
-    await addWanted(wantedBody).unwrap();
-
     const dict = new Map<string, number>();
     (skillsDict ?? []).forEach((s: any) => dict.set(s.name, s.id));
+    const todayIso = new Date().toISOString();
+
     const skillsPayload: UserSkillCreateI[] = (data.skills || [])
       .map((name: string) => (dict.has(name) ? dict.get(name)! : null))
       .filter((id): id is number => typeof id === 'number')
       .map((id_skill) => ({
         id_skill,
-        id_user: uid,
         proficiency: 100,
         priority: null,
-        start_date: null,
-        end_date: null,
-        status: 'active',
+        start_date: todayIso,
+        end_date: todayIso,
+        status: "inactive",
       }));
+
     if (skillsPayload.length) {
       await addSkills({ body: skillsPayload }).unwrap();
     }
+
+    const wantedBody: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
+    await addWanted(wantedBody).unwrap();
 
     onClose();
     navigate('/');
