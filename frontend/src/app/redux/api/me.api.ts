@@ -11,10 +11,13 @@ export const meApi = createApi({
     getWantedProfessionsByUserId: build.query<WantedProfessionI[], number>({
       // arg: user_id
       query: (user_id) => ({ url: `${ME_WANTED_PROFESSION_GETALL_PATH}/${user_id}`, method: "GET" }),
-      providesTags: (_r, _e, user_id) => [{ type: "WantedProf", id: `LIST-${user_id}` }],
+      providesTags: (_r, _e, user_id) => [
+        { type: "WantedProf", id: `LIST-${user_id}` },
+        { type: "WantedProf", id: "LIST-SELF" },
+      ],
     }),
 
-    addWantedProfessions: build.mutation<void, WantedProfessionCreateI | WantedProfessionCreateI[]>({
+    addWantedProfessions: build.mutation<unknown, WantedProfessionCreateI | WantedProfessionCreateI[]>({
       query: (body) => ({
         url: ME_WANTED_PROFESSION_ADD_PATH,
         method: "POST",

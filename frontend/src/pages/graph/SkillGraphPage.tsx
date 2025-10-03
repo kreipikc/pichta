@@ -44,7 +44,7 @@ export const SkillGraphPage = () => {
   const { data: me } = useGetMeQuery();
   const userId = me?.id;
 
-  const { data: wanted } = useGetWantedProfessionsByUserIdQuery(userId!, { skip: !userId });
+  const { data: wanted } = useGetWantedProfessionsByUserIdQuery(userId!, { skip: !userId, refetchOnMountOrArgChange: true, });
   const [selectedProfId, setSelectedProfId] = useState<number | null>(null);
 
   useEffect(() => {
