@@ -1,6 +1,7 @@
 import { Badge, Button, Center, Divider, Group, Loader, Modal, Stack, Text, Anchor } from "@mantine/core";
 import dayjs from "dayjs";
 import { diffDaysInclusive, type NormalizedSkill } from "./useGanttLayout";
+import styles from "../GanttChartPage.module.css"
 
 // API-хуки для навыков/курсов
 import { useGetAllSkillsQuery, useGetSkillCoursesQuery } from "@/app/redux/api/skill.api";
@@ -71,11 +72,17 @@ export function SkillModal({ opened, onClose, active }: Props) {
                 Для этого навыка курсы не найдены.
               </Text>
             ) : (
-              <ul style={{ margin: "4px 0 0 18px" }}>
+              <ul className={styles.courseList}>
                 {courses.map((c) => (
-                  <li key={c.id} style={{ margin: "4px 0" }}>
-                    <Anchor href={c.url} target="_blank" rel="noopener noreferrer">
-                      {c.url}
+                  <li key={c.id} className={styles.courseItem}>
+                    <Anchor
+                      href={c.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.courseLink}
+                      title={c.url}
+                    >
+                      {c.title || c.url}
                     </Anchor>
                   </li>
                 ))}

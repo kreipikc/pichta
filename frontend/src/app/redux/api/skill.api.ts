@@ -120,7 +120,6 @@ export const skillApi = createApi({
     }),
 
     getSkillCourses: build.query<SkillCourseI[], number>({
-      // skillId -> /skill/get/{id}/courses
       query: (skillId) => ({
         url: `${SKILL_GET_COURSES_PATH}/${skillId}/courses`,
         method: 'GET',

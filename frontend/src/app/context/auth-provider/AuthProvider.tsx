@@ -102,41 +102,17 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (me) dispatch(addUser(me));
   }, [me, dispatch, addUser]);
 
-  // ===== ИНИЦИАЛИЗАЦИЯ БЕЗ ТАЙМЕРОВ =====
-  useEffect(() => {
-    const init = async () => {
-      const token = localStorage.getItem('access_token');
-      const type = localStorage.getItem('token_type');
+  // ===== ИНИЦИАЛИЗАЦИЯ =====
+useEffect(() => {
+  const token = localStorage.getItem('access_token');
+  const type = localStorage.getItem('token_type');
 
-      // 1) если уже есть access — считаем аутентифицированным
-      if (token && type) {
-        setStatus(AuthStatus.Authenticated);
-        return;
-      }
-
-      // 2) пробуем один раз обновить токен (по cookie refresh)
-      try {
-        const refreshed: any = await refreshToken().unwrap().catch(() => null);
-        const access =
-          refreshed?.access_token ?? refreshed?.accessToken ?? refreshed?.token ?? null;
-        const tokenType = refreshed?.token_type ?? refreshed?.tokenType ?? 'Bearer';
-
-        if (access) {
-          localStorage.setItem('access_token', String(access));
-          localStorage.setItem('token_type', String(tokenType));
-          setStatus(AuthStatus.Authenticated);
-          return;
-        }
-      } catch {
-        // ignore — упадём в Unauthenticated ниже
-      }
-
-      setStatus(AuthStatus.Unauthenticated);
-    };
-
-    void init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  if (token && type) {
+    setStatus(AuthStatus.Authenticated);
+  } else {
+    setStatus(AuthStatus.Unauthenticated);
+  }
+}, []);
 
   // --- редирект в анкету: простое правило по wantedProfs ---
   useEffect(() => {

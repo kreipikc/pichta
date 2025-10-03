@@ -54,4 +54,8 @@ export interface SkillProcessI {
 }
 
 export type SkillItemI = { id: number; name: string };
-export type SkillCourseI = { id: number; url: string };
+export type SkillCourseI = {
+  id: number;
+  url: string;
+  title: string;
+};

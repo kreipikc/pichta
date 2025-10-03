@@ -328,8 +328,14 @@ export const SkillGraphPage = () => {
                   <ul className={styles.courseList}>
                     {courses.map((c) => (
                       <li key={c.id} className={styles.courseItem}>
-                        <Anchor href={c.url} target="_blank" rel="noopener noreferrer" className={styles.courseLink}>
-                          {c.url}
+                        <Anchor
+                          href={c.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.courseLink}
+                          title={c.url}
+                        >
+                          {c.title || c.url}
                         </Anchor>
                       </li>
                     ))}
