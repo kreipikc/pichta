@@ -11,6 +11,7 @@ from routers.auth.admin.router import router as router_admin
 from routers.education.router import router as router_education
 from routers.experience.router import router as router_experience
 from routers.for_myself.router import router as router_myself
+from routers.graphs.router import router as router_graphs
 from routers.profession.router import router as router_profession
 from routers.skill.router import router as router_skill
 from routers.task.router import router as router_task
@@ -36,6 +37,7 @@ app.include_router(router_ident, prefix="/auth", tags=["Auth"])
 app.include_router(router_user, prefix="/user", tags=["User"])
 app.include_router(router_admin, prefix="/user", tags=["Admin"])
 app.include_router(router_myself, prefix="/me", tags=["For Myself"])
+app.include_router(router_graphs, prefix="/graph", tags=["Graphs"])
 app.include_router(router_education, prefix="/educ", tags=["Education"])
 app.include_router(router_experience, prefix="/exper", tags=["Experience"])
 app.include_router(router_profession, prefix="/prof", tags=["Profession"])

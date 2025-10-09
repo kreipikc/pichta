@@ -1,10 +1,13 @@
-from typing import List
+from typing import List, Union
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 
+from logger import app_logger
 from .service import get_skill_repository, SkillRepository
-from .schemas import UserSkillCreate, UserSkillResponse
-from ..auth.ident.dependencies import get_current_user
+from .schemas import UserSkillCreate, UserSkillResponse, SkillResponse, UserSkillUpdate, SkillOnlyResponse
+from ..auth.ident.dependencies import get_current_user, require_roles
+from ..auth.user.roles import UserRole
 from ..auth.user.schemas import UserInfo
+from ..courser.schemas import CourseResponse
 
 
 router = APIRouter()
@@ -12,99 +15,241 @@ router = APIRouter()
 
 @router.get(
     path="/getall",
-    summary="Get all skills for yourself",
-    description="Get all skills for yourself",
+    summary="Get all skills",
+    description="Get all skills",
     response_description="List skills",
     status_code=status.HTTP_200_OK,
-    response_model=List[UserSkillResponse],
+    response_model=List[SkillOnlyResponse],
 )
-async def get_user_skills(
+async def get_all_skills(
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
-) -> List[UserSkillResponse]:
-    user_id = int(current_user.id)
-    skills = await skill_repo.get_user_skills(user_id)
-    return [UserSkillResponse.model_validate(skill) for skill in skills]
+) -> List[SkillOnlyResponse]:
+    try:
+        skills = await skill_repo.get_all_skills()
+
+        if not skills:
+            return []
+        return [SkillOnlyResponse.model_validate(skill) for skill in skills]
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @router.get(
-    path="/get/",
-    summary="Get skill for yourself by skill_id",
-    description="Get skill for yourself by skill_id",
+    path="/getall/{user_id}",
+    summary="Get all skills for user by user_id",
+    description="Get all skills for user by user_id. Admin - all users, user - yourself.",
+    response_description="List skills",
+    status_code=status.HTTP_200_OK,
+    response_model=List[SkillResponse],
+)
+async def get_user_skills(
+        user_id: int,
+        skill_repo: SkillRepository = Depends(get_skill_repository),
+        current_user: UserInfo = Depends(get_current_user)
+) -> List[SkillResponse]:
+    try:
+        if current_user.role != UserRole.admin:
+            if user_id != current_user.id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
+        skills = await skill_repo.get_user_skills(user_id)
+
+        if not skills:
+            return []
+
+        return [SkillResponse.model_validate(skill) for skill in skills]
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@router.get(
+    path="/get/{skill_id}",
+    summary="Get skill by skill_id and user_id",
+    description="Get skill by skill_id and user_id. Admin - all users, user - yourself.",
     response_description="Skill object",
     status_code=status.HTTP_200_OK,
-    response_model=UserSkillResponse,
+    response_model=Union[SkillResponse, List],
+)
+async def get_user_skill(
+        skill_id: int,
+        user_id: int,
+        skill_repo: SkillRepository = Depends(get_skill_repository),
+        current_user: UserInfo = Depends(get_current_user)
+) -> Union[SkillResponse, List]:
+    try:
+        if current_user.role != UserRole.admin:
+            if current_user.id != user_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
+        skill = await skill_repo.get_user_skill(skill_id=skill_id, user_id=user_id)
+
+        if not skill:
+            return []
+
+        return SkillResponse.model_validate(skill)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@router.get(
+    path="/get/{skill_id}/courses",
+    summary="Get all courses for skill",
+    description="Get all courses for skill",
+    response_description="List courses",
+    status_code=status.HTTP_200_OK,
+    response_model=List[CourseResponse]
 )
 async def get_user_skill(
         skill_id: int,
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
-) -> UserSkillResponse:
-    user_id = int(current_user.id)
-    if skill := await skill_repo.get_user_skill(skill_id, user_id):
-        return UserSkillResponse.model_validate(skill)
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Skill not found for this user")
+) -> List[CourseResponse]:
+    try:
+        list_course = await skill_repo.get_courser_skill(skill_id)
+
+        return [CourseResponse(id=course.id, url=course.url, title=course.title) for course in list_course]
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@router.get(
+    path="/get/{user_id}/process",
+    summary="Get all skills in process",
+    description="Get all skills in process",
+    response_description="List skills",
+    status_code=status.HTTP_200_OK,
+    response_model=List[SkillResponse]
+)
+async def get_user_skill(
+        user_id: int,
+        skill_repo: SkillRepository = Depends(get_skill_repository),
+        current_user: UserInfo = Depends(get_current_user)
+):
+    try:
+        if current_user.role != UserRole.admin:
+            if current_user.id != user_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="View can only your data")
+
+        skills = await skill_repo.get_user_skills_in_process(user_id)
+
+        return [SkillResponse.model_validate(skill) for skill in skills]
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @router.post(
     path="/add",
     summary="Add skill for yourself",
-    description="Add skill for yourself",
-    response_description="Data of the created object",
+    description="Add skill for yourself. Row status - enum('inactive', 'process', 'complete')",
+    response_description="Status code",
     status_code=status.HTTP_201_CREATED,
-    response_model=UserSkillResponse,
+    response_class=Response
 )
-async def add_user_skill(
-        skill_data: UserSkillCreate,
+async def add_my_skill(
+        skill_data: List[UserSkillCreate],
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
-) -> UserSkillResponse:
-    current_user_id = int(current_user.id)
+) -> Response:
+    try:
+        await skill_repo.create_user_skills(current_user.id, skill_data)
+        return Response(status_code=status.HTTP_201_CREATED)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    if skill_data.id_user != current_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Can only add skills for yourself"
-        )
-    return UserSkillResponse.model_validate(await skill_repo.create_user_skill(skill_data))
+
+@router.post(
+    path="/add/{user_id}",
+    summary="Add skill for user",
+    description="Add skill for specific user (admin only).  Row status - enum('inactive', 'process', 'complete')",
+    response_description="Status code",
+    status_code=status.HTTP_201_CREATED,
+    response_class=Response
+)
+async def add_user_skill(
+        user_id: int,
+        skill_data: List[UserSkillCreate],
+        skill_repo: SkillRepository = Depends(get_skill_repository),
+        current_user: UserInfo = Depends(require_roles([UserRole.admin]))
+) -> Response:
+    try:
+        await skill_repo.create_user_skills(user_id, skill_data)
+        return Response(status_code=status.HTTP_201_CREATED)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @router.put(
-    path="/update",
-    summary="Update skill for yourself",
-    description="Update skill for yourself",
+    path="/update/{skill_id}",
+    summary="Update skill for user",
+    description="Update skill for user. Admin - all users, user - yourself.  Row status - enum('inactive', 'process', 'complete')",
     response_description="Data of the updated object",
     status_code=status.HTTP_200_OK,
     response_model=UserSkillResponse,
 )
 async def update_user_skill(
-        skill_data: UserSkillCreate,
+        skill_id: int,
+        user_id: int,
+        skill_data: UserSkillUpdate,
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> UserSkillResponse:
-    current_user_id = int(current_user.id)
+    try:
+        if current_user.role != UserRole.admin:
+            if current_user.id != user_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Update can only your data")
 
-    if skill_data.id_user != current_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Can only update your own skills"
-        )
-    return UserSkillResponse.model_validate(await skill_repo.update_user_skill(skill_data.id_skill, skill_data.id_user, skill_data))
+        user_skill = await skill_repo.update_user_skill(skill_id, current_user.id, skill_data)
+
+        return UserSkillResponse.model_validate(user_skill)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @router.delete(
     path="/delete/{skill_id}",
-    summary="Delete skill",
-    description="Delete skill by skill_id",
+    summary="Delete skill for user",
+    description="Delete skill by skill_id for user. Admin - all users, user - yourself.",
     response_description="Status code",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
 )
 async def delete_user_skill(
         skill_id: int,
+        user_id: int,
         skill_repo: SkillRepository = Depends(get_skill_repository),
         current_user: UserInfo = Depends(get_current_user)
 ) -> Response:
-    current_user_id = int(current_user.id)
-    await skill_repo.delete_user_skill(skill_id, current_user_id)
-    return Response(status_code=status.HTTP_200_OK)
+    try:
+        if current_user.role != UserRole.admin:
+            if current_user.id != user_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Delete can only your data")
+
+        await skill_repo.delete_user_skill(skill_id, user_id)
+
+        return Response(status_code=status.HTTP_200_OK)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

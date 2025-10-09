@@ -4,7 +4,7 @@ from fastapi import HTTPException, status, Depends
 
 from database import get_db
 from .models import Profession
-from .schemas import ProfessionCreate, ProfessionUpdate, ProfessionResponse
+from .schemas import ProfessionCreate, ProfessionUpdate, ProfessionRead
 
 
 class ProfessionRepository:
@@ -19,13 +19,13 @@ class ProfessionRepository:
         result = await self.session.execute(select(Profession).where(Profession.id == profession_id))
         return result.scalar_one_or_none()
 
-    async def create_profession(self, profession: ProfessionCreate) -> ProfessionResponse:
+    async def create_profession(self, profession: ProfessionCreate) -> ProfessionRead:
         try:
             db_profession = Profession(**profession.model_dump())
             self.session.add(db_profession)
             await self.session.commit()
             await self.session.refresh(db_profession)
-            return ProfessionResponse.model_validate(db_profession)
+            return ProfessionRead.model_validate(db_profession)
         except Exception as e:
             await self.session.rollback()
             raise HTTPException(
@@ -33,7 +33,7 @@ class ProfessionRepository:
                 detail=f"Error creating profession: {str(e)}"
             )
 
-    async def update_profession(self, profession_id: int, profession: ProfessionUpdate) -> ProfessionResponse:
+    async def update_profession(self, profession_id: int, profession: ProfessionUpdate) -> ProfessionRead:
         db_profession = await self.get_profession_by_id(profession_id)
         if not db_profession:
             raise HTTPException(
@@ -47,7 +47,7 @@ class ProfessionRepository:
 
         await self.session.commit()
         await self.session.refresh(db_profession)
-        return ProfessionResponse.model_validate(db_profession)
+        return ProfessionRead.model_validate(db_profession)
 
     async def delete_profession(self, profession_id: int) -> None:
         db_profession = await self.get_profession_by_id(profession_id)

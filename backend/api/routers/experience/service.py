@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status, Depends
@@ -10,7 +12,11 @@ class ExperienceRepository:
     def __init__(self, session: AsyncSession = Depends(get_db)):
         self.session = session
 
-    async def create_experience_for_self(self, user_id: int, experience_data: ExperienceCreate) -> ExperienceResponse:
+    async def get_all_experience(self) -> list[WorkExperience]:
+        exp_list = await self.session.execute(select(WorkExperience))
+        return exp_list.scalars().all()
+
+    async def create_experience_for_user(self, user_id: int, experience_data: ExperienceCreate) -> ExperienceResponse:
         try:
             experience_dict = experience_data.model_dump()
             experience = WorkExperience(
@@ -28,11 +34,19 @@ class ExperienceRepository:
                 detail=f"Error creating experience: {str(e)}"
             )
 
-    async def get_user_experiences(self, user_id: int) -> list[ExperienceResponse]:
+    async def get_user_all_experiences(self, user_id: int) -> list[ExperienceResponse]:
         result = await self.session.execute(
             select(WorkExperience).where(WorkExperience.id_user == user_id))
         experiences = result.scalars().all()
         return [ExperienceResponse.model_validate(exp) for exp in experiences]
+
+    async def get_user_experience(self, user_id: int, experience_id: int) -> Optional[WorkExperience]:
+        result = await self.session.execute(
+            select(WorkExperience)
+            .where(WorkExperience.id == experience_id)
+            .where(WorkExperience.id_user == user_id)
+        )
+        return result.scalar_one_or_none()
 
     async def get_experience(self, experience_id: int) -> ExperienceResponse | None:
         result = await self.session.execute(
@@ -40,29 +54,9 @@ class ExperienceRepository:
         experience = result.scalar_one_or_none()
         return ExperienceResponse.model_validate(experience) if experience else None
 
-    async def create_experience(self, experience_data: ExperienceCreate, user_id: int) -> ExperienceResponse:
+    async def update_experience_for_user(self, user_id: int, experience_id: int, experience_data: ExperienceUpdate) -> ExperienceResponse:
         try:
-            experience_dict = experience_data.model_dump()
-            experience = WorkExperience(
-                id_user=user_id,
-                **experience_dict
-            )
-            self.session.add(experience)
-            await self.session.commit()
-            await self.session.refresh(experience)
-            return ExperienceResponse.model_validate(experience)
-        except Exception as e:
-            await self.session.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error creating experience: {str(e)}"
-            )
-
-    async def update_experience(self, experience_id: int, experience_data: ExperienceUpdate) -> ExperienceResponse:
-        try:
-            result = await self.session.execute(
-                select(WorkExperience).where(WorkExperience.id == experience_id))
-            experience = result.scalar_one_or_none()
+            experience = await self.get_user_experience(user_id, experience_id)
 
             if not experience:
                 raise HTTPException(
@@ -84,11 +78,9 @@ class ExperienceRepository:
                 detail=f"Error updating experience: {str(e)}"
             )
 
-    async def delete_experience(self, experience_id: int) -> None:
+    async def delete_user_experience(self, user_id: int, experience_id: int) -> None:
         try:
-            result = await self.session.execute(
-                select(WorkExperience).where(WorkExperience.id == experience_id))
-            experience = result.scalar_one_or_none()
+            experience = await self.get_user_experience(user_id, experience_id)
 
             if not experience:
                 raise HTTPException(

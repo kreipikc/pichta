@@ -17,8 +17,11 @@ class EducationBase(BaseModel):
         return value
 
 
-class EducationCreate(EducationBase):
-    pass
+class EducationCreate(BaseModel):
+    type: str
+    direction: str
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
 
 
 class EducationUpdate(BaseModel):

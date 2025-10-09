@@ -1,0 +1,53 @@
+.root {
+  /* больше НЕ fixed, чтобы не перекрывать хедер */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: var(--mantine-color-body, #fff);
+  /* займём весь экран минус хедер; можно переопределить переменной из AppShell */
+  min-height: calc(100dvh - var(--app-header-h, 64px));
+  box-sizing: border-box;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.graphContainer {
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.iconWrapper {
+  margin-top: 12px;
+}
+
+.drawerIcon {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.courseList {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.courseItem {
+  margin: 4px 0;
+}
+
+.courseLink {
+  color: var(--mantine-color-teal-7, #0ca678);
+  text-decoration: none;
+}
+.courseLink:hover { text-decoration: underline; }

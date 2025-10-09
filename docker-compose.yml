@@ -3,13 +3,13 @@ services:
     build:
       context: .
       dockerfile: docker/backend/database/postgres/Dockerfile
-      args:
-        - POSTGRES_USER=${POSTGRES_USER}
-        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-        - POSTGRES_DB=${POSTGRES_DB}
     container_name: pg_age
     env_file:
       - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     networks:
       - app_network
     ports:
@@ -24,6 +24,17 @@ services:
       retries: 5
       start_period: 10s
 
+  pgadmin:
+    image: dpage/pgadmin4:9
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    networks:
+      - app_network
+
   backend:
     build:
       context: .
@@ -35,7 +46,11 @@ services:
     env_file:
       - .env
     environment:
-      - POSTGRES_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pg_age:5432/${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=pg_age
+      - POSTGRES_PORT=5432
       - SECRET_KEY_JWT=${SECRET_KEY_JWT}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
@@ -46,9 +61,29 @@ services:
     ports:
       - "8005:8005"
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+    container_name: frontend
+    depends_on:
+      - backend
+    environment:
+      - BACKEND_URL=http://backend:8005
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    networks:
+      - app_network
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+
 networks:
   app_network:
     driver: bridge
 
 volumes:
   pg_data:
+  frontend_node_modules:

@@ -1,0 +1,40 @@
+.pageTitle {
+  margin: 0;
+}
+
+/* Спрятать внутренние пустые состояния у mantine-datatable */
+.tableRoot :global(.mantine-datatable-empty-state) {
+  display: none !important;
+}
+.tableRoot :global(.mantine-datatable-loader) {
+  display: none !important;
+}
+
+/* Безрамочные поля Mantine внутри таблицы */
+.inputUnstyledMantine :global(.mantine-Input-input) {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 6px 8px;
+}
+.textareaUnstyledMantine :global(.mantine-Input-input) {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 6px 8px;
+  resize: none;            /* <- фикс: нельзя растягивать поле описания */
+}
+
+/* Ячейка с action-кнопками */
+.actionsCell {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Геометрия ActionIcon, чтобы высота строки не прыгала */
+.actionIcon {
+  width: 32px;
+  height: 32px;
+}

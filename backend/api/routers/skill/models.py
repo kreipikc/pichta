@@ -1,5 +1,11 @@
+from datetime import datetime
+from sqlalchemy.orm import relationship
+
 from database import Model
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum as SQLEnum
+
+from .enums import UserSkillStatus
+from ..courser.models import Course
 
 
 class Skill(Model):
@@ -17,6 +23,27 @@ class UserSkill(Model):
     id_user = Column(Integer, ForeignKey('users.id'), primary_key=True)
     proficiency = Column(Integer, nullable=False)
     priority = Column(Integer)
-    start_date = Column(DateTime)
+    start_date = Column(DateTime, default=datetime.now)
     end_date = Column(DateTime)
-    status = Column(String(20), nullable=False)
+    status = Column(SQLEnum(UserSkillStatus, name='skill_status'), default=UserSkillStatus.inactive, nullable=False)
+
+    skill = relationship("Skill", backref="user_skills")
+
+    @property
+    def name(self) -> str:
+        """Возвращает название навыка из связанной таблицы skills"""
+        return self.skill.name if self.skill else None
+
+
+class CourserSkill(Model):
+    __tablename__ = 'skill_to_course'
+
+    id_skill = Column(Integer, ForeignKey('skills.id'), primary_key=True)
+    id_course = Column(Integer, ForeignKey('courses.id'), primary_key=True)
+
+    course = relationship("Course", backref="skill_to_course")
+
+    @property
+    def url(self) -> str:
+        """Возвращает название навыка из связанной таблицы skills"""
+        return self.url.name if self.url else None

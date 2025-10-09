@@ -1,5 +1,6 @@
 -- Создание enum типа
 CREATE TYPE user_role AS ENUM ('admin', 'user', 'manager');
+CREATE TYPE skill_status AS ENUM ('inactive', 'process', 'complete');
 
 -- Таблица пользователей
 CREATE TABLE users (
@@ -21,14 +22,21 @@ CREATE TABLE skills (
 -- Таблица профессий
 CREATE TABLE professions (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    lvl VARCHAR(50) NOT NULL
+    name VARCHAR(100) NOT NULL
 );
 
 -- Таблица курсов
 CREATE TABLE courses (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    url VARCHAR(500) UNIQUE NOT NULL
+    url VARCHAR(500) UNIQUE NOT NULL,
+    title VARCHAR(100) NOT NULL
+);
+
+-- Связь навыков и курсов
+CREATE TABLE skill_to_course (
+    id_skill INTEGER NOT NULL REFERENCES skills(id),
+    id_course INTEGER NOT NULL REFERENCES courses(id),
+    PRIMARY KEY (id_skill, id_course)
 );
 
 -- Связь профессий и курсов
@@ -44,9 +52,9 @@ CREATE TABLE user_skills (
     id_user INTEGER NOT NULL REFERENCES users(id),
     proficiency INTEGER NOT NULL,
     priority INTEGER,
-    start_date TIMESTAMP,
-    end_date TIMESTAMP,
-    status VARCHAR(20) NOT NULL,
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    status skill_status NOT NULL,
     PRIMARY KEY (id_skill, id_user)
 );
 

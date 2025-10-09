@@ -21,8 +21,12 @@ class ExperienceCreate(ExperienceBase):
     pass
 
 
-class ExperienceUpdate(ExperienceBase):
-    pass
+class ExperienceUpdate(BaseModel):
+    title: Optional[str] = None
+    id_profession: Optional[int] = None
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
 
 
 class ExperienceResponse(ExperienceBase):

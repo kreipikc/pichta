@@ -17,6 +17,13 @@ class UserInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserPrint(BaseModel):
+    id: int
+    login: str
+    role: UserRole
+    about_me: Optional[str]
+
+
 class UserUpdate(BaseModel):
     login: str
     password: str = Field(min_length=6, max_length=50, description="Пароль, от 6 до 50 знаков")
@@ -25,3 +32,7 @@ class UserUpdate(BaseModel):
 
 class AboutMeCreate(BaseModel):
     about_me: str
+
+
+class UserRoleResponse(BaseModel):
+    role: str

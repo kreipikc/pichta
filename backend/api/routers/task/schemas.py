@@ -23,7 +23,7 @@ class TaskCreateSelf(BaseModel):
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = Field(None, max_length=500)
-    status: str = Field("pending", max_length=20)
+    status: Optional[str] = Field("pending", max_length=20)
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
@@ -37,7 +37,7 @@ class TaskBase(BaseModel):
 
 
 class TaskCreate(TaskBase):
-    created_from: int
+    pass
 
 
 class TaskResponse(TaskBase):

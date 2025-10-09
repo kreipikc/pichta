@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, Response, Request, Depends
 from utils import handle_catch_error
 
 from .dependencies import get_current_user
-from .schemas import UserRegister, UserLogin, Token
+from .schemas import UserRegister, UserLogin, Token, ChangePass
 from .responses.responses import IdentResponse, base_auth_responses
 from .responses.http_errors import HTTPError
 from .service import AuthRepository
@@ -88,3 +88,21 @@ async def logout(response: Response, user_current: UserInfo = Depends(get_curren
     )
     response.status_code = status.HTTP_200_OK
     return response
+
+
+@router.post(
+    path="/change_pass",
+    summary="Change pass for yourself",
+    description="Change pass for yourself",
+    response_description="Empty response (status 200)",
+    status_code=status.HTTP_200_OK,
+    response_class=Response,
+    responses=IdentResponse.change_pass
+)
+@handle_catch_error
+async def change_pass(
+        user_data: ChangePass,
+        user_current: UserInfo = Depends(get_current_user)
+) -> Response:
+    await AuthRepository.update_pass_user(user_current.id, user_data)
+    return Response(status_code=status.HTTP_200_OK)

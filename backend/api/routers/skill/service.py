@@ -1,62 +1,168 @@
+from typing import List
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status, Depends
-from .models import Skill, UserSkill
-from .schemas import UserSkillCreate
+from sqlalchemy.orm import selectinload
+
+from logger import app_logger
+from .enums import UserSkillStatus
+from .models import Skill, UserSkill, CourserSkill
+from .schemas import UserSkillCreate, UserSkillUpdate
 from database import get_db
+from ..courser.models import Course
 
 
 class SkillRepository:
     def __init__(self, session: AsyncSession = Depends(get_db)):
         self.session = session
 
+    async def get_all_skills(self) -> list[Skill]:
+        result = await self.session.execute(select(Skill))
+        return result.scalars().all()
+
     async def get_user_skills(self, user_id: int) -> list[UserSkill]:
         result = await self.session.execute(
-            select(UserSkill).where(UserSkill.id_user == user_id))
+            select(UserSkill)
+            .where(UserSkill.id_user == user_id)
+            .options(selectinload(UserSkill.skill))  # загружаем связь skill
+        )
         return result.scalars().all()
+
+    async def get_user_skills_dict(self, user_id: int) -> dict[str, int]:
+        objects = await self.get_user_skills(user_id)
+        return {
+            user_skill.skill.name: user_skill.proficiency
+            for user_skill in objects
+        }
+
+    async def get_user_skills_in_process(self, user_id: int):
+        result = await self.session.execute(
+            select(UserSkill)
+            .where(UserSkill.id_user == user_id)
+            .where(UserSkill.status == UserSkillStatus.process)
+            .options(selectinload(UserSkill.skill))
+            .order_by(
+                UserSkill.priority.desc(),
+                UserSkill.start_date.desc()
+            )
+        )
+        return result.scalars().all()
+
+    async def get_courser_skill(self, skill_id: int) -> list[Course]:
+        result = await self.session.execute(
+            select(Course)
+            .join(CourserSkill, Course.id == CourserSkill.id_course)
+            .where(CourserSkill.id_skill == skill_id)
+        )
+        return result.scalars().all()
+
+    async def get_skill_by_id(self, skill_id: int) -> UserSkill | None:
+        result = await self.session.execute(
+            select(UserSkill)
+            .where(UserSkill.id_skill == skill_id)
+            .options(selectinload(UserSkill.skill))
+        )
+        return result.scalar_one_or_none()
 
     async def get_user_skill(self, skill_id: int, user_id: int) -> UserSkill | None:
         result = await self.session.execute(
             select(UserSkill)
             .where(UserSkill.id_skill == skill_id)
-            .where(UserSkill.id_user == user_id))
+            .where(UserSkill.id_user == user_id)
+            .options(selectinload(UserSkill.skill))
+        )
         return result.scalar_one_or_none()
 
-    async def create_user_skill(self, skill_data: UserSkillCreate) -> UserSkill:
+    async def create_user_skills(self, user_id: int, skill_data: List[UserSkillCreate]) -> List[UserSkill]:
         try:
-            skill = UserSkill(**skill_data.model_dump())
-            self.session.add(skill)
+            skills = []
+            for skill in skill_data:
+                skill_dict = skill.model_dump(exclude_unset=True)
+
+                if skill_dict.get('start_date') and skill_dict['start_date'].tzinfo is not None:
+                    skill_dict['start_date'] = skill_dict['start_date'].replace(tzinfo=None)
+
+                if skill_dict.get('end_date') and skill_dict['end_date'].tzinfo is not None:
+                    skill_dict['end_date'] = skill_dict['end_date'].replace(tzinfo=None)
+
+                skills.append(UserSkill(id_user=user_id, **skill_dict))
+
+            self.session.add_all(skills)
+            await self.session.commit()
+
+            for skill in skills:
+                await self.session.refresh(skill)
+            return skills
+
+        except IntegrityError as e:
+            await self.session.rollback()
+            app_logger.error(f"IntegrityError: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Skill already exists for this user or invalid foreign key"
+            )
+        except Exception as e:
+            await self.session.rollback()
+            app_logger.error(f"Error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error"
+            )
+
+    async def update_user_skill(self, skill_id: int, user_id: int, skill_data: UserSkillUpdate) -> UserSkill:
+        try:
+            skill = await self.get_user_skill(skill_id, user_id)
+            if not skill:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Skill not found for this user"
+                )
+
+            update_data = skill_data.model_dump(exclude_unset=True)
+
+            if 'start_date' in update_data and update_data['start_date']:
+                if update_data['start_date'].tzinfo is not None:
+                    update_data['start_date'] = update_data['start_date'].replace(tzinfo=None)
+
+            if 'end_date' in update_data and update_data['end_date']:
+                if update_data['end_date'].tzinfo is not None:
+                    update_data['end_date'] = update_data['end_date'].replace(tzinfo=None)
+
+            for key, value in update_data.items():
+                if hasattr(skill, key):
+                    setattr(skill, key, value)
+
             await self.session.commit()
             await self.session.refresh(skill)
             return skill
         except Exception as e:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error: {e}")
-
-    async def update_user_skill(self, skill_id: int, user_id: int, skill_data: UserSkillCreate) -> UserSkill:
-        skill = await self.get_user_skill(skill_id, user_id)
-        if not skill:
+            await self.session.rollback()
+            app_logger.error(f"Error: {e}")
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Skill not found for this user"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error"
             )
-
-        for key, value in skill_data.model_dump().items():
-            setattr(skill, key, value)
-
-        await self.session.commit()
-        await self.session.refresh(skill)
-        return skill
 
     async def delete_user_skill(self, skill_id: int, user_id: int) -> None:
-        skill = await self.get_user_skill(skill_id, user_id)
-        if not skill:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Skill not found for this user"
-            )
+        try:
+            skill = await self.get_user_skill(skill_id, user_id)
+            if not skill:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Skill not found for this user"
+                )
 
-        await self.session.delete(skill)
-        await self.session.commit()
+            await self.session.delete(skill)
+            await self.session.commit()
+        except Exception as e:
+            await self.session.rollback()
+            app_logger.error(f"Error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error"
+            )
 
 
 def get_skill_repository(db: AsyncSession = Depends(get_db)) -> SkillRepository:

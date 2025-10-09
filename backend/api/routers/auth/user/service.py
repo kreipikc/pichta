@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from database import new_session
+from logger import app_logger
 from .models import UserOrm
 from .responses.http_errors import HTTPError as HTTPError_user
 from .roles import UserRole
