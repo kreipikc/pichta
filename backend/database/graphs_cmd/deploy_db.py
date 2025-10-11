@@ -1,6 +1,8 @@
 from age import Age
 import json
 import psycopg2
+import argparse
+import os
 from psycopg2.extras import RealDictCursor
 
 # Заменить на свои данные от PostgreSQL
@@ -9,9 +11,6 @@ POSTGRES_PASSWORD = "postgrespass"
 POSTGRES_DB = "testdb"
 POSTGRES_HOST = "localhost"
 POSTGRES_PORT = 5432
-
-# Заменить на путь до графа в формате JSON
-PATH_TO_JSON = "C:\\Users\\User\\graphs\\graph_c++.json"
 
 
 class GraphImporter:
@@ -291,17 +290,58 @@ class GraphImporter:
             self.conn.close()
 
 
-def main():
+def parsing(path: str):
     importer = GraphImporter()
     try:
         importer.connect_to_db()
-        importer.process_json_file(PATH_TO_JSON)
+        importer.process_json_file(path)
     except Exception as e:
         print(f"Произошла ошибка: {e}")
         import traceback
         traceback.print_exc()
     finally:
         importer.close_connections()
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Deploy Graph in DB')
+    parser.add_argument("--file", help="Если нужно распарсить конкретный json-файл.")
+    parser.add_argument("--dir", type=str, help="Если нужно распарсить все json-файлы в директории.")
+
+    args = parser.parse_args()
+
+    if args.file:
+        if os.path.exists(args.file):
+            parsing(args.file)
+        else:
+            print(f"❌ Файл не найден: {args.file}")
+    
+    elif args.dir:
+        if os.path.exists(args.dir) and os.path.isdir(args.dir):
+            try:
+                files = os.listdir(args.dir)
+                json_files = [f for f in files if f.endswith('.json')]
+                
+                if not json_files:
+                    print(f"❌ В директории {args.dir} не найдено JSON файлов")
+                    return
+                
+                print(f"📁 Найдено {len(json_files)} JSON файлов для обработки")
+                
+                for file in json_files:
+                    file_path = os.path.join(args.dir, file)
+                    parsing(file_path)
+                    
+            except Exception as e:
+                print(f"❌ Ошибка при чтении директории: {e}")
+        else:
+            print(f"❌ Директория не найдена или не является директорией: {args.dir}")
+    
+    else:
+        print("ℹ️  Использование:")
+        print("  --file <path>  - обработать конкретный json файл")
+        print("  --dir <path>   - обработать все JSON файлы в директории")
+        print("❌ Не указаны аргументы. Используйте --help для справки.")
 
 
 if __name__ == "__main__":
