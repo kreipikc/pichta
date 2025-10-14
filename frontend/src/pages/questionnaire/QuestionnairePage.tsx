@@ -57,11 +57,11 @@ export const QuestionnairePage = () => {
                 className={`progress-step ${i < step ? 'completed' : i === step ? 'active' : ''}`}
                 onClick={() => setStep(i)}
               >
-                {i < step ? (
-                  <IconCheck size={16} color="white" />
+                { i < step ? (
+                  <IconCheck size={16} color="currentColor" />
                 ) : (
                   <span>{i + 1}</span>
-                )}
+                ) }
               </div>
 
               <Text size="xs" className="progress-label">

@@ -303,15 +303,26 @@ form {
   transition: all 0.3s ease;
 }
 
-.progress-step.active {
-  border-color: var(--mantine-color-primary-6);
-  background-color: var(--mantine-color-white);
-  color: var(--mantine-color-primary-6);
+:root[data-mantine-color-scheme='light'] .progress-step.active {
+  border-color: var(--mantine-color-teal-6);
+  color: var(--mantine-color-teal-6);
+}
+:root[data-mantine-color-scheme='dark'] .progress-step.active {
+  border-color: var(--mantine-color-teal-5);
+  color: var(--mantine-color-teal-5);
 }
 
-.progress-step.completed {
-  background-color: var(--mantine-color-primary-6);
-  border-color: var(--mantine-color-primary-6);
+/* светлая тема */
+:root[data-mantine-color-scheme='light'] .progress-step.completed {
+  background-color: var(--mantine-color-teal-6);
+  border-color: var(--mantine-color-teal-6);
+  color: var(--mantine-color-white);
+}
+
+/* тёмная тема */
+:root[data-mantine-color-scheme='dark'] .progress-step.completed {
+  background-color: var(--mantine-color-teal-5);
+  border-color: var(--mantine-color-teal-5);
   color: var(--mantine-color-white);
 }
 
@@ -333,8 +344,12 @@ form {
   transition: background-color 0.3s ease;
 }
 
-.progress-line.filled {
-  background-color: var(--mantine-color-primary-6);
+/* заодно линия прогресса — тот же оттенок */
+:root[data-mantine-color-scheme='light'] .progress-line.filled {
+  background-color: var(--mantine-color-teal-6);
+}
+:root[data-mantine-color-scheme='dark'] .progress-line.filled {
+  background-color: var(--mantine-color-teal-5);
 }
 
 .questionnaire-body { flex: 1; }
