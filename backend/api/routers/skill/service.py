@@ -30,7 +30,7 @@ class SkillRepository:
         )
         return result.scalars().all()
 
-    async def get_user_skills_dict(self, user_id: int) -> dict[str, int]:
+    async def get_user_skills_dict_name_prof(self, user_id: int) -> dict[str, int]:
         objects = await self.get_user_skills(user_id)
         return {
             user_skill.skill.name: user_skill.proficiency
