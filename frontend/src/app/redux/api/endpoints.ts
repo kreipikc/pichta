@@ -69,4 +69,4 @@ export const PROF_DELETE_PATH = `${PROF_PREFIX}/delete`;            // + /{profe
 
 // Graphs
 export const GRAPH_PREFIX = 'graph';
-export const GRAPH_GET_PATH = `${GRAPH_PREFIX}/get`;  
+export const GRAPH_GET_PATH = `${GRAPH_PREFIX}/get`;

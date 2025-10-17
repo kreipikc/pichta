@@ -26,9 +26,9 @@ export const MainHeader = () => {
           <Button variant="subtle" color="teal" onClick={() => navigate(paths.Graph)}>
             Граф навыков
           </Button>
-          {/* <Button variant="subtle" color="teal" onClick={() => navigate(paths.GanttChart)}>
+          <Button variant="subtle" color="teal" onClick={() => navigate(paths.GanttChart)}>
             Диаграмма Ганта
-          </Button> */}
+          </Button>
         </div>
 
         {/* Плейсхолдер справа */}

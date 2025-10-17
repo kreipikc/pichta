@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+// src/pages/.../GanttChart.tsx
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Card,
   Title,
@@ -10,22 +11,42 @@ import {
   Center,
   SegmentedControl,
   Badge,
+  Select,
   useMantineTheme,
   useMantineColorScheme,
 } from "@mantine/core";
 import { IconRefresh } from "@tabler/icons-react";
 import { useAppSelector } from "@/hooks/useAppSelector";
-import { useGetUserSkillProcessesQuery } from "@/app/redux/api/skill.api";
-
-import { NormalizedSkill, useGanttLayout } from "./components/useGanttLayout";
+import { useGanttLayout } from "./components/useGanttLayout";
 import { GanttHeader } from "./components/GanttHeader";
 import { SkillModal } from "./components/SkillModal";
 
-type NSkill = NormalizedSkill & {
-  proficiency?: number;
-  priority?: number;
-  skillId?: number;
-};
+// данные для ганта (нормалайзер под /gantt)
+import {
+  useGraphGanttSkills,
+  type TypeFilter,
+  type GanttRow,
+} from "@/hooks/useGraphGanttSkills";
+
+// список профессий
+import { useGetAllProfessionQuery } from "@/app/redux/api/profession.api";
+
+// (опционально) стартовый profId из роутера
+let useRouteProfId: () => number;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { useRouter } = require("next/router");
+  useRouteProfId = () => {
+    try {
+      const r = useRouter();
+      return Number(r.query.prof_id ?? r.query.id) || 0;
+    } catch {
+      return 0;
+    }
+  };
+} catch {
+  useRouteProfId = () => 0;
+}
 
 export default function GanttChart() {
   const theme = useMantineTheme();
@@ -35,55 +56,62 @@ export default function GanttChart() {
   const user = useAppSelector((s) => s.user.currentUser);
   const userId = user?.id ?? 0;
 
-  const { data, isLoading, refetch } = useGetUserSkillProcessesQuery(userId, {
-    skip: !userId,
+  // стартовый profId — из стора/роута, дальше управляет селект
+  const profIdFromStore =
+    (useAppSelector as any)?.((s: any) => s?.profession?.currentId) ?? 0;
+  const profIdInitial = Number(profIdFromStore || useRouteProfId()) || 0;
+
+  // === селект профессий ===
+  const {
+    data: professions,
+    isLoading: isProfLoading,
+    refetch: refetchProf,
+  } = useGetAllProfessionQuery();
+
+  const profOptions =
+    (professions ?? []).map((p: any) => ({
+      value: String(p.id ?? p.profession_id ?? p.value),
+      label: String(p.name ?? p.title ?? p.label ?? "Профессия"),
+    })) ?? [];
+
+  const [selectedProfId, setSelectedProfId] = useState<number>(profIdInitial);
+
+  // если profId не задан — берём первую профессию после загрузки
+  useEffect(() => {
+    if (!selectedProfId && profOptions.length) {
+      const first = Number(profOptions[0].value);
+      if (first) setSelectedProfId(first);
+    }
+  }, [profOptions.length, selectedProfId]);
+
+  // фильтр/сортировка
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [sortMode, setSortMode] = useState<"type" | "none">("type");
+
+  // данные для ганта
+  const { rows, isLoading, refetch } = useGraphGanttSkills({
+    profId: selectedProfId,
+    userId,
+    typeFilter,
+    sortMode,
   });
 
-  // Универсальный нормалайзер/API-мэппер
-  const skills = useMemo<NSkill[]>(
-    () =>
-      ((data as any[]) ?? []).map((r: any, i: number) => {
-        const rawStart =
-          r.start ?? r.date_start ?? r.start_date ?? r.started_at ?? r.begin ?? r.dateStart ?? r.dateFrom;
-        const rawEnd =
-          r.end ?? r.date_end ?? r.end_date ?? r.finished_at ?? r.finish ?? r.dateEnd ?? r.dateTo;
-
-        const s = rawStart ? new Date(rawStart) : new Date();
-        const start = isNaN(s.getTime()) ? new Date() : s;
-
-        const e = rawEnd ? new Date(rawEnd) : new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
-        const end = isNaN(e.getTime()) ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7) : e;
-
-        const id = r.id ?? r.id_skill_process ?? r.id_skill ?? r.skill_id ?? r.process_id ?? `row-${i}`;
-        const title = r.skill?.name ?? r.title ?? r.name ?? r.skill_name ?? "Навык";
-        const color = r.skill?.color ?? r.color ?? undefined;
-
-        const proficiency = r.proficiency ?? r.progress ?? r.percent ?? r.completion ?? undefined;
-        const priority = r.priority ?? r.importance ?? r.rank ?? undefined;
-        const skillId = r.skill?.id ?? r.skill_id ?? r.id_skill ?? undefined;
-
-        return { id, title, start, end, color, proficiency, priority, skillId } as NSkill;
-      }),
-    [data]
-  );
-
-  const gantt = useGanttLayout(skills);
+  const gantt = useGanttLayout(rows);
 
   const textDimmed = isDark ? theme.colors.dark[2] : theme.colors.gray[6];
   const zebraEven = isDark ? theme.colors.dark[6] : theme.colors.gray[0];
   const zebraOdd = "transparent";
   const gridLine = isDark ? theme.colors.dark[4] : theme.colors.gray[3];
 
-  // --- ширина контента таймлайна и скрытие горизонтального скролла до первого измерения
+  // ширина контента таймлайна
   const contentWidthPx = gantt.dates.length * gantt.DAY_PX;
   const hasMeasured = gantt.timelineWidth > 0;
   const showScroll = hasMeasured && contentWidthPx > gantt.timelineWidth + 1;
   const contentWidthStyle = hasMeasured ? `max(100%, ${contentWidthPx}px)` : "100%";
 
-  // --- синхронизация высоты шапок: слева высота = правой (две строки)
+  // синхронизация высоты правого хедера
   const rightHeaderRef = useRef<HTMLDivElement | null>(null);
   const [rightHeaderH, setRightHeaderH] = useState<number>(64);
-
   useEffect(() => {
     const el = rightHeaderRef.current;
     if (!el) return;
@@ -98,8 +126,8 @@ export default function GanttChart() {
     };
   }, [gantt.segment, gantt.dates.length]);
 
-  // --- hover-лейбл без фона, следит за мышью и не уходит за границы
-  const [hovered, setHovered] = useState<NSkill | null>(null);
+  // hover-лейбл
+  const [hovered, setHovered] = useState<GanttRow | null>(null);
   const [mouse, setMouse] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [labelSize, setLabelSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const labelRef = useRef<HTMLDivElement | null>(null);
@@ -130,30 +158,79 @@ export default function GanttChart() {
 
     const tryRight = mouse.x + offset + w <= containerW - padding;
     let left = tryRight ? mouse.x + offset : mouse.x - offset - w;
-
     let top = mouse.y - h / 2;
-
     left = Math.max(padding, Math.min(left, containerW - w - padding));
     top = Math.max(padding, Math.min(top, containerH - h - padding));
-
     return { left, top };
   };
 
   const fmtRu = (d: Date) => d.toLocaleDateString("ru-RU");
 
+  // Цвета баров
+  const barColors = {
+    process: {
+      bg: isDark ? theme.colors.blue[9] : theme.colors.blue[2],
+      br: isDark ? theme.colors.blue[6] : theme.colors.blue[3],
+    },
+    complete: {
+      bg: isDark ? theme.colors.teal[9] : theme.colors.teal[2],
+      br: isDark ? theme.colors.teal[6] : theme.colors.teal[3],
+    },
+  } as const;
+
   return (
     <>
       <Card withBorder p="md" radius="lg" style={{ overflow: "hidden" }}>
-        {/* Верхняя строка: заголовок + овальный счётчик рядом */}
+        {/* Заголовок + контролы */}
         <Group justify="space-between" align="center" mb="md">
           <Group gap="sm" align="center">
             <Title order={3}>Диаграмма Ганта</Title>
             <Badge radius="xl" variant="outline">
-              <Text span fw={700} mr={4}>{skills.length}</Text>навыков
+              <Text span fw={700} mr={4}>{rows.length}</Text>навыков
             </Badge>
           </Group>
 
-          <Group gap="xs">
+          <Group gap="xs" wrap="nowrap">
+            {/* выбор профессии */}
+            <Select
+              size="xs"
+              w={260}
+              searchable
+              placeholder={isProfLoading ? "Загрузка..." : "Выберите профессию"}
+              data={profOptions}
+              value={selectedProfId ? String(selectedProfId) : null}
+              onChange={(v) => setSelectedProfId(Number(v) || 0)}
+              disabled={isProfLoading || !profOptions.length}
+              nothingFoundMessage="Профессии не найдены"
+            />
+
+            {/* фильтр по типу */}
+            <Select
+              size="xs"
+              value={typeFilter}
+              onChange={(v) => setTypeFilter((v as TypeFilter) || "all")}
+              data={[
+                { label: "Все типы", value: "all" },
+                { label: "В процессе", value: "process" },
+                { label: "Серая зона", value: "gray_zone" },
+                { label: "Завершено", value: "complete" },
+                { label: "Неактивно", value: "inactive" },
+              ]}
+              w={170}
+            />
+
+            {/* сортировка по типу */}
+            <SegmentedControl
+              size="xs"
+              value={sortMode}
+              onChange={(v) => setSortMode(v as typeof sortMode)}
+              data={[
+                { label: "По типу", value: "type" },
+                { label: "Как пришло", value: "none" },
+              ]}
+            />
+
+            {/* масштаб времени */}
             <SegmentedControl
               size="xs"
               value={gantt.segment}
@@ -164,31 +241,39 @@ export default function GanttChart() {
                 { label: "Месяцы", value: "months" },
               ]}
             />
+
             <Tooltip label="Обновить">
-              <ActionIcon variant="light" onClick={() => refetch()}>
+              <ActionIcon
+                variant="light"
+                onClick={() => {
+                  refetch();
+                  refetchProf();
+                }}
+              >
                 <IconRefresh size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>
         </Group>
 
-        {!userId ? (
+        {!userId || !selectedProfId ? (
           <Center mih={160}>
-            <Text c="dimmed">Сначала войдите в систему</Text>
+            <Text c="dimmed">Сначала выберите профессию и войдите в систему</Text>
           </Center>
         ) : isLoading ? (
           <Center mih={160}>
             <Loader />
           </Center>
-        ) : skills.length === 0 ? (
+        ) : rows.length === 0 ? (
           <Center mih={160}>
-            <Text c="dimmed">Нет навыков для изучения</Text>
+            <Text c="dimmed">Нет навыков для отображения</Text>
           </Center>
         ) : (
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: `320px 1fr`,
+              // адаптивная левая колонка
+              gridTemplateColumns: "clamp(340px, 36vw, 580px) 1fr",
               minHeight: 240,
               borderRadius: 12,
               border: `1px solid ${gridLine}`,
@@ -202,7 +287,7 @@ export default function GanttChart() {
                 borderRight: `1px solid ${gridLine}`,
               }}
             >
-              {/* Шапка слева: по высоте правой */}
+              {/* Шапка слева */}
               <div
                 style={{
                   position: "sticky",
@@ -227,24 +312,60 @@ export default function GanttChart() {
 
               {/* Ряды */}
               <div>
-                {skills.map((t, i) => (
+                {rows.map((t, i) => (
                   <div
                     key={`${t.id}-${i}`}
                     style={{
                       height: gantt.ROW_HEIGHT,
                       display: "grid",
-                      gridTemplateColumns: "1fr auto",
+                      gridTemplateColumns: "minmax(0, 1fr) auto",
                       alignItems: "center",
                       padding: "0 12px",
                       background: i % 2 === 0 ? zebraEven : zebraOdd,
                       borderBottom: `1px solid ${gridLine}`,
                     }}
                   >
-                    <Text fw={500} lineClamp={1} title={t.title}>
-                      {t.title}
-                    </Text>
+                    {/* название + индикатор */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        title={t.type}
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 999,
+                          marginTop: 1,
+                          background:
+                            t.type === "process"
+                              ? theme.colors.blue[6]
+                              : t.type === "complete"
+                              ? theme.colors.teal[6]
+                              : theme.colors.gray[5],
+                          opacity:
+                            t.type === "gray_zone" || t.type === "inactive" ? 0.5 : 1,
+                          flex: "0 0 auto",
+                        }}
+                      />
+                      <Text
+                        fw={500}
+                        lineClamp={1}
+                        title={t.title}
+                        style={{ minWidth: 0 }}
+                      >
+                        {t.title}
+                      </Text>
+                    </div>
+
                     <Text size="sm" c={textDimmed}>
-                      {fmtRu(t.start)} — {fmtRu(t.end)}
+                      {t.type === "gray_zone" || t.type === "inactive"
+                        ? "—"
+                        : `${fmtRu(t.start)} — ${fmtRu(t.end)}`}
                     </Text>
                   </div>
                 ))}
@@ -263,7 +384,7 @@ export default function GanttChart() {
                 scrollbarGutter: "stable both-edges",
               }}
             >
-              {/* Правый заголовок — обёртка для измерения высоты */}
+              {/* Правый заголовок */}
               <div ref={rightHeaderRef}>
                 <GanttHeader
                   side="right"
@@ -280,9 +401,16 @@ export default function GanttChart() {
 
               {/* Контент таймлайна */}
               <div style={{ width: contentWidthStyle }}>
-                {skills.map((t, i) => {
+                {rows.map((t, i) => {
                   const leftPx = gantt.leftOffsetPx(t.start);
                   const widthPx = gantt.widthPx(t.start, t.end);
+
+                  const color =
+                    t.type === "process"
+                      ? barColors.process
+                      : t.type === "complete"
+                      ? barColors.complete
+                      : null;
 
                   return (
                     <div
@@ -295,33 +423,35 @@ export default function GanttChart() {
                         userSelect: "none",
                       }}
                     >
-                      {/* Сам бар */}
-                      <div
-                        onClick={() => gantt.modal.openModal(t)}
-                        onMouseEnter={() => setHovered(t)}
-                        onMouseLeave={() => setHovered(null)}
-                        style={{
-                          position: "absolute",
-                          left: leftPx,
-                          top: 6,
-                          height: gantt.ROW_HEIGHT - 12,
-                          width: widthPx,
-                          borderRadius: 8,
-                          border: `1px solid ${isDark ? theme.colors.dark[3] : theme.colors.gray[3]}`,
-                          background: isDark ? theme.colors.teal[9] : theme.colors.teal[2],
-                          boxShadow: isDark
-                            ? "inset 0 -1px 0 rgba(255,255,255,0.04)"
-                            : "inset 0 -1px 0 rgba(0,0,0,0.06)",
-                          cursor: "pointer",
-                          transition: "transform 120ms ease",
-                        }}
-                      />
+                      {/* Бар рисуем ТОЛЬКО для process и complete */}
+                      {t.drawBar && color && (
+                        <div
+                          onClick={() => gantt.modal.openModal(t)}
+                          onMouseEnter={() => setHovered(t)}
+                          onMouseLeave={() => setHovered(null)}
+                          style={{
+                            position: "absolute",
+                            left: leftPx,
+                            top: 6,
+                            height: gantt.ROW_HEIGHT - 12,
+                            width: widthPx,
+                            borderRadius: 8,
+                            border: `1px solid ${color.br}`,
+                            background: color.bg,
+                            boxShadow: isDark
+                              ? "inset 0 -1px 0 rgba(255,255,255,0.04)"
+                              : "inset 0 -1px 0 rgba(0,0,0,0.06)",
+                            cursor: "pointer",
+                            transition: "transform 120ms ease",
+                          }}
+                        />
+                      )}
                     </div>
                   );
                 })}
 
-                {/* Ховер-лейбл без фона: колонкой, закреплён внутри контейнера */}
-                {hovered && (
+                {/* Ховер-лейбл */}
+                {hovered && hovered.drawBar && (
                   <div
                     ref={labelRef}
                     style={{
@@ -339,7 +469,13 @@ export default function GanttChart() {
                       fontWeight: 700,
                     }}
                   >
-                    <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div
+                      style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {hovered.title}
                     </div>
                     {typeof hovered.proficiency === "number" && (
@@ -362,7 +498,7 @@ export default function GanttChart() {
       <SkillModal
         opened={gantt.modal.opened}
         onClose={gantt.modal.close}
-        active={gantt.modal.active as NSkill | null}
+        active={gantt.modal.active as GanttRow | null}
       />
     </>
   );

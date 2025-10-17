@@ -153,7 +153,7 @@ useEffect(() => {
       try { await logoutMutation().unwrap(); } catch {}
       localStorage.removeItem('access_token');
       localStorage.removeItem('token_type');
-
+      sessionStorage.removeItem('pending_questionnaire_check');
       dispatch(authApi.util.resetApiState());
       dispatch(deleteUser());
 
