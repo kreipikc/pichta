@@ -96,6 +96,38 @@ export default function GanttChart() {
     sortMode,
   });
 
+  // === АВТО-ОБНОВЛЕНИЕ ДАННЫХ ===
+  // 1) на маунте и при изменении ключевых аргументов
+  useEffect(() => {
+    if (userId && selectedProfId) {
+      refetch();
+    }
+  }, [userId, selectedProfId, refetch]);
+
+  // 2) при возврате фокуса/видимости вкладки
+  useEffect(() => {
+    const revalidate = () => {
+      if (userId && selectedProfId) {
+        refetch();
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") revalidate();
+    };
+    window.addEventListener("focus", revalidate);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", revalidate);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [userId, selectedProfId, refetch]);
+
+  // 3) подтягиваем список профессий тоже «свежий»
+  useEffect(() => {
+    refetchProf();
+  }, [refetchProf]);
+
+  // ====== ЛЕЙАУТ ======
   const gantt = useGanttLayout(rows);
 
   const textDimmed = isDark ? theme.colors.dark[2] : theme.colors.gray[6];
