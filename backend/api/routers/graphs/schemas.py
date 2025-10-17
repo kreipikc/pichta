@@ -6,8 +6,11 @@ from routers.skill.enums import UserSkillStatus
 
 
 class UserSkillBody(BaseModel):
+    name: str
+    count: int
     proficiency: int
     priority: Optional[int] = None
+    percent: float
     start_date: datetime
     end_date: Optional[datetime]
     status: UserSkillStatus
