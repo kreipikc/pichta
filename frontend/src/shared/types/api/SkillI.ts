@@ -28,11 +28,11 @@ export interface UserSkillCreateI {
 
 // Для PATCH /skill/update (тоже массив). Поля частично optional, но id_skill обязателен.
 export interface UserSkillUpdateI {
-  proficiency: number;
+  proficiency?: number;
   priority?: number | null;
   start_date?: string | null;
   end_date?: string | null;
-  status: string;
+  status?: string;
 }
 
 export interface UserSkillResponseI extends UserSkillWithNameI {}

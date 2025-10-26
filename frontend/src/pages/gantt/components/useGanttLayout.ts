@@ -36,27 +36,38 @@ export function useGanttLayout(items: NormalizedSkill[]) {
   const ROW_HEIGHT = 36;
   const HEADER_HEIGHT = 72;
 
-  // левая граница — min(start) или сегодня
-  const minStart = useMemo(() => {
-    const fallback = dayjs().startOf("day");
-    if (!items.length) return fallback;
-    let min = dayjs(items[0].start).startOf("day");
+  // реальные границы задач (без буфера)
+  const { minStartOrig, maxEndOrig } = useMemo(() => {
+    if (!items.length) {
+      const todayStart = dayjs().startOf("day");
+      const todayEnd = dayjs().endOf("day");
+      return {
+        minStartOrig: todayStart,
+        maxEndOrig: todayEnd.add(1, "day"),
+      };
+    }
+
+    let minS = dayjs(items[0].start).startOf("day");
+    let maxE = dayjs(items[0].end).endOf("day");
+
     for (const it of items) {
       const s = dayjs(it.start).startOf("day");
-      if (s.isBefore(min)) min = s;
+      const e = dayjs(it.end).endOf("day");
+      if (s.isBefore(minS)) minS = s;
+      if (e.isAfter(maxE)) maxE = e;
     }
-    return min;
+
+    return { minStartOrig: minS, maxEndOrig: maxE };
   }, [items]);
 
-  // === КЛЮЧЕВОЕ: измеряем ширину только ПРАВОЙ колонки (таймлайна) ===
+  // измерение ширины правой части (видимого вьюпорта таймлайна)
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const [timelineWidth, setTimelineWidth] = useState(0);
 
-  // первичная оценка ширины до первого срабатывания ResizeObserver
   const [initialClientWidth] = useState<number>(() =>
     typeof window !== "undefined" ? window.innerWidth : 0
   );
-  // грубая оценка ширины правой колонки (левый сайдбар 320px + бордеры/паддинги ~32px)
+  // грубая оценка ширины правой части (минус левая колонка)
   const estimatedRightWidth = Math.max(0, initialClientWidth - 320 - 32);
 
   useLayoutEffect(() => {
@@ -64,39 +75,54 @@ export function useGanttLayout(items: NormalizedSkill[]) {
     if (!el) return;
     const ro = new ResizeObserver(() => setTimelineWidth(el.clientWidth));
     ro.observe(el);
-    // начальный замер
     setTimelineWidth(el.clientWidth);
     return () => ro.disconnect();
   }, []);
 
-  // сколько дней показывать, чтобы занять ширину и покрыть все элементы
-  const daysToShow = useMemo(() => {
+  // сколько дней нужно минимум, чтобы занять текущую ширину экрана
+  const minDaysByWidth = useMemo(() => {
     const widthForCalc = timelineWidth || estimatedRightWidth;
-    const minDaysByWidth = Math.max(7, Math.ceil(widthForCalc / DAY_PX));
-    if (!items.length) return minDaysByWidth;
+    return Math.max(7, Math.ceil(widthForCalc / DAY_PX));
+  }, [timelineWidth, estimatedRightWidth, DAY_PX]);
 
-    let maxEnd = dayjs(items[0].end).endOf("day");
-    for (const it of items) {
-      const e = dayjs(it.end).endOf("day");
-      if (e.isAfter(maxEnd)) maxEnd = e;
-    }
-    const spanTasks = diffDaysInclusive(minStart, maxEnd);
-    return Math.max(minDaysByWidth, spanTasks);
-  }, [timelineWidth, estimatedRightWidth, items, minStart]);
+  // ====== БУФЕР ПО ВРЕМЕНИ ======
+  // было 5 лет -> лагало.
+  // делаем по 1 году назад и вперёд от минимального/максимального навыка.
+  const BUFFER_BEFORE_DAYS = 365;
+  const BUFFER_AFTER_DAYS = 365;
 
-  const viewStart = minStart;
-  const viewDays = daysToShow;
+  // откуда начинаем всю нашу большую шкалу времени
+  const viewStart = useMemo(
+    () => minStartOrig.subtract(BUFFER_BEFORE_DAYS, "day").startOf("day"),
+    [minStartOrig]
+  );
 
+  // полный интервал с буферами
+  const rawDaysSpan = useMemo(() => {
+    const endWithBuffer = maxEndOrig
+      .add(BUFFER_AFTER_DAYS, "day")
+      .endOf("day");
+    return diffDaysInclusive(viewStart, endWithBuffer);
+  }, [viewStart, maxEndOrig]);
+
+  // сколько реально отрисовывать:
+  // либо весь (с буфером), либо достаточно для экрана
+  const viewDays = useMemo(
+    () => Math.max(minDaysByWidth, rawDaysSpan),
+    [minDaysByWidth, rawDaysSpan]
+  );
+
+  // массив всех дат шкалы
   const dates = useMemo(
     () => buildRange(viewStart, viewDays),
     [viewStart, viewDays]
   );
 
-  // подсветки/цвета
+  // цвета / оформление
   const headerBg = isDark ? theme.colors.dark[6] : theme.white;
   const textDimmed = isDark ? theme.colors.dark[2] : theme.colors.gray[6];
 
-  // группы по месяцам
+  // месяцы (верхняя строка шкалы)
   const monthSpans = useMemo(() => {
     const spans: { key: string; label: string; days: number }[] = [];
     let i = 0;
@@ -109,15 +135,16 @@ export function useGanttLayout(items: NormalizedSkill[]) {
         j < dates.length &&
         dates[j].month() === curr.month() &&
         dates[j].year() === curr.year()
-      )
+      ) {
         j++;
+      }
       spans.push({ key, label, days: j - i });
       i = j;
     }
     return spans;
   }, [dates]);
 
-  // группы по неделям
+  // недели (вторая строка шкалы в режиме "недели")
   const weekSpans = useMemo(() => {
     const spans: { key: string; label: string; days: number }[] = [];
     let i = 0;
@@ -131,21 +158,24 @@ export function useGanttLayout(items: NormalizedSkill[]) {
         j < dates.length &&
         dates[j].isoWeek() === week &&
         dates[j].year() === curr.year()
-      )
+      ) {
         j++;
+      }
       spans.push({ key, label, days: j - i });
       i = j;
     }
     return spans;
   }, [dates]);
 
-  // позиции баров
+  // позиция бара относительно viewStart
   const leftOffsetPx = (start: Date) => {
     const s = dayjs(start).startOf("day");
-    const d = Math.max(0, s.diff(viewStart, "day"));
+    const diffDays = s.diff(viewStart, "day");
+    const d = Math.max(0, diffDays);
     return d * DAY_PX;
   };
 
+  // ширина бара по датам
   const widthPx = (start: Date, end: Date) => {
     const s = dayjs(start).startOf("day");
     const e = dayjs(end).endOf("day");
@@ -153,7 +183,22 @@ export function useGanttLayout(items: NormalizedSkill[]) {
     return Math.max(DAY_PX, days * DAY_PX);
   };
 
-  // подписи хедера
+  // сколько пикселей между САМЫМ ранним и САМЫМ поздним навыком (без буфера)
+  const taskSpanPx = useMemo(() => {
+    const spanDays = diffDaysInclusive(
+      minStartOrig.startOf("day"),
+      maxEndOrig.endOf("day")
+    );
+    return spanDays * DAY_PX;
+  }, [minStartOrig, maxEndOrig, DAY_PX]);
+
+  // смещение (px) от начала всей шкалы (viewStart) до начала реальных задач
+  // нужно чтобы правильно позиционировать offsetPx и нижний скролл
+  const offsetBasePx = useMemo(() => {
+    return leftOffsetPx(minStartOrig.toDate());
+  }, [minStartOrig, leftOffsetPx]);
+
+  // текущий масштаб шкалы (дни / недели / месяцы)
   const [segment, setSegment] = useState<"days" | "weeks" | "months">("weeks");
 
   // модалка
@@ -172,14 +217,21 @@ export function useGanttLayout(items: NormalizedSkill[]) {
     ROW_HEIGHT,
     HEADER_HEIGHT,
 
-    // отдаём ref и измеренную ширину
     timelineRef,
     timelineWidth,
 
+    // шкала
     dates,
     monthSpans,
     weekSpans,
     viewDays,
+    viewStart,
+
+    // реальный диапазон задач
+    minStartOrig,
+    maxEndOrig,
+    taskSpanPx,
+    offsetBasePx,
 
     headerBg,
     textDimmed,

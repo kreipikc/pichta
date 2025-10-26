@@ -17,6 +17,7 @@ type RightProps = PropsBase & {
 export function GanttHeader(props: LeftProps | RightProps) {
   const { headerBg, gridLine } = props;
 
+  // левая шапка (название/период в левом столбце)
   if (props.side === "left") {
     return (
       <div
@@ -35,7 +36,14 @@ export function GanttHeader(props: LeftProps | RightProps) {
     );
   }
 
+  // правая шапка (месяцы / недели / дни)
   const { DAY_PX, monthSpans, weekSpans, dates, segment, textDimmed } = props;
+
+  const cellBase: React.CSSProperties = {
+    textAlign: "center",
+    boxSizing: "border-box",
+    borderRight: `1px solid ${gridLine}`,
+  };
 
   return (
     <div
@@ -47,18 +55,29 @@ export function GanttHeader(props: LeftProps | RightProps) {
         borderBottom: `1px solid ${gridLine}`,
       }}
     >
-      {/* Месяцы (ru) */}
+      {/* верхний ряд: месяцы */}
       <div
         style={{
           height: 36,
           display: "grid",
-          gridTemplateColumns: monthSpans.map((m) => `${m.days * DAY_PX}px`).join(" "),
+          gridTemplateColumns: monthSpans
+            .map((m) => `${m.days * DAY_PX}px`)
+            .join(" "),
           borderBottom: `1px solid ${gridLine}`,
           alignItems: "center",
         }}
       >
-        {monthSpans.map((m) => (
-          <div key={m.key} style={{ textAlign: "center" }}>
+        {monthSpans.map((m, idx) => (
+          <div
+            key={m.key}
+            style={{
+              ...cellBase,
+              borderRight:
+                idx === monthSpans.length - 1
+                  ? "1px solid transparent"
+                  : cellBase.borderRight,
+            }}
+          >
             <Text size="xs" fw={600}>
               {m.label}
             </Text>
@@ -66,7 +85,7 @@ export function GanttHeader(props: LeftProps | RightProps) {
         ))}
       </div>
 
-      {/* Недели или дни */}
+      {/* нижний ряд: недели или дни */}
       {segment === "months" ? (
         <div style={{ height: 36 }} />
       ) : (
@@ -82,15 +101,33 @@ export function GanttHeader(props: LeftProps | RightProps) {
           }}
         >
           {segment === "weeks"
-            ? weekSpans.map((w) => (
-                <div key={w.key} style={{ textAlign: "center", borderRight: `1px solid ${gridLine}` }}>
+            ? weekSpans.map((w, idx) => (
+                <div
+                  key={w.key}
+                  style={{
+                    ...cellBase,
+                    borderRight:
+                      idx === weekSpans.length - 1
+                        ? "1px solid transparent"
+                        : cellBase.borderRight,
+                  }}
+                >
                   <Text size="xs" c={textDimmed}>
                     {w.label}
                   </Text>
                 </div>
               ))
-            : dates.map((d) => (
-                <div key={d.format("YYYY-MM-DD")} style={{ textAlign: "center", borderRight: `1px solid ${gridLine}` }}>
+            : dates.map((d, idx) => (
+                <div
+                  key={d.format("YYYY-MM-DD")}
+                  style={{
+                    ...cellBase,
+                    borderRight:
+                      idx === dates.length - 1
+                        ? "1px solid transparent"
+                        : cellBase.borderRight,
+                  }}
+                >
                   <Text size="xs" c={textDimmed}>
                     {d.format("DD")}
                   </Text>
