@@ -13,7 +13,22 @@ build-backend:
   script:
     - export IMAGE_TAG="$(date +%Y%m%d)-$CI_COMMIT_SHORT_SHA"
     - echo "Building backend image $BACKEND_IMAGE:$IMAGE_TAG"
-    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" "$DOCKER_REGISTRY"
+    - echo "DOCKER_REGISTRY=$DOCKER_REGISTRY"
+    - |
+      if [ -n "$DOCKER_USER" ]; then
+        echo "DOCKER_USER=$DOCKER_USER"
+      else
+        echo "DOCKER_USER is empty"
+        exit 1
+      fi
+    - |
+      if [ -n "$DOCKER_PASSWORD" ]; then
+        echo "DOCKER_PASSWORD=$DOCKER_PASSWORD"
+      else
+        echo "DOCKER_PASSWORD is empty"
+        exit 1
+      fi
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin "$DOCKER_REGISTRY"
     - docker build -t "$BACKEND_IMAGE:$IMAGE_TAG" -f backend/Dockerfile backend/
     - docker push "$BACKEND_IMAGE:$IMAGE_TAG"
     - docker tag "$BACKEND_IMAGE:$IMAGE_TAG" "$BACKEND_IMAGE:latest"
@@ -35,7 +50,23 @@ build-frontend:
   script:
     - export IMAGE_TAG="$(date +%Y%m%d)-$CI_COMMIT_SHORT_SHA"
     - echo "Building frontend image $FRONTEND_IMAGE:$IMAGE_TAG"
-    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" "$DOCKER_REGISTRY"
+    - echo "DOCKER_REGISTRY=$DOCKER_REGISTRY"
+    - |
+      if [ -n "$DOCKER_USER" ]; then
+        echo "DOCKER_USER=$DOCKER_USER"
+      else
+        echo "DOCKER_USER is empty"
+        exit 1
+      fi
+    - |
+      if [ -n "$DOCKER_PASSWORD" ]; then
+        echo "DOCKER_PASSWORD is set"
+        echo "DOCKER_PASSWORD length: ${#DOCKER_PASSWORD}"
+      else
+        echo "DOCKER_PASSWORD is empty"
+        exit 1
+      fi
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin "$DOCKER_REGISTRY"
     - docker build -t "$FRONTEND_IMAGE:$IMAGE_TAG" -f frontend/Dockerfile frontend/
     - docker push "$FRONTEND_IMAGE:$IMAGE_TAG"
     - docker tag "$FRONTEND_IMAGE:$IMAGE_TAG" "$FRONTEND_IMAGE:latest"
