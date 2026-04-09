@@ -3,15 +3,26 @@
   ansible.builtin.stat:
     path: "{{ project_root }}/.git"
   register: git_dir_check
+  become: false
   tags: pref
 
 - name: Remove project root if it exists but is not a git repo
   ansible.builtin.file:
     path: "{{ project_root }}"
     state: absent
-  when:
+  become: true
+  when: 
     - git_dir_check.stat.exists == false
-    - ansible_check_mode == false  # только при реальном выполнении
+    - ansible_check_mode == false
+  tags: pref
+
+- name: Ensure project root exists with correct owner
+  ansible.builtin.file:
+    path: "{{ project_root }}"
+    state: directory
+    owner: "ansible"
+    group: "ansible"
+    mode: "0755"
   become: true
   tags: pref
 
@@ -26,11 +37,14 @@
   become: false
   tags: pref
 
-- name: Create manifests directory
+- name: Ensure manifests directory exists with correct owner
   ansible.builtin.file:
     path: "{{ manifests_dir }}"
     state: directory
+    owner: "ansible"
+    group: "ansible"
     mode: "0755"
+  become: true
   tags: pref
 
 - name: Render namespace manifest
