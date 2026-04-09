@@ -11,7 +11,7 @@
 
 - name: Ensure project repository is up to date
   ansible.builtin.git:
-    repo: "{{ repo_rul }}"
+    repo: "{{ repo_url }}"
     dest: "{{ project_root: }}"
     version: "{{ repo_version }}"
     update: true
