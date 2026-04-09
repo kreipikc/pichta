@@ -1,4 +1,4 @@
-stages:
+\stages:
   - build
   - deploy
 
@@ -29,7 +29,7 @@ build-backend:
         exit 1
       fi
     - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
-    - docker build -t "$BACKEND_IMAGE:$IMAGE_TAG" -f backend/Dockerfile backend/
+    - docker build -t "$BACKEND_IMAGE:$IMAGE_TAG" -f docker/backend/Dockerfile backend/
     - docker push "$BACKEND_IMAGE:$IMAGE_TAG"
     - docker tag "$BACKEND_IMAGE:$IMAGE_TAG" "$BACKEND_IMAGE:latest"
     - docker push "$BACKEND_IMAGE:latest"
@@ -67,7 +67,7 @@ build-frontend:
         exit 1
       fi
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin "$DOCKER_REGISTRY"
-    - docker build -t "$FRONTEND_IMAGE:$IMAGE_TAG" -f frontend/Dockerfile frontend/
+    - docker build -t "$FRONTEND_IMAGE:$IMAGE_TAG" -f docker/frontend/Dockerfile frontend/
     - docker push "$FRONTEND_IMAGE:$IMAGE_TAG"
     - docker tag "$FRONTEND_IMAGE:$IMAGE_TAG" "$FRONTEND_IMAGE:latest"
     - docker push "$FRONTEND_IMAGE:latest"
