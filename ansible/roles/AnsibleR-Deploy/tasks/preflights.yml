@@ -1,22 +1,5 @@
 ---
-- name: Check if project root is a git repository
-  ansible.builtin.stat:
-    path: "{{ project_root }}/.git"
-  register: git_dir_check
-  become: false
-  tags: pref
-
-- name: Remove project root if it exists but is not a git repo
-  ansible.builtin.file:
-    path: "{{ project_root }}"
-    state: absent
-  become: true
-  when: 
-    - git_dir_check.stat.exists == false
-    - ansible_check_mode == false
-  tags: pref
-
-- name: Ensure project root exists with correct owner
+- name: Ensure project root directory exists with correct ownership
   ansible.builtin.file:
     path: "{{ project_root }}"
     state: directory
@@ -37,7 +20,7 @@
   become: false
   tags: pref
 
-- name: Ensure manifests directory exists with correct owner
+- name: Create manifests directory
   ansible.builtin.file:
     path: "{{ manifests_dir }}"
     state: directory

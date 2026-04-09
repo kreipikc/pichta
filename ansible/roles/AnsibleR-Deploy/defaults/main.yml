@@ -13,7 +13,7 @@ SECRET_KEY_JWT: "obama"
 
 BACKEND_URL: "http://backend:8005"
 
-project_root: "/home/ansible"
+project_root: "/home/ansible/pichta-repo"
 path_to_frontend: "{{ project_root }}/pichta/frontend"
-manifests_dir: "/home/ansible/manifests"
+manifests_dir: "/home/ansible/pichta-repo/manifests"
 
