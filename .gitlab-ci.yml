@@ -8,19 +8,17 @@ variables:
   BACKEND_IMAGE: "$DOCKER_REGISTRY/$DOCKER_NAMESPACE/pichta-backend"
   FRONTEND_IMAGE: "$DOCKER_REGISTRY/$DOCKER_NAMESPACE/pichta-frontend"
 
-# -------------------------------------------------------------------
-# Сборка и пуш бэкенда – только при изменениях в папке backend/
 build-backend:
   stage: build
   script:
     - export IMAGE_TAG="$(date +%Y%m%d)-$CI_COMMIT_SHORT_SHA"
     - echo "Building backend image $BACKEND_IMAGE:$IMAGE_TAG"
-    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" $DOCKER_REGISTRY
+    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" "$DOCKER_REGISTRY"
     - docker build -t "$BACKEND_IMAGE:$IMAGE_TAG" -f backend/Dockerfile backend/
     - docker push "$BACKEND_IMAGE:$IMAGE_TAG"
-    - docker tag "$BACKEND_IMAGE:$IMAGE_TAG"
-    - docker push "$BACKEND_IMAGE:$IMGAE_TAG"
-    - echo $IMAGE_TAG > backend_tag.txt   # сохраняем тег для деплоя
+    - docker tag "$BACKEND_IMAGE:$IMAGE_TAG" "$BACKEND_IMAGE:latest"
+    - docker push "$BACKEND_IMAGE:latest"
+    - echo "$IMAGE_TAG" > backend_tag.txt
   artifacts:
     paths:
       - backend_tag.txt
@@ -28,23 +26,21 @@ build-backend:
   rules:
     - changes:
         - backend/**/*
-      when: on_success
     - when: never
   tags:
     - shell
 
-# Сборка и пуш фронтенда – при изменениях в папке frontend/
 build-frontend:
   stage: build
   script:
     - export IMAGE_TAG="$(date +%Y%m%d)-$CI_COMMIT_SHORT_SHA"
     - echo "Building frontend image $FRONTEND_IMAGE:$IMAGE_TAG"
-    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" $DOCKER_REGISTRY
+    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" "$DOCKER_REGISTRY"
     - docker build -t "$FRONTEND_IMAGE:$IMAGE_TAG" -f frontend/Dockerfile frontend/
     - docker push "$FRONTEND_IMAGE:$IMAGE_TAG"
-    - docker tag "$FRONTEND_IMAGE:$IMAGE_TAG"
-    - docker push "$FRONTEND_IMAGE:$IMAGE_TAG"
-    - echo $IMAGE_TAG > frontend_tag.txt
+    - docker tag "$FRONTEND_IMAGE:$IMAGE_TAG" "$FRONTEND_IMAGE:latest"
+    - docker push "$FRONTEND_IMAGE:latest"
+    - echo "$IMAGE_TAG" > frontend_tag.txt
   artifacts:
     paths:
       - frontend_tag.txt
@@ -52,26 +48,26 @@ build-frontend:
   rules:
     - changes:
         - frontend/**/*
-      when: on_success
     - when: never
   tags:
     - shell
 
-# -------------------------------------------------------------------
-# Деплой через Ansible – всегда, даже если сборок не было
 deploy:
   stage: deploy
   script:
-    # Определяем теги: если артефакт есть – берём из него, иначе "latest"
     - BACKEND_TAG=$(cat backend_tag.txt 2>/dev/null || echo "latest")
     - FRONTEND_TAG=$(cat frontend_tag.txt 2>/dev/null || echo "latest")
     - echo "Deploying backend:$BACKEND_TAG frontend:$FRONTEND_TAG"
     - cd /etc/ansible
-    - |
-      ansible-playbook /opt/k8s/pichta/ansible/deploy.yml -t pref \
-        --extra-vars "backend_image_tag=$BACKEND_TAG frontend_image_tag=$FRONTEND_TAG"
+    - ansible-playbook /opt/k8s/pichta/ansible/deploy.yml -t pref --extra-vars "backend_image_tag=$BACKEND_TAG frontend_image_tag=$FRONTEND_TAG"
   rules:
     - when: always
-  needs: ["build-backend", "build-frontend"]   # дожидаемся сборок (если они есть)
+  needs:
+    - job: build-backend
+      optional: true
+      artifacts: true
+    - job: build-frontend
+      optional: true
+      artifacts: true
   tags:
     - shell
