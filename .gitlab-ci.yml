@@ -28,7 +28,7 @@ build-backend:
         echo "DOCKER_PASSWORD is empty"
         exit 1
       fi
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin "$DOCKER_REGISTRY"
+    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
     - docker build -t "$BACKEND_IMAGE:$IMAGE_TAG" -f backend/Dockerfile backend/
     - docker push "$BACKEND_IMAGE:$IMAGE_TAG"
     - docker tag "$BACKEND_IMAGE:$IMAGE_TAG" "$BACKEND_IMAGE:latest"
