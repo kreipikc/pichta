@@ -1,0 +1,68 @@
+---
+- name: Create project directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ project_root }}"
+    - "{{ manifests_dir }}"
+
+- name: Ensure project repository is up to date
+  ansible.builtin.git:
+    repo: "{{ repo_rul }}"
+    dest: "{{ project_root: }}"
+    version: "{{ repo_version }}"
+    update: true
+    force: true
+    accept_hostkey: true
+  become: false
+
+- name: Render namespace manifest
+  ansible.builtin.template:
+    src: ns.yml
+    dest: "{{ manifests_dir }}/ns.yml"
+    mode: "0644"
+
+- name: Render backend configmap manifest
+  ansible.builtin.template:
+    src: config-map_back.yml
+    dest: "{{ manifests_dir }}/config-map_back.yml"
+    mode: "0644"
+
+- name: Render backend secret manifest
+  ansible.builtin.template:
+    src: secret_back.yml
+    dest: "{{ manifests_dir }}/secret_back.yml"
+    mode: "0644"
+
+- name: Render backend deployment manifest
+  ansible.builtin.template:
+    src: backend.yml
+    dest: "{{ manifests_dir }}/backend.yml"
+    mode: "0644"
+
+- name: Render backend service manifest
+  ansible.builtin.template:
+    src: service_back.yml
+    dest: "{{ manifests_dir }}/service_back.yml"
+    mode: "0644"
+
+- name: Render frontend service manifest
+  ansible.builtin.template:
+    src: service_front.yml
+    dest: "{{ manifests_dir }}/service_front.yml"
+    mode: "0644"
+
+- name: Render frontend deployment manifest
+  ansible.builtin.template:
+    src: front.yml
+    dest: "{{ manifests_dir }}/front.yml"
+    mode: "0644"
+
+- name: Render ingress manifest
+  ansible.builtin.template:
+    src: ingres.yml
+    dest: "{{ manifests_dir }}/ingres.yml"
+    mode: "0644"
+

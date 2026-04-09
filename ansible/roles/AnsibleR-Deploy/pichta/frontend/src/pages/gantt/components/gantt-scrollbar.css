@@ -1,0 +1,32 @@
+/* Делает нижний нативный горизонтальный скролл видимым и удобным */
+.gantt-bottom-scroll {
+  /* Просим движок всегда оставлять “канавку” под скролл (где поддерживается) */
+  scrollbar-gutter: stable both-edges;
+
+  /* Firefox: размер/видимость ползунка */
+  scrollbar-width: auto;            /* вместо thin/none */
+  scrollbar-color: var(--mantine-color-dark-4) var(--mantine-color-dark-6);
+}
+
+/* Chromium/WebKit */
+.gantt-bottom-scroll::-webkit-scrollbar {
+  height: 14px;                     /* делаем заметнее */
+}
+.gantt-bottom-scroll::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-dark-4);
+  border-radius: 8px;
+}
+.gantt-bottom-scroll::-webkit-scrollbar-track {
+  background: var(--mantine-color-dark-6);
+}
+
+/* Светлая тема — подменяем цвета трека/ползунка */
+:root[data-mantine-color-scheme="light"] .gantt-bottom-scroll {
+  scrollbar-color: var(--mantine-color-gray-5) var(--mantine-color-gray-2);
+}
+:root[data-mantine-color-scheme="light"] .gantt-bottom-scroll::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-5);
+}
+:root[data-mantine-color-scheme="light"] .gantt-bottom-scroll::-webkit-scrollbar-track {
+  background: var(--mantine-color-gray-2);
+}

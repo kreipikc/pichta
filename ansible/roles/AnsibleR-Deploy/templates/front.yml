@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: frontend-hostpath-pv
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "{{ path_to_frontend }}"
+    type: Directory
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frontend-pvc
+  namespace: pichta
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: frontend-hostpath-pv
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: pichta
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      nodeName: warden
+      containers:
+        - name: frontend
+          image: "{{ frontend_image }}"
+          imagePullPolicy: IfNotPresent
+
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cd /app && \
+              npm install && \
+              npm run dev -- --host 0.0.0.0 --port 8085
+
+          ports:
+            - containerPort: 8085
+
+          env:
+            - name: BACKEND_URL
+              value: http://backend:8005
+            - name: CHOKIDAR_USEPOLLING
+              value: "true"
+            - name: WATCHPACK_POLLING
+              value: "true"
+
+          volumeMounts:
+            - name: frontend-code
+              mountPath: /app
+            - name: frontend-node-modules
+              mountPath: /app/node_modules
+
+      volumes:
+        - name: frontend-code
+          persistentVolumeClaim:
+            claimName: frontend-pvc
+        - name: frontend-node-modules
+          emptyDir: {}

@@ -1,0 +1,7 @@
+- name: preflights
+  ansible.builtin.include_tasks: preflights.yml
+  tags: pref
+
+- name: deploy
+  ansible.builtin.include_tasks: deploy.yml
+  tags: deploy

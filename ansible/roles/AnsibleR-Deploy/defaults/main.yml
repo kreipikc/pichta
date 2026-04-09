@@ -1,0 +1,19 @@
+repo_url: "https://gitlab.pan-tech.ru/OPG/pichta"
+repo_version: "main"
+
+backend_image: "revenan7/pichta-backend:1.0"
+frontend_image: "revenan7/pichta-frontend:1.0"
+
+POSTGRES_USER: "postgres"
+POSTGRES_HOST: "obama.su"
+POSTGRES_PORT: 5432
+POSTGRES_PASSWORD: "postgrespass"
+POSTGRES_DB: "testdb"
+SECRET_KEY_JWT: "obama"
+
+BACKEND_URL: "http://backend:8005"
+
+project_root: "/home/ansible"
+path_to_frontend: "{{ project_root }}/pichta/frontend"
+manifests_dir: "/home/ansible/manifests"
+

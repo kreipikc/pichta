@@ -1,0 +1,271 @@
+import { Modal, Stack, Title, Text, Paper, Group, Button, Divider, ScrollArea, List, ThemeIcon } from '@mantine/core';
+import { IconCheck } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import dayjs from 'dayjs';
+
+import { useQuestionnaire } from '../context/QuestionnaireContext';
+
+import { useGetMeQuery } from '@/app/redux/api/auth.api';
+import { useAddEducationMutation } from '@/app/redux/api/education.api';
+import { useAddExperienceForSelfMutation } from '@/app/redux/api/experience.api';
+import { useAddWantedProfessionsMutation } from '@/app/redux/api/me.api';
+import { useAddSkillMutation, useGetAllSkillsQuery } from '@/app/redux/api/skill.api';
+import { useGetAllProfessionQuery } from '@/app/redux/api/profession.api';
+import { useAppSelector } from '@/hooks/useAppSelector';
+
+import type { EducationCreateI } from '@/shared/types/api/EducationI';
+import type { ExperienceCreateI } from '@/shared/types/api/ExperienceI';
+import type { WantedProfessionCreateI } from '@/shared/types/api/ForMyselfI';
+import type { UserSkillCreateI } from '@/shared/types/api/SkillI';
+
+interface Props {
+  opened: boolean;
+  onClose: () => void;
+}
+
+// форматирование дат в YYYY-MM-DD (как вы и делали ранее)
+function toYMD(v?: string | null) {
+  if (!v) return null;
+  const d = dayjs(v);
+  return d.isValid() ? d.format('YYYY-MM-DD') : null;
+}
+
+export default function SummaryModal({ opened, onClose }: Props) {
+  const { data } = useQuestionnaire();
+  const navigate = useNavigate();
+
+  const { data: me } = useGetMeQuery();
+  const userFromStore = useAppSelector((s) => s.user?.currentUser as any);
+  const uid = Number(userFromStore?.id ?? (me as any)?.id) || 0;
+
+  const { data: skillsDict } = useGetAllSkillsQuery();
+  const { data: professionsDict } = useGetAllProfessionQuery();
+
+  const [addEducation] = useAddEducationMutation();
+  const [addExperience] = useAddExperienceForSelfMutation();
+  const [addWanted] = useAddWantedProfessionsMutation();
+  const [addSkills] = useAddSkillMutation();
+
+  // образование (как было)
+  const educationList = Array.isArray((data as any).educationList) ? (data as any).educationList : [];
+
+  // ✳️ опыт: поддерживаем и новый, и старый ключи
+  const rawExperience =
+    (Array.isArray((data as any).experienceList) && (data as any).experienceList) ||
+    (Array.isArray((data as any).experience) && (data as any).experience) ||
+    [];
+
+  // карта профессий для рендера
+  const profById = useMemo(() => {
+    const m = new Map<number, string>();
+    (professionsDict ?? []).forEach((p: any) => m.set(p.id, p.name));
+    return m;
+  }, [professionsDict]);
+
+  const selectedWantedIds = useMemo(
+    () => (data.goals ? data.goals.split('||').filter(Boolean).map(Number) : []),
+    [data.goals]
+  );
+
+  const selectedWantedNames = useMemo(() => {
+    if (!professionsDict) return [];
+    const byId = new Map<number, string>();
+    (professionsDict as any[]).forEach((p: any) => byId.set(p.id, p.name));
+    return selectedWantedIds.map((id) => byId.get(id)).filter(Boolean) as string[];
+  }, [professionsDict, selectedWantedIds]);
+
+  const aboutText =
+    (data as any).about ||
+    (data as any).orientation ||
+    (me as any)?.about_me ||
+    '—';
+
+  const isWantedValid = selectedWantedIds.length > 0;
+
+  const handleConfirm = async () => {
+    if (!uid || !isWantedValid) {
+      onClose();
+      return;
+    }
+
+    // образование
+    for (const e of educationList) {
+      if (!e?.institution && !e?.degree) continue;
+      const edu: EducationCreateI = {
+        id_user: uid,
+        type: e.degree || 'Не указано',
+        direction: e.institution || 'Не указано',
+        start_time: toYMD(e.start) ?? dayjs().format('YYYY-MM-DD'),
+        end_time: toYMD(e.end),
+      };
+      await addEducation({ user_id: uid, body: edu }).unwrap();
+    }
+
+    // ✳️ опыт: поддержка обоих форматов
+    // Новый формат из формы: { org, professionId, start, end, description }
+    // Старый формат (если где-то остался): { name, level, start, end, description }
+    for (const exp of rawExperience as any[]) {
+      const titleFromNew = exp?.org?.trim?.();
+      const titleFromOld = exp?.title?.trim?.() || exp?.name?.trim?.();
+      const title = titleFromNew || titleFromOld || '';
+
+      if (!title) continue;
+
+      const payload: ExperienceCreateI = {
+        title, // организация
+        id_profession: (exp?.professionId ?? exp?.id_profession) ?? null,
+        description: exp?.description ?? null,
+        start_time: toYMD(exp?.start) ?? dayjs().format('YYYY-MM-DD'),
+        end_time: toYMD(exp?.end),
+      };
+
+      await addExperience(payload).unwrap();
+    }
+
+    // навыки (как было)
+    const dict = new Map<string, number>();
+    (skillsDict ?? []).forEach((s: any) => dict.set(s.name, s.id));
+    const todayIso = new Date().toISOString();
+
+    const skillsPayload: UserSkillCreateI[] = (data.skills || [])
+      .map((name: string) => (dict.has(name) ? dict.get(name)! : null))
+      .filter((id): id is number => typeof id === 'number')
+      .map((id_skill) => ({
+        id_skill,
+        proficiency: 100,
+        priority: null,
+        start_date: todayIso,
+        end_date: todayIso,
+        status: 'inactive',
+      }));
+
+    if (skillsPayload.length) {
+      await addSkills({ body: skillsPayload }).unwrap();
+    }
+
+    if (selectedWantedIds.length) {
+      const wantedBody: WantedProfessionCreateI[] = selectedWantedIds.map((id_profession) => ({ id_profession }));
+      await addWanted(wantedBody).unwrap();
+    }
+
+    onClose();
+    navigate('/');
+  };
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={<Title order={3}>Подтверждение анкеты</Title>}
+      size="xl"
+      centered
+      keepMounted={false}
+    >
+      <ScrollArea.Autosize mah="70vh" type="scroll">
+        <Stack gap="md">
+          <Paper withBorder p="md">
+            <Text fw={600}>О себе</Text>
+            <Text>{aboutText}</Text>
+          </Paper>
+
+          <Paper withBorder p="md">
+            <Text fw={600}>Образование</Text>
+            {educationList.length ? (
+              <List
+                spacing="xs"
+                size="sm"
+                icon={
+                  <ThemeIcon color="teal" size={18} radius="xl">
+                    <IconCheck size={14} />
+                  </ThemeIcon>
+                }
+              >
+                {educationList.map((e: any, i: number) => (
+                  <List.Item key={`edu-${i}`}>
+                    {e.degree || '—'} — {e.institution || '—'} (
+                    {e.start ? dayjs(e.start).format('YYYY-MM-DD') : '—'} – {e.end ? dayjs(e.end).format('YYYY-MM-DD') : 'по наст. время'}
+                    )
+                  </List.Item>
+                ))}
+              </List>
+            ) : (
+              <Text>—</Text>
+            )}
+          </Paper>
+
+          <Paper withBorder p="md">
+            <Text fw={600}>Опыт</Text>
+            {rawExperience.length ? (
+              <List
+                spacing="xs"
+                size="sm"
+                icon={
+                  <ThemeIcon color="teal" size={18} radius="xl">
+                    <IconCheck size={14} />
+                  </ThemeIcon>
+                }
+              >
+                {(rawExperience as any[]).map((exp: any, i: number) => {
+                  // для нового формата: профессия по id
+                  const profName =
+                    (typeof exp?.professionId === 'number' && profById.get(exp.professionId)) ||
+                    (typeof exp?.id_profession === 'number' && profById.get(exp.id_profession)) ||
+                    null;
+
+                  const titleText = exp?.org
+                    ? (profName ? `${profName} — ${exp.org}` : `${exp.org}`)
+                    : (exp?.name || exp?.title || '—');
+
+                  return (
+                    <List.Item key={`exp-${i}`}>
+                      {titleText} (
+                      {exp?.start ? dayjs(exp.start).format('YYYY-MM-DD') : '—'} – {exp?.end ? dayjs(exp.end).format('YYYY-MM-DD') : 'по наст. время'}
+                      ){exp?.description ? ` — ${exp.description}` : ''}
+                    </List.Item>
+                  );
+                })}
+              </List>
+            ) : (
+              <Text>—</Text>
+            )}
+          </Paper>
+
+          <Paper withBorder p="md">
+            <Text fw={600}>Желаемые профессии</Text>
+            {selectedWantedNames.length ? (
+              <List
+                spacing="xs"
+                size="sm"
+                icon={
+                  <ThemeIcon color="teal" size={18} radius="xl">
+                    <IconCheck size={14} />
+                  </ThemeIcon>
+                }
+              >
+                {selectedWantedNames.map((n, i) => (
+                  <List.Item key={`${n}-${i}`}>{n}</List.Item>
+                ))}
+              </List>
+            ) : (
+              <Text c="red">Не выбрано ни одной профессии</Text>
+            )}
+          </Paper>
+
+          <Paper withBorder p="md">
+            <Text fw={600}>Навыки</Text>
+            {data.skills?.length ? <Text>{data.skills.join(', ')}</Text> : <Text>—</Text>}
+          </Paper>
+
+          <Divider />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={onClose}>Отмена</Button>
+            <Button color="teal" onClick={handleConfirm} disabled={!isWantedValid}>
+              Подтвердить и сохранить
+            </Button>
+          </Group>
+        </Stack>
+      </ScrollArea.Autosize>
+    </Modal>
+  );
+}

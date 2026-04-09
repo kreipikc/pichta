@@ -1,0 +1,105 @@
+.card {
+  height: 100%;
+  overflow: hidden;
+}
+
+.scrollContainer {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 12px;
+  background: var(--mantine-color-body);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  padding: 8px;
+  cursor: grab;
+  scroll-behavior: smooth;
+}
+
+.scrollContainer.dragging {
+  cursor: grabbing;
+}
+
+/* ===== Тема для gantt-task-react (включая SVG) ===== */
+.ganttTheme {
+  --gantt-header-bg: var(--mantine-color-default);
+  --gantt-header-fg: var(--mantine-color-text);
+  --gantt-calendar-bg: var(--mantine-color-default);
+  --gantt-calendar-fg: var(--mantine-color-text);
+  --gantt-row-base: var(--mantine-color-body);
+  --gantt-row-alt: color-mix(in oklab, var(--mantine-color-body) 85%, black 15%);
+  --gantt-grid-line: var(--mantine-color-default-border);
+}
+
+/* тёмная тема: чуть светлее альт-строки */
+:global([data-mantine-color-scheme="dark"]) .ganttTheme {
+  --gantt-row-alt: color-mix(in oklab, var(--mantine-color-body) 92%, white 8%);
+}
+
+/* Левая таблица */
+:global(.gantt-task-react .ganttTable_Header) {
+  background: var(--gantt-header-bg) !important;
+  color: var(--gantt-header-fg) !important;
+  border-bottom: 1px solid var(--mantine-color-default-border) !important;
+}
+:global(.gantt-task-react .ganttTable) {
+  background: var(--gantt-row-base) !important;
+}
+:global(.gantt-task-react .ganttTableRow) {
+  border-bottom: 1px solid var(--mantine-color-default-border) !important;
+  color: var(--mantine-color-text) !important;
+}
+:global(.gantt-task-react .ganttTableRow:nth-child(even)) {
+  background: var(--gantt-row-alt) !important;
+}
+
+/* Календарь сверху */
+:global(.gantt-task-react .calendar),
+:global(.gantt-task-react .calendarHeader),
+:global(.gantt-task-react .calendarRow),
+:global(.gantt-task-react .calendarTop),
+:global(.gantt-task-react .calendarBottom) {
+  background: var(--gantt-calendar-bg) !important;
+  color: var(--gantt-calendar-fg) !important;
+  border-bottom: 1px solid var(--mantine-color-default-border) !important;
+}
+
+/* ====== ПРАВАЯ СЕТКА — это SVG! используем fill/stroke ====== */
+/* базовый фон строк */
+:global(.gantt-task-react .gridRow) {
+  fill: var(--gantt-row-base) !important;
+}
+/* зебра на четных строках */
+:global(.gantt-task-react .gridRow:nth-child(even)) {
+  fill: var(--gantt-row-alt) !important;
+}
+/* вертикальные деления и границы */
+:global(.gantt-task-react .gridTick) {
+  stroke: var(--gantt-grid-line) !important;
+}
+
+/* Ссылки на курсы */
+.courseLink {
+  color: var(--mantine-primary-color-filled);
+  font-weight: 500;
+  text-decoration: none;
+  position: relative;
+  transition: color 0.2s ease;
+}
+.courseLink::after {
+  content: ' ↗';
+  font-size: 0.8em;
+  opacity: 0.6;
+}
+.courseLink:hover {
+  text-decoration: underline;
+  color: var(--mantine-primary-color-filled-hover);
+}
+
+.courseList {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.courseItem {
+  margin-bottom: 6px;
+}

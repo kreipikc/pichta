@@ -1,0 +1,34 @@
+---
+- name: Apply namespace
+  ansible.builtin.command: kubectl apply -f {{ manifests_dir }}/ns.yml
+  register: ns_apply
+  changed_when: "'created' in ns_apply.stdout or 'configured' in ns_apply.stdout"
+
+- name: Apply backend secret
+  ansible.builtin.command: kubectl apply -f {{ manifests_dir }}/secret_back.yml
+  register: secret_apply
+  changed_when: "'created' in secret_apply.stdout or 'configured' in secret_apply.stdout"
+
+- name: Apply backend configmap
+  ansible.builtin.command: kubectl apply -f {{ manifests_dir }}/config-map_back.yml
+  register: configmap_apply
+  changed_when: "'created' in configmap_apply.stdout or 'configured' in configmap_apply.stdout"
+
+- name: Apply remaining manifests
+  ansible.builtin.command: kubectl apply -f {{ manifests_dir }}/{{ item }}
+  loop:
+    - service_back.yml
+    - backend.yml
+    - service_front.yml
+    - front.yml
+    - ingres.yml
+  register: apply_rest
+  changed_when: "'created' in apply_rest.stdout or 'configured' in apply_rest.stdout"
+
+- name: Wait for backend rollout
+  ansible.builtin.command: kubectl -n {{ k8s_namespace }} rollout status deploy/backend --timeout=180s
+  changed_when: false
+
+- name: Wait for frontend rollout
+  ansible.builtin.command: kubectl -n {{ k8s_namespace }} rollout status deploy/frontend --timeout=180s
+  changed_when: false

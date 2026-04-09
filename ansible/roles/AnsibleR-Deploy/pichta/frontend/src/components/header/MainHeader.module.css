@@ -1,0 +1,29 @@
+.header {
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  }
+  
+  .headerContent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+  
+  .centerNav {
+    display: flex;
+    gap: var(--mantine-spacing-md);
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .logo {
+    height: 40px;
+  }
+  
+  .placeholder {
+    width: 40px;
+  }
+  
