@@ -4,7 +4,7 @@ stages:
 
 variables:
   DOCKER_REGISTRY: "docker.io"
-  DOCKER_NAMESPACE: "pan-tech"
+  DOCKER_NAMESPACE: "revenan7"
   BACKEND_IMAGE: "$DOCKER_REGISTRY/$DOCKER_NAMESPACE/pichta-backend"
   FRONTEND_IMAGE: "$DOCKER_REGISTRY/$DOCKER_NAMESPACE/pichta-frontend"
 
