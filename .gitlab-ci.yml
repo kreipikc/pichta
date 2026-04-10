@@ -67,7 +67,7 @@ build-frontend:
         exit 1
       fi
     - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
-    - docker build -t "$FRONTEND_IMAGE:$IMAGE_TAG" -f /opt/k8s/pichta/docker/frontend/Dockerfile .
+    - docker build -t "$FRONTEND_IMAGE:$IMAGE_TAG" -f /opt/k8s/pichta/docker/frontend/Dockerfile /opt/k8s/pichta/frontend
     - docker push "$FRONTEND_IMAGE:$IMAGE_TAG"
     - docker tag "$FRONTEND_IMAGE:$IMAGE_TAG" "$FRONTEND_IMAGE:latest"
     - docker push "$FRONTEND_IMAGE:latest"
