@@ -70,7 +70,7 @@ uvicorn main:app --host 0.0.0.0 --port 8005
 Проект запущен локально на порту **8005** и доступен по http://localhost:8005.
 
 ## 🏗️ Структура проекта
-Повторяющие названия файлы имеют один и тот же функционал (например: admin/schemas.py и education/schemas.py).
+Одинаковые названия файлов в разных модулях имеют один и тот же функционал (например: `admin/schemas.py` и `education/schemas.py`).
 ```
 pichta
 ├── README.md
@@ -81,6 +81,7 @@ pichta
 │   ├── logger.py         # Настройка и инициализация объекта для логирования
 │   ├── main.py           # Точка входа
 │   ├── requirements.txt  # Необходимые зависимости для Python
+│   ├── pytest.ini        # Настройки pytest (в т.ч. пути импорта для тестов)
 │   ├── routers           # Все сервисы с ручками
 │   │   ├── auth                  # Основной сервис для работы с AAA
 │   │   │   ├── admin             # Сервис с admin-endpoints
@@ -93,7 +94,7 @@ pichta
 │   │   │   │   ├── responses           # Все возможные ошибки данного сервиса (классификация ошибок)
 │   │   │   │   │   ├── http_errors.py  # Классы со всеми видами ошибок сервиса
 │   │   │   │   │   └── responses.py    # Класс для инициализации ошибок в проекте
-│   │   │   │   ├── router.py.
+│   │   │   │   ├── router.py
 │   │   │   │   ├── schemas.py
 │   │   │   │   ├── service.py
 │   │   │   │   └── utils.py            # Дополнительные утилиты для сервиса
@@ -111,16 +112,24 @@ pichta
 │   │   │   ├── router.py
 │   │   │   ├── schemas.py
 │   │   │   └── service.py
-│   │   ├── experience      # Аналогинчно серсиву education
-│   │   ├── for_myself      # Аналогинчно серсиву education
-│   │   ├── profession      # Аналогинчно серсиву education
-│   │   ├── skill           # Аналогинчно серсиву education
-│   │   └── task            # Аналогинчно серсиву education
+│   │   ├── experience      # Аналогично сервису education
+│   │   ├── for_myself      # Аналогично сервису education
+│   │   ├── graphs          # Граф профессий и выгрузка навыков
+│   │   │   ├── router.py
+│   │   │   ├── schemas.py
+│   │   │   └── service.py
+│   │   ├── profession      # Аналогично сервису education
+│   │   ├── courser         # Модели и схемы курсов (связка со skill)
+│   │   │   ├── models.py
+│   │   │   └── schemas.py
+│   │   ├── skill           # Аналогично сервису education
+│   │   └── task            # Аналогично сервису education
 │   ├── tests           # Все backend тесты
 │   │   ├── unit        # Unit-тесты (зеркало по модулям)
 │   │   │   ├── test_utils.py
 │   │   │   ├── auth                # Тесты для модуля auth
 │   │   │   │   ├── test_jwt.py
+│   │   │   │   ├── test_utils.py
 │   │   │   │   └── ...
 │   │   │   ├── graphs              # Тесты для модуля graph
 │   │   │   │   └── test_service.py
@@ -129,9 +138,15 @@ pichta
 │   │   │   └── ...                 # Все модули аналогично
 │   │   └── ...           # Остальные типы тестов аналогично (при наличии)
 │   └── utils.py          # Общие утилиты
-└── database              # Данные для БД
-    └── postgres          # Конкретно для Postgres
-        └── 01.init.sql   # SQL-скрипт для инициализации
+└── database              # Данные для БД и вспомогательные скрипты
+    ├── postgres          # SQL-скрипты инициализации Postgres
+    │   ├── 01.init.sql   # Первичная инициализация схемы и таблиц
+    │   └── 02.init.sql   # Дополнительные изменения схемы / данных (AGE)
+    └── graphs_cmd        # Скрипты для графа (AGE): проверка и деплой БД
+        ├── README.md     # Описание сценариев для каталога
+        ├── check_db.py   # Проверка состояния БД / графа
+        ├── deploy_db.py  # Деплой / применение изменений к БД
+        └── requirements.txt  # Зависимости Python для скриптов каталога
 ```
 
 ## 🧪 Тестирование
@@ -164,12 +179,13 @@ pytest tests/unit/
 - **POST** `/auth/register` - регистрация нового пользователя;
 - **POST** `/auth/login` - вход в систему;
 - **POST** `/auth/refresh_token` - обновление access-токена с помощью refresh-токена;
-- **POST** `/auth/logout` - выход из системы.
+- **POST** `/auth/logout` - выход из системы;
+- **POST** `/auth/change_pass` - смена пароля текущего пользователя.
 
 ### User
 - **GET** `/user/me` - получить текущего пользователя;
-- **POST** `/user/me` - обновить информацию текущего пользователя;
-- **POST** `/user/aboutme` - обновить поле пользователя "Обо мне".
+- **POST** `/user/aboutme` - обновить поле пользователя "Обо мне";
+- **GET** `/user/get/role` - получить роль текущего пользователя.
 
 ### Admin
 - **GET** `/user/getall` - получить список всех пользователей;
@@ -177,22 +193,27 @@ pytest tests/unit/
 - **DELETE** `/user/delete/{user_id}` - удалить пользователя по id.
 
 ### For Myself
-- **GET** `/me/wanted_prof/add` - добавить желаемою профессию для себя.
+- **GET** `/me/wanted_prof/getall/{user_id}` - получить желаемые профессии пользователя по `user_id`;
+- **POST** `/me/wanted_prof/add` - добавить желаемые профессии для себя.
+
+### Graphs
+- **GET** `/graph/get/{prof_id}?user_id={user_id}` - получить иерархию графа профессии для пользователя;
+- **GET** `/graph/get/{prof_id}/gantt?user_id={user_id}` - навыки по статусам (complete, process, inactive, gray_zone) для графа и пользователя.
 
 ### Education
-- **GET** `/educ/getall` - получение всех educations;
-- **GET** `/educ/get/{education_id}` - получение education по id;
-- **POST** `/educ/add` - создание нового education;
-- **PUT** `/educ/update/{education_id}` - обновить education по id;
-- **DELETE** `/educ/delete/{education_id}` - удалить education по id.
+- **GET** `/educ/getall/{user_id}` - получение всех educations пользователя по `user_id`;
+- **GET** `/educ/get/{education_id}?user_id={user_id}` - получение education по id для пользователя;
+- **POST** `/educ/add/{user_id}` - создание нового education для пользователя;
+- **PUT** `/educ/update/{education_id}?user_id={user_id}` - обновить education по id;
+- **DELETE** `/educ/delete/{education_id}?user_id={user_id}` - удалить education по id.
 
 ### Experience
-- **GET** `/exper/getall` - получение всех experiences;
-- **GET** `/exper/get/{experience_id}` - получение experience по id;
-- **POST** `/exper/add` - создание новый experience;
-- **POST** `/exper/add/{user_id}` - добавить новый experience для пользователя по user_id;
-- **PUT** `/exper/update/{experience_id}` - обновить experience по id;
-- **DELETE** `/exper/delete/{experience_id}` - удалить experience по id.
+- **GET** `/exper/getall/{user_id}` - получение всех experiences пользователя по `user_id`;
+- **GET** `/exper/get/{experience_id}?user_id={user_id}` - получение experience по id для пользователя;
+- **POST** `/exper/add` - создание нового experience для текущего пользователя;
+- **POST** `/exper/add/{user_id}` - добавить новый experience для пользователя по `user_id`;
+- **PUT** `/exper/update/{experience_id}?user_id={user_id}` - обновить experience по id;
+- **DELETE** `/exper/delete/{experience_id}?user_id={user_id}` - удалить experience по id.
 
 ### Profession
 - **GET** `/prof/getall` - получение всех professions;
@@ -202,18 +223,23 @@ pytest tests/unit/
 - **DELETE** `/prof/delete/{profession_id}` - удалить profession по id.
 
 ### Skills
-- **GET** `/skill/getall` - получение всех skills;
-- **GET** `/skill/get/` - получение skill по id (в JSON);
-- **POST** `/skill/add` - создание нового skill;
-- **PUT** `/skill/update/{skill_id}` - обновить skill по id;
-- **DELETE** `/skill/delete/{skill_id}` - удалить skill по id.
+- **GET** `/skill/getall` - получение всех skills (справочник);
+- **GET** `/skill/getall/{user_id}` - получение всех skills пользователя по `user_id`;
+- **GET** `/skill/get/{skill_id}?user_id={user_id}` - получение skill пользователя по `skill_id`;
+- **GET** `/skill/get/{skill_id}/courses` - курсы, привязанные к skill;
+- **GET** `/skill/get/{user_id}/process` - skills пользователя в статусе process;
+- **POST** `/skill/add` - добавить skills себе;
+- **POST** `/skill/add/{user_id}` - добавить skills пользователю (admin);
+- **PUT** `/skill/update/{skill_id}?user_id={user_id}` - обновить skill пользователя;
+- **DELETE** `/skill/delete/{skill_id}?user_id={user_id}` - удалить skill у пользователя.
 
 ### Tasks
-- **GET** `/task/getall` - получение всех tasks;
+- **GET** `/task/getall/{user_id}` - получение всех tasks пользователя по `user_id`;
 - **GET** `/task/get/{task_id}` - получение task по id;
-- **POST** `/task/add` - создание нового task;
-- **PUT** `/task/update/{task_id}` - обновить task по id;
-- **DELETE** `/task/delete/{task_id}` - удалить task по id.
+- **POST** `/task/add` - создание task для себя;
+- **POST** `/task/add/{user_id}` - создание task для другого пользователя;
+- **PUT** `/task/update/{task_id}?user_id={user_id}` - обновить task по id;
+- **DELETE** `/task/delete/{task_id}?user_id={user_id}` - удалить task по id.
 
 ## 📊 Переменные окружения
 | Переменная                  | Описание                            | По умолчанию                                |
