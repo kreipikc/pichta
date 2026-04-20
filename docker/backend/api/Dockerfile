@@ -6,8 +6,10 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /api
 
-COPY ./backend/api .
+COPY ./backend/api/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ./backend/api .
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8005"]
