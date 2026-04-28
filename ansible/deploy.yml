@@ -1,0 +1,11 @@
+---
+- name: Test playbook
+  hosts: Warden
+  gather_facts: false
+
+  tasks:
+    - name: Print hello
+      ansible.builtin.debug:
+        msg: "hello from ansible"
+  roles:
+    - AnsibleR-Deploy
