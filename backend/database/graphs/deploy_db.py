@@ -4,13 +4,17 @@ import psycopg2
 import argparse
 import os
 from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
 
-# Заменить на свои данные от PostgreSQL
-POSTGRES_USER = "postgres"
-POSTGRES_PASSWORD = "postgrespass"
-POSTGRES_DB = "testdb"
-POSTGRES_HOST = "localhost"
-POSTGRES_PORT = 5432
+
+load_dotenv()
+
+POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "testdb")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "pg_age")
+POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", 5432))
+POSTGRES_GRAPH = os.getenv("POSTGRES_GRAPH", "professions_graph")
 
 
 class GraphImporter:

@@ -1,15 +1,19 @@
+import re
+import os
 from age import Age
 import networkx as nx
 import matplotlib.pyplot as plt
-import re
+from dotenv import load_dotenv
 
 
-POSTGRES_USER = "postgres"
-POSTGRES_PASSWORD = "postgrespass"
-POSTGRES_DB = "testdb"
-POSTGRES_GRAPH = "professions_graph"
-POSTGRES_HOST = "localhost"
-POSTGRES_PORT = 5432
+load_dotenv()
+
+POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "testdb")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "pg_age")
+POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", 5432))
+POSTGRES_GRAPH = os.getenv("POSTGRES_GRAPH", "professions_graph")
 
 
 class GraphVisualizer:

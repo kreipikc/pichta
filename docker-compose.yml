@@ -79,6 +79,25 @@ services:
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
+  
+  graphs_init:
+    build:
+      context: .
+      dockerfile: docker/backend/database/graphs-init/Dockerfile
+    container_name: graphs_init
+    depends_on:
+      pg_age:
+        condition: service_healthy
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=pg_age
+      - POSTGRES_PORT=5432
+      - POSTGRES_GRAPH=${POSTGRES_GRAPH}
+    restart: no
+    networks:
+      - app_network
 
 networks:
   app_network:
